@@ -5,47 +5,74 @@
 using namespace std;
 
 void initialize(){
-    cout << "initialize command recognized. Doing something.\n";
+    cout << "\x1B[32m\x1B[1minitialize\x1B[22m\x1B[0m command recognized. Doing something.\n";
 }
 
 void screen(){
-    cout << "screen command recognized. Doing something.\n";
+    cout << "\x1B[32m\x1B[1mscreen\x1B[22m\x1B[0m command recognized. Doing something.\n";
 }
 
 void scheduler_test(){
-    cout << "scheduler-test command recognized. Doing something.\n";
+    cout << "\x1B[32m\x1B[1mscheduler-test\x1B[22m\x1B[0m command recognized. Doing something.\n";
 }
 
 void scheduler_stop(){
-    cout << "scheduler-stop command recognized. Doing something.\n";
+    cout << "\x1B[32m\x1B[1mscheduler-stop\x1B[22m\x1B[0m command recognized. Doing something.\n";
 }
 
 void report_util(){
-    cout << "report-util command recognized. Doing something.\n";
+    cout << "\x1B[32m\x1B[1mreport-util\x1B[22m\x1B[0m command recognized. Doing something.\n";
 }
 
 // feel free to change the colors
 void header(){
     cout << "+==================================================+\n";
     cout << "|\x1B[48;5;195m\x1B[38;5;66m                                                  \033[0m|\n";
-    cout << "|\x1B[48;5;195m\x1B[38;5;66m          ___ ___  ___  ___ ___ _____   __        \033[0m|\n";
-    cout << "|\x1B[48;5;195m\x1B[38;5;66m         / __/ __|/ _ \\| _ \\ __/ __\\ \\ / /        \033[0m|\n";
-    cout << "|\x1B[48;5;195m\x1B[38;5;66m        | (__\\__ \\ (_) |  _/ _|\\__ \\\\ V /         \033[0m|\n";
-    cout << "|\x1B[48;5;195m\x1B[38;5;66m         \\___|___/\\___/|_| |___|___/ |_|          \033[0m|\n";
-    cout << "|\x1B[48;5;195m\x1B[38;5;66m   ___  ___    ___            _      _            \033[0m|\n";
-    cout << "|\x1B[48;5;195m\x1B[38;5;66m  / _ \\/ __|  | __|_ _ _ _  _| |__ _| |_ ___ _ _  \033[0m|\n";
-    cout << "|\x1B[48;5;195m\x1B[38;5;66m | (_) \\__ \\  | _|| ' ' | || | / _` |  _/ _ \\ '_| \033[0m|\n";
-    cout << "|\x1B[48;5;195m\x1B[38;5;66m  \\___/|___/  |___|_|_|_|__,_|_\\__,_|___\\___/_|   \033[0m|\n";
+    cout << "|\x1B[48;5;195m\x1B[38;5;66m\x1B[1m          ___ ___  ___  ___ ___ _____   __        \033[0m|\n";
+    cout << "|\x1B[48;5;195m\x1B[38;5;66m\x1B[1m         / __/ __|/ _ \\| _ \\ __/ __\\ \\ / /        \033[0m|\n";
+    cout << "|\x1B[48;5;195m\x1B[38;5;66m\x1B[1m        | (__\\__ \\ (_) |  _/ _|\\__ \\\\ V /         \033[0m|\n";
+    cout << "|\x1B[48;5;195m\x1B[38;5;66m\x1B[1m         \\___|___/\\___/|_| |___|___/ |_|          \033[0m|\n";
+    cout << "|\x1B[48;5;195m\x1B[38;5;66m\x1B[1m   ___  ___    ___            _      _            \033[0m|\n";
+    cout << "|\x1B[48;5;195m\x1B[38;5;66m\x1B[1m  / _ \\/ __|  | __|_ _ _ _  _| |__ _| |_ ___ _ _  \033[0m|\n";
+    cout << "|\x1B[48;5;195m\x1B[38;5;66m\x1B[1m | (_) \\__ \\  | _|| ' ' | || | / _` |  _/ _ \\ '_| \033[0m|\n";
+    cout << "|\x1B[48;5;195m\x1B[38;5;66m\x1B[1m  \\___/|___/  |___|_|_|_|__,_|_\\__,_|___\\___/_|   \033[0m|\n";
+    cout << "|\x1B[48;5;195m\x1B[38;5;66m\x1B[1m                                                  \033[0m|\n";
+    cout << "|\x1B[48;5;195m\x1B[38;5;66m\x1B[1m                   S20 Group 8                    \033[0m|\n";
+    cout << "|\x1B[48;5;195m\x1B[38;5;66m\x1B[1m        Buencamino, Chua, Ruiz, Seperidad         \033[0m|\n";
     cout << "|\x1B[48;5;195m\x1B[38;5;66m                                                  \033[0m|\n";
-    cout << "+--------------------------------------------------+\n";
-    cout << "| Welcome! Here are the commands:                  |\n";
-    cout << "| -  'initialize', 'screen', 'scheduler-test',     |\n";
-    cout << "| -  'scheduler-stop', 'report-util', 'clear',     |\n";
-    cout << "| -  'exit'                                        |\n";
-    cout << "|                                                  |\n";
-    cout << "| By: CSOPESY S20 Group 8                          |\n";
-    cout << "| Buencamino, Chua, Ruiz, Seperidad                |\n";
     cout << "+==================================================+\n";
+    cout << "| Welcome! Here are the available commands:        |\n";
+    cout << "|   - initialize        - report-util              |\n";
+    cout << "|   - screen            - clear                    |\n";
+    cout << "|   - scheduler-test    - exit                     |\n";
+    cout << "|   - scheduler-stop                               |\n";
+    cout << "+==================================================+\n";
+}
+
+// cannot output properly if not utf8 interpreted
+// needs to interpret first so that it can output properly or else it'll be garbage values
+void pretty_header(){
+    cout << "╔══════════════════════════════════════════════════╗\n";
+    cout << "║\x1B[48;5;195m\x1B[38;5;66m                                                  \033[0m║\n";
+    cout << "║\x1B[48;5;195m\x1B[38;5;66m\x1B[1m          ___ ___  ___  ___ ___ _____   __        \033[0m║\n";
+    cout << "║\x1B[48;5;195m\x1B[38;5;66m\x1B[1m         / __/ __|/ _ \\| _ \\ __/ __\\ \\ / /        \033[0m║\n";
+    cout << "║\x1B[48;5;195m\x1B[38;5;66m\x1B[1m        | (__\\__ \\ (_) |  _/ _|\\__ \\\\ V /         \033[0m║\n";
+    cout << "║\x1B[48;5;195m\x1B[38;5;66m\x1B[1m         \\___|___/\\___/|_| |___|___/ |_|          \033[0m║\n";
+    cout << "║\x1B[48;5;195m\x1B[38;5;66m\x1B[1m   ___  ___    ___            _      _            \033[0m║\n";
+    cout << "║\x1B[48;5;195m\x1B[38;5;66m\x1B[1m  / _ \\/ __|  | __|_ _ _ _  _| |__ _| |_ ___ _ _  \033[0m║\n";
+    cout << "║\x1B[48;5;195m\x1B[38;5;66m\x1B[1m | (_) \\__ \\  | _|| ' ' | || | / _` |  _/ _ \\ '_| \033[0m║\n";
+    cout << "║\x1B[48;5;195m\x1B[38;5;66m\x1B[1m  \\___/|___/  |___|_|_|_|__,_|_\\__,_|___\\___/_|   \033[0m║\n";
+    cout << "║\x1B[48;5;195m\x1B[38;5;66m\x1B[1m                                                  \033[0m║\n";
+    cout << "║\x1B[48;5;195m\x1B[38;5;66m\x1B[1m                   S20 Group 8                    \033[0m║\n";
+    cout << "║\x1B[48;5;195m\x1B[38;5;66m\x1B[1m        Buencamino, Chua, Ruiz, Seperidad         \033[0m║\n";
+    cout << "║\x1B[48;5;195m\x1B[38;5;66m                                                  \033[0m║\n";
+    cout << "╠══════════════════════════════════════════════════╣\n";
+    cout << "║ Welcome! Here are the available commands:        ║\n";
+    cout << "║   • initialize        • report-util              ║\n";
+    cout << "║   • screen            • clear                    ║\n";
+    cout << "║   • scheduler-test    • exit                     ║\n";
+    cout << "║   • scheduler-stop                               ║\n";
+    cout << "╚══════════════════════════════════════════════════╝\n";
 }
 
 void clear(){
@@ -54,7 +81,7 @@ void clear(){
         header();
     #else
         system("clear"); // Unix/Linux/MacOS
-        header()
+        header();
     #endif
 }
 
@@ -81,7 +108,7 @@ int main(){
         } else if (command == "exit") {
             exit(0); 
         } else {
-            cout << "Unknown command: " << command << "\n";
+            cout << "\x1B[31m\x1B[1mUnknown command:\x1B[22m " << command << "\x1B[0m\n";
         }
     } while (true);
    
