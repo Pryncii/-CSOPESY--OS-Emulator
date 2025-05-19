@@ -1,22 +1,23 @@
 #include <string>
 #include <ctime>
 #include <iostream>
-#define TOTAL 50
-#define CURRENT 0
+
 
 using namespace std;
 
 class Console{
     private:
         string processName;
-        int currentLine = CURRENT;
-        int totalLines = TOTAL;
+        int currentLine;
+        int totalLines;
         string timestamp;
+        string totalStrings;
 
     public:
+        Console();
         Console(const string name);
         void drawScreen() const;
-        void updateLine(int newLine);
         string getName() const;
-
+        string getStrings() const;
+        void setStrings(const string input);
 };

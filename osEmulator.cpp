@@ -89,6 +89,17 @@ void clear(){
     #endif
 }
 
+void screenInterface(string screenName){
+    string screenInput = "";
+    do{
+        cout << "Enter command: ";
+        getline(cin, screenInput);
+        screens[screenName].setStrings(screenInput);
+    } while (screenInput != "exit");
+}
+
+
+
 int main(){
 
     string command;
@@ -112,12 +123,15 @@ int main(){
         } else if (command == "exit") {
             exit(0); 
         } else if (command.rfind("screen -s ", 0) == 0){
-            string screenName = command.substr(10); // after "screen -s "
-            screens[screenName] = Console(screenName);
-            screens[screenName].drawScreen();
+            string screenName = command.substr(10);
+            Console temp(screenName);
+            screens.insert({screenName, temp});
+            system("cls");
+            screens[screenName].drawScreen(); 
+            screenInterface(screenName);
             clear();
-        } else if (command == "screen -r"){
-
+        } else if (command.rfind("screen -s ", 0) == 0){
+            cout << "placeholder";
         } else {
             cout << "\x1B[31m\x1B[1mUnknown command:\x1B[22m " << command << "\x1B[0m\n";
         }
