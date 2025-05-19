@@ -1,8 +1,12 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
+#include <unordered_map>
+#include "Console.h"
 
 using namespace std;
+
+std::unordered_map<std::string, Console> screens;
 
 void initialize(){
     cout << "\x1B[32m\x1B[1minitialize\x1B[22m\x1B[0m command recognized. Doing something.\n";
@@ -107,6 +111,13 @@ int main(){
             report_util();
         } else if (command == "exit") {
             exit(0); 
+        } else if (command.rfind("screen -s ", 0) == 0){
+            string screenName = command.substr(10); // after "screen -s "
+            screens[screenName] = Console(screenName);
+            screens[screenName].drawScreen();
+            clear();
+        } else if (command == "screen -r"){
+
         } else {
             cout << "\x1B[31m\x1B[1mUnknown command:\x1B[22m " << command << "\x1B[0m\n";
         }
