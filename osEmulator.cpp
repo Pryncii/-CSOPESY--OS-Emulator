@@ -49,7 +49,7 @@ void header(){
     cout << "|   - initialize        - report-util              |\n";
     cout << "|   - screen            - clear                    |\n";
     cout << "|   - scheduler-test    - exit                     |\n";
-    cout << "|   - scheduler-stop                               |\n";
+    cout << "|   - scheduler-stop    - screen -r/screen -s      |\n";
     cout << "+==================================================+\n";
 }
 
@@ -75,27 +75,27 @@ void pretty_header(){
     cout << "║   • initialize        • report-util              ║\n";
     cout << "║   • screen            • clear                    ║\n";
     cout << "║   • scheduler-test    • exit                     ║\n";
-    cout << "║   • scheduler-stop                               ║\n";
+    cout << "║   • scheduler-stop     • screen -r               ║\n";
+    cout << "║   • screen -s                                    ║\n";
     cout << "╚══════════════════════════════════════════════════╝\n";
 }
 
 void clear(){
-    #ifdef _WIN32
-        system("cls"); // Windows
-        header();
-    #else
-        system("clear"); // Unix/Linux/MacOS
-        header();
-    #endif
+    system("cls"); // Windows
+    header();
 }
 
 void screenInterface(string screenName){
     string screenInput = "";
+    system("cls");
+    screens[screenName].drawScreen(); 
     do{
         cout << "Enter command: ";
         getline(cin, screenInput);
+
         screens[screenName].setStrings(screenInput);
     } while (screenInput != "exit");
+    clear();
 }
 
 
@@ -106,6 +106,7 @@ int main(){
     
     header();
     do{
+        string screenName = "";
         cout << "Enter command: ";
         getline(cin, command);
         if (command == "clear") {
@@ -123,15 +124,13 @@ int main(){
         } else if (command == "exit") {
             exit(0); 
         } else if (command.rfind("screen -s ", 0) == 0){
-            string screenName = command.substr(10);
+            screenName = command.substr(10);
             Console temp(screenName);
             screens.insert({screenName, temp});
-            system("cls");
-            screens[screenName].drawScreen(); 
             screenInterface(screenName);
-            clear();
-        } else if (command.rfind("screen -s ", 0) == 0){
-            cout << "placeholder";
+        } else if (command.rfind("screen -r ", 0) == 0){
+            screenName = command.substr(10);
+            screenInterface(screenName);
         } else {
             cout << "\x1B[31m\x1B[1mUnknown command:\x1B[22m " << command << "\x1B[0m\n";
         }
