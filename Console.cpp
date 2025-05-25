@@ -2,7 +2,7 @@
 #include <iostream>
 #include <iomanip>
 #include <sstream>
-#define TOTAL 50
+#define TOTAL 500
 #define CURRENT 0
 using namespace std;
 
@@ -23,9 +23,12 @@ Console::Console()
     }
 
 void Console::drawScreen() const {
-    cout << "Process Name: " << processName << "\n";
-    cout << currentLine << "/" << totalLines << "\n";
-    cout << "Creation Time: " << timestamp << "\n";
+    cout << "============================================\n";
+    cout << "| Process Name: " << processName << "                        |\n";
+    cout << "| Current Line/Total Lines: ";
+    cout << currentLine << "/" << totalLines << "          |\n";
+    cout << "| Creation Time: " << timestamp << "   |\n";
+    cout << "============================================\n";
     cout << totalStrings;
 }
 

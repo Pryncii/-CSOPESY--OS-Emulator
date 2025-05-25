@@ -47,12 +47,14 @@ void header(){
     cout << "+==================================================+\n";
     cout << "| Welcome! Here are the available commands:        |\n";
     cout << "|   - initialize        - report-util              |\n";
-    cout << "|   - screen            - clear                    |\n";
-    cout << "|   - scheduler-test    - exit                     |\n";
-    cout << "|   - scheduler-stop    - screen -r/screen -s      |\n";
+    cout << "|   - screen            - screen -s <name>         |\n";
+    cout << "|   - scheduler-test    - screen -r <name>         |\n";
+    cout << "|   - scheduler-stop    - exit                     |\n";
+    cout << "|   - clear                                        |\n";
     cout << "+==================================================+\n";
 }
 
+/*
 // cannot output properly if not utf8 interpreted
 // needs to interpret first so that it can output properly or else it'll be garbage values
 void pretty_header(){
@@ -79,6 +81,7 @@ void pretty_header(){
     cout << "║   • screen -s                                    ║\n";
     cout << "╚══════════════════════════════════════════════════╝\n";
 }
+*/
 
 void clear(){
     system("cls"); // Windows
@@ -93,12 +96,24 @@ void screenInterface(string screenName){
         cout << "Enter command: ";
         getline(cin, screenInput);
 
+        if (screenInput != "exit") {
+            cout << "\x1B[31m\x1B[1mUnknown command:\x1B[22m " << screenInput << ". \x1B[31m\x1B[1m'exit' is the only available command right now.\x1B[0m\n";
+            screenInput = screenInput + "\n\x1B[31m\x1B[1mUnknown command:\x1B[22m " + screenInput + ". 'exit' is the only available command right now.\x1B[0m";
+        }
+
         screens[screenName].setStrings(screenInput);
     } while (screenInput != "exit");
     clear();
 }
 
+bool inScreenMap(string name)
+{
+    // screen name doesn't exist in map
+    if (screens.find(name) == screens.end())
+        return false;
 
+    return true;
+}
 
 int main(){
 
@@ -123,14 +138,48 @@ int main(){
             report_util();
         } else if (command == "exit") {
             exit(0); 
-        } else if (command.rfind("screen -s ", 0) == 0){
-            screenName = command.substr(10);
-            Console temp(screenName);
-            screens.insert({screenName, temp});
-            screenInterface(screenName);
-        } else if (command.rfind("screen -r ", 0) == 0){
-            screenName = command.substr(10);
-            screenInterface(screenName);
+        } else if (command.rfind("screen -s", 0) == 0){
+            string rawScreenName;
+            rawScreenName = command.substr(9); // get text after -s
+
+            // Trim whitespace
+            rawScreenName.erase(0, rawScreenName.find_first_not_of(" \t\n\r")); // left trim (" CSOPESY" becomes "CSOPESY")
+            rawScreenName.erase(rawScreenName.find_last_not_of(" \t\n\r") + 1); // right trim ("CSOPESY " becomes "CSOPESY")
+
+            if (rawScreenName.empty()) { // makes sure theres a proper screen name
+                std::cout << "\x1B[31m\x1B[1mError:\x1B[0m Screen name cannot be empty.\n";
+            }
+            else {
+                screenName = rawScreenName;
+                if (inScreenMap(screenName) == false) { // ensures screen name doesn't exist yet
+                    Console temp(screenName);
+                    screens.insert({ screenName, temp });
+                    screenInterface(screenName);
+                }
+                else {
+                    std::cout << "\x1B[31m\x1B[1mError:\x1B[0m Screen name already exist! Use 'screen -r <process name>' to view the screen.\n";
+                }
+            }
+        } else if (command.rfind("screen -r", 0) == 0){
+            string rawScreenName;
+            rawScreenName = command.substr(9);
+
+            // Trim whitespace
+            rawScreenName.erase(0, rawScreenName.find_first_not_of(" \t\n\r"));
+            rawScreenName.erase(rawScreenName.find_last_not_of(" \t\n\r") + 1);
+
+            if (rawScreenName.empty()) { // makes sure theres a proper screen name
+                std::cout << "\x1B[31m\x1B[1mError:\x1B[0m Screen name cannot be empty.\n";
+            }
+            else {
+                screenName = rawScreenName;
+                if (inScreenMap(screenName) == true) { // ensures screen name already exists
+                    screenInterface(screenName);
+                }
+                else {
+                    std::cout << "\x1B[31m\x1B[1mError:\x1B[0m Screen name doesn't exist! Use 'screen -s <process name>' to create the screen.\n";
+                }
+            }
         } else {
             cout << "\x1B[31m\x1B[1mUnknown command:\x1B[22m " << command << "\x1B[0m\n";
         }
@@ -138,3 +187,9 @@ int main(){
    
     return 0;
 }
+
+/* TO DO LIST
+    - [DONE] (not sure if need) empty screen name (from "screen -s  ")
+    - [DONE] screen -s and -r does the same thing (make sure -s checks it doesnt exist and -r checks it does)
+    - (optional for now) main menu text doesnt get saved
+*/
