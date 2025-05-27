@@ -49,8 +49,8 @@ void header(){
     cout << "|   - initialize        - report-util              |\n";
     cout << "|   - screen            - screen -s <name>         |\n";
     cout << "|   - scheduler-test    - screen -r <name>         |\n";
-    cout << "|   - scheduler-stop    - exit                     |\n";
-    cout << "|   - clear                                        |\n";
+    cout << "|   - scheduler-stop    - screen -ls               |\n";
+    cout << "|   - clear             - exit                     |\n";
     cout << "+==================================================+\n";
 }
 
@@ -149,6 +149,15 @@ int main(){
                 }
                 else {
                     std::cout << "\x1B[31m\x1B[1mError:\x1B[0m Screen name doesn't exist! Use 'screen -s <process name>' to create the screen.\n";
+                }
+            }
+        } else if (command == "screen -ls"){
+            if (screens.empty()) {
+                std::cout << "No screens available.\n";
+            } else {
+                std::cout << "Available screens:\n";
+                for (const auto& pair : screens) {
+                    std::cout << "- " << pair.first << "\n";
                 }
             }
         } else {
