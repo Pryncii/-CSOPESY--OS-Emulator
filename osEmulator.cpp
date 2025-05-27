@@ -54,35 +54,6 @@ void header(){
     cout << "+==================================================+\n";
 }
 
-/*
-// cannot output properly if not utf8 interpreted
-// needs to interpret first so that it can output properly or else it'll be garbage values
-void pretty_header(){
-    cout << "╔══════════════════════════════════════════════════╗\n";
-    cout << "║\x1B[48;5;195m\x1B[38;5;66m                                                  \033[0m║\n";
-    cout << "║\x1B[48;5;195m\x1B[38;5;66m\x1B[1m          ___ ___  ___  ___ ___ _____   __        \033[0m║\n";
-    cout << "║\x1B[48;5;195m\x1B[38;5;66m\x1B[1m         / __/ __|/ _ \\| _ \\ __/ __\\ \\ / /        \033[0m║\n";
-    cout << "║\x1B[48;5;195m\x1B[38;5;66m\x1B[1m        | (__\\__ \\ (_) |  _/ _|\\__ \\\\ V /         \033[0m║\n";
-    cout << "║\x1B[48;5;195m\x1B[38;5;66m\x1B[1m         \\___|___/\\___/|_| |___|___/ |_|          \033[0m║\n";
-    cout << "║\x1B[48;5;195m\x1B[38;5;66m\x1B[1m   ___  ___    ___            _      _            \033[0m║\n";
-    cout << "║\x1B[48;5;195m\x1B[38;5;66m\x1B[1m  / _ \\/ __|  | __|_ _ _ _  _| |__ _| |_ ___ _ _  \033[0m║\n";
-    cout << "║\x1B[48;5;195m\x1B[38;5;66m\x1B[1m | (_) \\__ \\  | _|| ' ' | || | / _` |  _/ _ \\ '_| \033[0m║\n";
-    cout << "║\x1B[48;5;195m\x1B[38;5;66m\x1B[1m  \\___/|___/  |___|_|_|_|__,_|_\\__,_|___\\___/_|   \033[0m║\n";
-    cout << "║\x1B[48;5;195m\x1B[38;5;66m\x1B[1m                                                  \033[0m║\n";
-    cout << "║\x1B[48;5;195m\x1B[38;5;66m\x1B[1m                   S20 Group 8                    \033[0m║\n";
-    cout << "║\x1B[48;5;195m\x1B[38;5;66m\x1B[1m        Buencamino, Chua, Ruiz, Seperidad         \033[0m║\n";
-    cout << "║\x1B[48;5;195m\x1B[38;5;66m                                                  \033[0m║\n";
-    cout << "╠══════════════════════════════════════════════════╣\n";
-    cout << "║ Welcome! Here are the available commands:        ║\n";
-    cout << "║   • initialize        • report-util              ║\n";
-    cout << "║   • screen            • clear                    ║\n";
-    cout << "║   • scheduler-test    • exit                     ║\n";
-    cout << "║   • scheduler-stop     • screen -r               ║\n";
-    cout << "║   • screen -s                                    ║\n";
-    cout << "╚══════════════════════════════════════════════════╝\n";
-}
-*/
-
 void clear(){
     system("cls"); // Windows
     header();

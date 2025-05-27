@@ -24,10 +24,10 @@ Console::Console()
 
 void Console::drawScreen() const {
     cout << "============================================\n";
-    cout << "| Process Name: " << processName << "                        |\n";
-    cout << "| Current Line/Total Lines: ";
-    cout << currentLine << "/" << totalLines << "          |\n";
-    cout << "| Creation Time: " << timestamp << "   |\n";
+    cout << "  Process Name: " << processName << "\n";
+    cout << "  Current Line/Total Lines: ";
+    cout << currentLine << "/" << totalLines << "\n";
+    cout << "  Creation Time: " << timestamp << "\n";
     cout << "============================================\n";
     cout << totalStrings;
 }
