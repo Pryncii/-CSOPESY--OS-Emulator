@@ -50,6 +50,8 @@
         "vector": "cpp",
         "xhash": "cpp",
         "xlocmon": "cpp",
-        "xloctime": "cpp"
+        "xloctime": "cpp",
+        "map": "cpp",
+        "xtree": "cpp"
     }
 }
