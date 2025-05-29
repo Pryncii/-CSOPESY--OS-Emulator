@@ -159,7 +159,6 @@ void DrawBox2(int x, int y, int width, int height) {
             int innerWidth = width - 2;
             int spaceL = (innerWidth - header1.length() - header2.length() - header3.length()) / 2;
             int spaceR = innerWidth - header1.length() - header2.length() - header3.length() - spaceL;
-// ...existing code...
             cout << "|" << header1 << string(spaceL, ' ') << header2 << string(spaceR, ' ') << header3  << "|";
         } else if (i == 6){
             cout << "|" << string(width - 2, '=')  << "|";
