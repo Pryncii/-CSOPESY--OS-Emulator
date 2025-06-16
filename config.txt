@@ -1,0 +1,7 @@
+num-cpu
+scheduler
+quantum-cycles
+batch-process-freq
+min-ins
+max-ins
+delay-per-exec

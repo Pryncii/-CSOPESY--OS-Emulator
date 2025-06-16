@@ -7,6 +7,7 @@
 using namespace std;
 
 std::unordered_map<std::string, Console> screens;
+int cpuCycles = 0;
 
 void initialize(){
     cout << "\x1B[32m\x1B[1minitialize\x1B[22m\x1B[0m command recognized. Doing something.\n";
@@ -92,6 +93,7 @@ int main(){
     
     header();
     do{
+		cpuCycles++; // Increment CPU cycles for each command processed
         string screenName = "";
         cout << "Enter command: ";
         getline(cin, command);

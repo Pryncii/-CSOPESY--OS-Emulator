@@ -119,8 +119,27 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="AddCommand.cpp" />
+    <ClCompile Include="Command.cpp" />
     <ClCompile Include="Console.cpp" />
+    <ClCompile Include="DeclareCommand.cpp" />
+    <ClCompile Include="ForLoopCommand.cpp" />
     <ClCompile Include="osEmulator.cpp" />
+    <ClCompile Include="PrintCommand.cpp" />
+    <ClCompile Include="Process.cpp" />
+    <ClCompile Include="SubtractCommand.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="config.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="AddCommand.h" />
+    <ClInclude Include="Command.h" />
+    <ClInclude Include="DeclareCommand.h" />
+    <ClInclude Include="ForLoopCommand.h" />
+    <ClInclude Include="PrintCommand.h" />
+    <ClInclude Include="Process.h" />
+    <ClInclude Include="SubtractCommand.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
