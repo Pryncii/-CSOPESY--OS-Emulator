@@ -1,5 +1,6 @@
 #include "DeclareCommand.h"
 #include "Command.h"
+#include "Process.h"
 #include <string>
 #include <iostream>
 #include <unordered_map>
@@ -7,16 +8,26 @@
 
 
 using namespace std;
-extern unordered_map<string, uint16_t> symbolTable;
 
-DeclareCommand::DeclareCommand(int pid, string& varName, uint16_t value) : Command(pid, CommandType::DECLARE) {
-	this->pid = pid;
+
+DeclareCommand::DeclareCommand(shared_ptr<Process> process, string& varName, uint16_t value) : Command(process, CommandType::DECLARE) {
+	this->process = process;
 	this->varName = varName;
 	this->value = value;
 }
 
 void DeclareCommand::execute() {
-	symbolTable[varName] = move(value);
-	cout << "Executing DeclareCommand for process " << pid << ": declaring variable '" << varName << "' with value " << value << endl;
+	// Check if the variable already exists in the symbol table
+	
+	if (process->getSymbolTable().find(varName) != process->getSymbolTable().end()) {
+		cerr << "Error: Variable '" << varName << "' already declared in process " << process->getPid() << endl;
+		return;
+	}
+	else {
+			// Declare the variable in the process's symbol table
+		process->addSymbol(varName, value);
+	}
+	
+	cout << "Executing DeclareCommand for process " << process->getPid() << ": declaring variable '" << varName << "' with value " << value << endl;
 }
 

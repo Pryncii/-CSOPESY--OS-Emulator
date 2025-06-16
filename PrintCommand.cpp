@@ -5,10 +5,10 @@
 
 using namespace std;
 
-PrintCommand::PrintCommand(int pid, string& message) : Command(pid, PRINT) {
+PrintCommand::PrintCommand(shared_ptr<Process> process, string& message) : Command(process, PRINT) {
 	this->message = message;
 }
 
 void PrintCommand::execute() {
-	cout << "Process " << pid << " prints: " << message << endl;
+	cout << "Process " << process->getPid() << " prints: " << message << endl;
 }

@@ -1,4 +1,8 @@
 #pragma once
+#include "Process.h"
+#include <memory>
+using namespace std;
+
 class Command
 {
 	public:
@@ -10,12 +14,12 @@ class Command
 			SLEEP,
 			FOR
 		};
-		Command(int pid, CommandType commandType);
+		Command(shared_ptr<Process> process, CommandType commandType);
 		CommandType getCommandType();
 		virtual void execute();
 
 	protected:
-		int pid; // Process ID
+		shared_ptr<Process> process; // Process ID
 		CommandType commandType;
 };
 
@@ -23,7 +27,7 @@ inline Command::CommandType Command::getCommandType() {
 	return this->commandType;
 }
 
-inline Command::Command(int pid, CommandType commandType){
-	this->pid = pid;
+inline Command::Command(shared_ptr<Process> process, CommandType commandType){
+	this->process = process;
 	this->commandType = commandType;
 }
