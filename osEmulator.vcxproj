@@ -135,6 +135,7 @@
   <ItemGroup>
     <ClInclude Include="AddCommand.h" />
     <ClInclude Include="Command.h" />
+    <ClInclude Include="Console.h" />
     <ClInclude Include="DeclareCommand.h" />
     <ClInclude Include="ForLoopCommand.h" />
     <ClInclude Include="PrintCommand.h" />

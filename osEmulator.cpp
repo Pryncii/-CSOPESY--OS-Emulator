@@ -8,6 +8,7 @@ using namespace std;
 
 std::unordered_map<std::string, Console> screens;
 int cpuCycles = 0;
+int globalPID = 1000;
 
 void initialize(){
     cout << "\x1B[32m\x1B[1minitialize\x1B[22m\x1B[0m command recognized. Doing something.\n";
@@ -139,9 +140,11 @@ int main(){
             else {
                 screenName = rawScreenName;
                 if (inScreenMap(screenName) == false) { // ensures screen name doesn't exist yet
-                    Console temp(screenName);
+                    shared_ptr<Process> process = make_shared<Process>(globalPID, screenName);
+                    Console temp(process);
                     screens.insert({ screenName, temp });
                     screenInterface(screenName);
+                    globalPID++;
                 }
                 else {
                     std::cout << "\x1B[31m\x1B[1mError:\x1B[0m Screen name already exist! Use 'screen -r <process name>' to view the screen.\n";

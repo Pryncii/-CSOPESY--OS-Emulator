@@ -10,5 +10,5 @@ PrintCommand::PrintCommand(shared_ptr<Process> process, string& message) : Comma
 }
 
 void PrintCommand::execute() {
-	cout << "Process " << process->getPid() << " prints: " << message << endl;
+	cout << "Process " << process->getPID() << " prints: " << message << endl;
 }

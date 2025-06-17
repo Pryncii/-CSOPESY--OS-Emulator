@@ -19,7 +19,7 @@ void DeclareCommand::execute() {
 	// Check if the variable already exists in the symbol table
 	
 	if (process->getSymbolTable().find(varName) != process->getSymbolTable().end()) {
-		cerr << "Error: Variable '" << varName << "' already declared in process " << process->getPid() << endl;
+		cerr << "Error: Variable '" << varName << "' already declared in process " << process->getPID() << endl;
 		return;
 	}
 	else {
@@ -27,6 +27,6 @@ void DeclareCommand::execute() {
 		process->addSymbol(varName, value);
 	}
 	
-	cout << "Executing DeclareCommand for process " << process->getPid() << ": declaring variable '" << varName << "' with value " << value << endl;
+	cout << "Executing DeclareCommand for process " << process->getPID() << ": declaring variable '" << varName << "' with value " << value << endl;
 }
 

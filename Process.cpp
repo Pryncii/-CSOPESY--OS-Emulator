@@ -11,16 +11,18 @@ Process::Process(int pid, string name) {
 	this->name = name;
 	this->commandCounter = 0;
 	this->currentState = ProcessState::READY;
-
 }
 
 void Process::addCommand(shared_ptr<Command> command) {
 	commandList.push_back(command);
 }
 
-
-int Process::getPid() const {
+int Process::getPID() const {
 	return pid; 
+}
+
+string Process::getName() const {
+	return name;
 }
 
 void Process::addSymbol(const string& symbol, uint16_t value) {

@@ -24,7 +24,8 @@ class Process
 		void moveToNextLine();
 
 		bool isFinished() const;
-		int getPid() const;
+		int getPID() const;
+		string getName() const;
 		unordered_map<string, uint16_t> getSymbolTable() const;
 		void addSymbol(const string& symbol, uint16_t value);
 		uint16_t getSymbolValue(const string& symbol);
@@ -41,8 +42,3 @@ class Process
 
 
 };
-
-/*
-
-
-*/
