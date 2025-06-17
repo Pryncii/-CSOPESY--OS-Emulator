@@ -43,3 +43,6 @@ string Console::getStrings() const{
 void Console::setStrings(string input){
     totalStrings.append("Enter Command: " + input + "\n");
 }
+
+// Somehow attach the console to a process
+// Process smi, u have to view the process in the console

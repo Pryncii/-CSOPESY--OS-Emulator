@@ -12,15 +12,10 @@ Process::Process(int pid, string name) {
 
 }
 
-void Process::addCommand(string command) {
+void Process::addCommand(shared_ptr<Command> command) {
 	commandList.push_back(command);
 }
 
-void Process::executeCommand() {
-	
-
-
-}
 
 int Process::getPid() const {
 	return pid; 
@@ -34,7 +29,11 @@ unordered_map<string, uint16_t> Process::getSymbolTable() const {
 	return symbolTable;
 }
 
-uint16_t Process::getSymbolValue(const string& symbol) const {
+uint16_t Process::getSymbolValue(const string& symbol) {
+	if (symbolTable.find(symbol) == symbolTable.end()) {
+		addSymbol(symbol, 0); // If symbol not found, add it with value 0
+	}
+
 	return symbolTable.at(symbol);
 }
 

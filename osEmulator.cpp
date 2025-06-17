@@ -87,6 +87,20 @@ bool inScreenMap(string name)
     return true;
 }
 
+/*
+    1. Loading from config
+    2. Sleep(X) for[instructions] command representations
+    3. Thread to run processes (CPUs) 
+    - Based on how many is declared, create a thread, this
+      thread will run the process assigned to it
+	4. Thread for scheduling 
+    - also a scheduler thread that will run the scheduler
+	- this will run the scheduler_test and scheduler_stop commands
+    - make dummy processes that will arrive every X Cpu ticks
+    -
+    5. Report - util
+    6. Detailed process - smi and screen - ls
+*/
 int main(){
 
     string command;
