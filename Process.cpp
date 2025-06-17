@@ -1,6 +1,8 @@
 #include "Process.h"
 #include <string>
 #include <iostream>
+#include <memory>
+#include "Command.h"
 
 using namespace std;
 

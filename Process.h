@@ -3,11 +3,10 @@
 #include <vector>
 #include <unordered_map>
 #include <memory>
-#include "Command.h"
-
-
 
 using namespace std;
+
+class Command;
 
 class Process
 {

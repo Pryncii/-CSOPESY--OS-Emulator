@@ -4,6 +4,8 @@
 
 using namespace std;
 
+class Process;
+
 class Command
 {
 public:
@@ -28,4 +30,3 @@ inline Command::CommandType Command::getCommandType() {
 	return this->commandType;
 }
 
-// Definition of the constructor
