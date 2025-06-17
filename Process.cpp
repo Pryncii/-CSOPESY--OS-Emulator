@@ -23,6 +23,10 @@ int Process::getPid() const {
 	return pid; 
 }
 
+void Process::setCpuCoreID(int cpuCoreID) {
+	this->cpuCoreID = cpuCoreID;
+}
+
 void Process::addSymbol(const string& symbol, uint16_t value) {
 	symbolTable[symbol] = value;
 }

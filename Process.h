@@ -22,6 +22,7 @@ class Process
 		void addCommand(shared_ptr<Command> command);
 		void executeCommand();
 		void moveToNextLine();
+		void setCpuCoreID(int coreID);
 
 		bool isFinished() const;
 		int getPid() const;
@@ -42,7 +43,3 @@ class Process
 
 };
 
-/*
-
-
-*/
