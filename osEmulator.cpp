@@ -179,6 +179,7 @@ int main(){
                     Console temp(process);
                     shared_ptr<Console> consolePtr = make_shared<Console>(temp);
                     screens.insert({ screenName, consolePtr });
+					screenInterface(screenName); // open the screen interface
                     globalPID++;
                 }
                 else {
