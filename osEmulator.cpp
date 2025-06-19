@@ -6,6 +6,8 @@
 #include <memory>
 #include "Scheduler.h"
 #include "PrintCommand.h"
+#include <fstream>
+#include <sstream>
 
 using namespace std;
 
@@ -13,6 +15,106 @@ std::unordered_map<std::string, shared_ptr<Console>> screens;
 int cpuCycles = 0;
 int globalPID = 1000;
 bool processGeneration = false;
+
+struct Config {
+    int numCPU; // 1-128
+    std::string schedulerMode;
+    uint32_t quantum; // 1-2^32
+    uint32_t batchFreq; // 1-2^32
+    uint32_t minIns; // 1-2^32
+    uint32_t maxIns; // 1-2^32
+    uint32_t delay; // 0-2^32
+};
+
+bool isNonNegativeInteger(const std::string& s) {
+    if (s.empty()) return false;
+
+    for (char c : s) {
+        if (!isdigit(c)) return false;
+    }
+
+    return true;
+}
+
+uint32_t parsecheckWithinRange(const string& stringvalue, const string& key, uint32_t min, uint32_t max) {
+    if (!isNonNegativeInteger(stringvalue)) {
+        cerr << "Invalid value for " << key << ": \"" << stringvalue << "\" (must be a non-negative integer)\n";
+        exit(1);
+    }
+
+    try {
+        uint64_t val = stoull(stringvalue); // used stoull instead of stoi bc its bigger and jic the config has crazy high numbers
+        if (val < min || val > max) { // if outside range
+            cerr << "Value for " << key << " out of range [" << min << ", " << max << "]: " << val << "\n";
+            exit(1);
+        }
+        return static_cast<uint32_t>(val); // static_cast just to be safe since val up there is 64 bits
+    }
+    catch (...) {
+        cerr << "Failed to parse value for " << key << ": " << stringvalue << "\n";
+        exit(1);
+    }
+}
+
+Config loadConfig() {
+    ifstream file("config.txt");
+    if (!file) {
+        cout << "Failed to open config.txt\n";
+        exit(1);
+    }
+
+    unordered_map<string, string> textconfig;
+    string line;
+
+    while (getline(file, line)) {
+        istringstream iss(line); // breaking down line into words
+        string key, value;
+        if (iss >> key >> value) { // key here would be the first word (ex. num-cpu), value will be second word (ex. 4)
+            textconfig[key] = value;
+        }
+    }
+
+    Config config;
+
+    if (textconfig.find("scheduler") == textconfig.end()) {
+        cout << "Missing required key: scheduler\n";
+        exit(1);
+    }
+    config.schedulerMode = textconfig["scheduler"];
+    config.schedulerMode.erase(remove(config.schedulerMode.begin(), config.schedulerMode.end(), '"'), config.schedulerMode.end()); // remove quotes ("rr" --> rr)
+
+    // check that its only either rr or fcfs
+    if (config.schedulerMode != "fcfs" && config.schedulerMode != "rr") {
+        cerr << "Invalid scheduler: " << config.schedulerMode << " (must be \"fcfs\" or \"rr\")\n";
+        exit(1);
+    }
+
+    const vector<string> checkIntKeys = {
+        "num-cpu", "quantum-cycles", "batch-process-freq", "min-ins", "max-ins", "delay-per-exec"
+    };
+
+    for (const string& key : checkIntKeys) {
+        if (textconfig.find(key) == textconfig.end()) {
+            cout << "Missing required key: " << key << "\n";
+            exit(1);
+        }
+        if (!isNonNegativeInteger(textconfig[key])) {
+            cout << "Invalid value for " << key << ": " << textconfig[key]
+                << " (must be a positive integer)\n";
+            exit(1);
+        }
+    }
+
+    // Parse all integer values with proper ranges
+    config.numCPU = parsecheckWithinRange(textconfig["num-cpu"], "num-cpu", 1, 128);
+    config.quantum = parsecheckWithinRange(textconfig["quantum-cycles"], "quantum-cycles", 1, UINT32_MAX);
+    config.batchFreq = parsecheckWithinRange(textconfig["batch-process-freq"], "batch-process-freq", 1, UINT32_MAX);
+    config.minIns = parsecheckWithinRange(textconfig["min-ins"], "min-ins", 1, UINT32_MAX);
+    config.maxIns = parsecheckWithinRange(textconfig["max-ins"], "max-ins", 1, UINT32_MAX);
+    config.delay = parsecheckWithinRange(textconfig["delay-per-exec"], "delay-per-exec", 0, UINT32_MAX);
+
+    return config;
+}
 
 void initialize(){
     cout << "\x1B[32m\x1B[1minitialize\x1B[22m\x1B[0m command recognized. Doing something.\n";
@@ -123,7 +225,32 @@ bool inScreenMap(string name)
 int main(){
 
     string command;
+    Config config = loadConfig();
 
+    Scheduler::Mode mode;
+    if (config.schedulerMode == "rr") {
+        mode = Scheduler::Mode::RR;
+    }
+    else if (config.schedulerMode == "fcfs") {
+        mode = Scheduler::Mode::FCFS;
+    }
+    else {
+        cout << "Invalid scheduler mode!\n";
+        return 1;
+    }
+
+    Scheduler scheduler(mode, config.quantum, config.numCPU);
+
+    cout << "CPUs: " << config.numCPU << "\n";
+    cout << "Scheduler: " << config.schedulerMode << "\n";
+    cout << "Quantum: " << config.quantum << "\n";
+    cout << "Batch Freq: " << config.batchFreq << "\n";
+    cout << "Min Instructions: " << config.minIns << "\n";
+    cout << "Max Instructions: " << config.maxIns << "\n";
+    cout << "Delay: " << config.delay << "\n";
+
+    /*
+    // FOR TESTING
     // Create Processes
     auto p1 = make_shared<Process>(1, "Process 1");
     auto p2 = make_shared<Process>(2, "Process 2");
@@ -155,6 +282,7 @@ int main(){
     scheduler.addProcess(p3);
     scheduler.addProcess(p4);
     scheduler.run();
+    */
     
     header();
     do{
