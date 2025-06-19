@@ -42,9 +42,6 @@
     <ClCompile Include="ForLoopCommand.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SleepCommand.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Text Include="config.txt" />
@@ -71,7 +68,7 @@
     <ClInclude Include="ForLoopCommand.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SleepCommand.h">
+    <ClInclude Include="Console.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

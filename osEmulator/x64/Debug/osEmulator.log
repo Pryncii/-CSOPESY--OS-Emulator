@@ -1,8 +1,4 @@
-﻿  AddCommand.cpp
-  Command.cpp
-  DeclareCommand.cpp
-  PrintCommand.cpp
-  Process.cpp
-  SubtractCommand.cpp
-  Generating Code...
-  osEmulator.vcxproj -> C:\Users\Prince Buencamino\Desktop\Acads\3rd Year T3\[CSOPESY]-OS-Emulator\x64\Debug\osEmulator.exe
+﻿  Console.cpp
+C:\Users\Abby\Documents\GitHub\-CSOPESY--OS-Emulator\Console.cpp(15,67): warning C4996: 'localtime': This function or variable may be unsafe. Consider using localtime_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\Users\Abby\Documents\GitHub\-CSOPESY--OS-Emulator\Console.cpp(23,67): warning C4996: 'localtime': This function or variable may be unsafe. Consider using localtime_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+  osEmulator.vcxproj -> C:\Users\Abby\Documents\GitHub\-CSOPESY--OS-Emulator\x64\Debug\osEmulator.exe
