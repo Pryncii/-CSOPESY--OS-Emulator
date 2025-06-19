@@ -8,12 +8,14 @@
 #include "PrintCommand.h"
 #include <fstream>
 #include <sstream>
+#include <thread>
 
 using namespace std;
 
 std::unordered_map<std::string, shared_ptr<Console>> screens;
 int cpuCycles = 0;
 int globalPID = 1000;
+bool processGeneration = false;
 
 struct Config {
     int numCPU; // 1-128
@@ -123,8 +125,24 @@ void screen(){
     cout << "\x1B[32m\x1B[1mscreen\x1B[22m\x1B[0m command recognized. Doing something.\n";
 }
 
-void scheduler_test(){
+void scheduler_start(uint32_t delayMs, uint32_t batchFreq, Scheduler& scheduler){
     cout << "\x1B[32m\x1B[1mscheduler-test\x1B[22m\x1B[0m command recognized. Doing something.\n";
+    processGeneration = true;
+    while (processGeneration) {
+        // Generate a new process second
+		//generate a new process every batchFreq cycles
+        std::this_thread::sleep_for(std::chrono::milliseconds(delayMs));
+        if (cpuCycles % batchFreq == 0) {
+
+            // Create a new process with a unique PID
+            auto newProcess = make_shared<Process>(globalPID++, "Generated Process " + to_string(globalPID));
+
+            // Add the process to the scheduler's queue
+            scheduler.addProcess(newProcess);
+
+            //cout << "New process " << newProcess->getName() << " added to the scheduler.\n";
+        }
+	}
 }
 
 void scheduler_stop(){
@@ -201,16 +219,27 @@ bool inScreenMap(string name)
       thread will run the process assigned to it
 	4. Thread for scheduling 
     - also a scheduler thread that will run the scheduler
-	- this will run the scheduler_test and scheduler_stop commands
+	- this will run the scheduler_start and scheduler_stop commands
     - make dummy processes that will arrive every X Cpu ticks
     -
     5. Report - util
     6. Detailed process - smi and screen - ls
 */
+
+void cpuCycleThread(uint32_t delayMs) {
+    while (true) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(delayMs));
+        ++cpuCycles;
+		//cout <<  cpuCycles << "\n"; // Print CPU cycles every delayMs milliseconds
+    }
+}
 int main(){
 
     string command;
     Config config = loadConfig();
+
+    std::thread cycleThread(cpuCycleThread, config.delay);
+    cycleThread.detach();
 
     Scheduler::Mode mode;
     if (config.schedulerMode == "rr") {
@@ -271,7 +300,7 @@ int main(){
     
     header();
     do{
-		cpuCycles++; // Increment CPU cycles for each command processed
+		
         string screenName = "";
         cout << "Enter command: ";
         getline(cin, command);
@@ -281,9 +310,12 @@ int main(){
             initialize();
         } else if (command == "screen") {
             screen();
-        } else if (command == "scheduler-test") {
-            scheduler_test();
+        } else if (command == "scheduler-start") {
+			thread schedulerThread(scheduler_start, config.delay, config.batchFreq, ref(scheduler));
+			schedulerThread.detach(); // Detach the thread to run scheduler_start in the background
+            
         } else if (command == "scheduler-stop") {
+            processGeneration = false;
             scheduler_stop();
         } else if (command == "report-util") {
             report_util();
