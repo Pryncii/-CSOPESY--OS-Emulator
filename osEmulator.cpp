@@ -3,12 +3,13 @@
 #include <cstdlib>
 #include <unordered_map>
 #include "Console.h"
+#include <memory>
 #include "Scheduler.h"
 #include "PrintCommand.h"
 
 using namespace std;
 
-std::unordered_map<std::string, Console> screens;
+std::unordered_map<std::string, shared_ptr<Console>> screens;
 int cpuCycles = 0;
 int globalPID = 1000;
 
@@ -66,7 +67,7 @@ void clear(){
 void screenInterface(string screenName){
     string screenInput = "";
     system("cls");
-    screens[screenName].drawScreen(); 
+    screens[screenName]->drawScreen(); 
     do{
         cout << "Enter command: ";
         getline(cin, screenInput);
@@ -76,7 +77,7 @@ void screenInterface(string screenName){
             screenInput = screenInput + "\n\x1B[31m\x1B[1mUnknown command:\x1B[22m " + screenInput + ". 'exit' is the only available command right now.\x1B[0m";
         }
 
-        screens[screenName].setStrings(screenInput);
+        screens[screenName]->setStrings(screenInput);
     } while (screenInput != "exit");
     clear();
 }
@@ -176,8 +177,8 @@ int main(){
                 if (inScreenMap(screenName) == false) { // ensures screen name doesn't exist yet
                     shared_ptr<Process> process = make_shared<Process>(globalPID, screenName);
                     Console temp(process);
-                    screens.insert({ screenName, temp });
-                    screenInterface(screenName);
+                    shared_ptr<Console> consolePtr = make_shared<Console>(temp);
+                    screens.insert({ screenName, consolePtr });
                     globalPID++;
                 }
                 else {

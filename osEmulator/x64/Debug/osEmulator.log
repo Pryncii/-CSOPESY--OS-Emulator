@@ -1,5 +1,15 @@
-﻿  SleepCommand.cpp
+﻿  AddCommand.cpp
+  Command.cpp
+  Console.cpp
+C:\Users\Prince Buencamino\Desktop\Acads\3rd Year T3\[CSOPESY]-OS-Emulator\Console.cpp(16,67): warning C4996: 'localtime': This function or variable may be unsafe. Consider using localtime_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\Users\Prince Buencamino\Desktop\Acads\3rd Year T3\[CSOPESY]-OS-Emulator\Console.cpp(24,67): warning C4996: 'localtime': This function or variable may be unsafe. Consider using localtime_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+  DeclareCommand.cpp
+  ForLoopCommand.cpp
+  osEmulator.cpp
+  PrintCommand.cpp
+  Process.cpp
+  Scheduler.cpp
+  SleepCommand.cpp
   SubtractCommand.cpp
   Generating Code...
-  LINK : C:\Users\Roooiz\Documents\GitHub\-CSOPESY--OS-Emulator\x64\Debug\osEmulator.exe not found or not built by the last incremental link; performing full link
-  osEmulator.vcxproj -> C:\Users\Roooiz\Documents\GitHub\-CSOPESY--OS-Emulator\x64\Debug\osEmulator.exe
+  osEmulator.vcxproj -> C:\Users\Prince Buencamino\Desktop\Acads\3rd Year T3\[CSOPESY]-OS-Emulator\x64\Debug\osEmulator.exe
