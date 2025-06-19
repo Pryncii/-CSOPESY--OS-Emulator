@@ -9,7 +9,7 @@
 using namespace std;
 
 
-DeclareCommand::DeclareCommand(shared_ptr<Process> process, string& varName, uint16_t value) : Command(process, CommandType::DECLARE) {
+DeclareCommand::DeclareCommand(shared_ptr<Process> process, const string& varName, uint16_t value) : Command(process, CommandType::DECLARE) {
 	this->process = process;
 	this->varName = varName;
 	this->value = value;
