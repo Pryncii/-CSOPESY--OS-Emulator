@@ -8,7 +8,7 @@ using namespace std;
 
 class Command;
 
-class Process
+class Process : public enable_shared_from_this<Process>
 {
 	public:
 		enum ProcessState {
@@ -20,6 +20,7 @@ class Process
 
 		Process(int pid, string name);
 		void addCommand(shared_ptr<Command> command);
+		void generateCommands();
 		void executeCommand();
 		void moveToNextLine();
 		void setCpuCoreID(int coreID);
@@ -29,6 +30,8 @@ class Process
 		int getCommandCounter() const;
 		int getCommandListSize();
 		string getName() const;
+		int getCurLines() const;
+		int getTotalLines() const;
 		unordered_map<string, uint16_t> getSymbolTable() const;
 		void addSymbol(const string& symbol, uint16_t value);
 		uint16_t getSymbolValue(const string& symbol);

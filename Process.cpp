@@ -1,8 +1,15 @@
-#include "Process.h"
 #include <string>
 #include <iostream>
 #include <memory>
+#include <cstdlib>
+#include <ctime>
+#include "Process.h"
 #include "Command.h"
+#include "PrintCommand.h"
+#include "DeclareCommand.h"
+#include "AddCommand.h"
+#include "SubtractCommand.h"
+#include "SleepCommand.h"
 
 using namespace std;
 
@@ -19,6 +26,14 @@ void Process::addCommand(shared_ptr<Command> command) {
 
 int Process::getPID() const {
 	return pid; 
+}
+
+int Process::getCurLines() const {
+	return this->commandCounter; 
+}
+
+int Process::getTotalLines() const {
+	return this->commandList.size(); 
 }
 
 string Process::getName() const {
@@ -60,3 +75,73 @@ bool Process::isFinished() const {
 	return commandCounter >= commandList.size();
 }
 	
+void Process::generateCommands() {
+	srand(static_cast<unsigned int>(time(0))); // Seed once
+    
+    int numCommands = 5 + (rand() % 6); // Generate 5 to 10 commands
+
+    for (int i = 0; i < numCommands; ++i) {
+        Command::CommandType type = static_cast<Command::CommandType>(rand() % 5); // 0 to 4
+        
+        shared_ptr<Command> cmd;
+		string varName;
+
+        switch (type) {
+            case Command::DECLARE:
+                varName = "x" + to_string(i);
+				uint16_t value = rand() % 100;
+				
+				cmd = make_shared<DeclareCommand>(shared_from_this(), varName, value);
+                break;
+            case Command::ADD:
+				while (symbolTable.size() < 2) {
+					string fillerName = "autoVar_" + to_string(symbolTable.size());
+					addSymbol(fillerName, 0); // Automatically add with value 0
+				}
+
+				// Randomly pick two source variables
+				auto it1 = symbolTable.begin();
+				advance(it1, rand() % symbolTable.size());
+
+				auto it2 = symbolTable.begin();
+				advance(it2, rand() % symbolTable.size());
+
+				varName = "x" + to_string(i);
+				uint16_t val1 = it1->second;
+    			uint16_t val2 = it2->second;
+
+				cmd = make_shared<AddCommand>(shared_from_this(), varName, val1, val2);
+                break;
+            case Command::SUBTRACT:
+				while (symbolTable.size() < 2) {
+					string fillerName = "autoVar_" + to_string(symbolTable.size());
+					addSymbol(fillerName, 0); // Automatically add with value 0
+				}
+
+				// Randomly pick two source variables
+				auto it1 = symbolTable.begin();
+				advance(it1, rand() % symbolTable.size());
+
+				auto it2 = symbolTable.begin();
+				advance(it2, rand() % symbolTable.size());
+
+				varName = "x" + to_string(i);
+				uint16_t val1 = it1->second;
+    			uint16_t val2 = it2->second;
+
+                cmd = make_shared<SubtractCommand>(shared_from_this(), varName, val1, val2);
+                break;
+            case Command::PRINT:
+                cmd = make_shared<PrintCommand>(shared_from_this(), "Value from: ");
+                break;
+            case Command::SLEEP:
+				uint16_t value = rand() % 100;
+                cmd = make_shared<SleepCommand>(shared_from_this(), rand() % 3 + 1); // 1-3 sec
+                break;
+        }
+
+        if (cmd) {
+            addCommand(cmd);
+        }
+	}
+}

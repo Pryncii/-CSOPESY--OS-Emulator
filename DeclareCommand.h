@@ -8,7 +8,7 @@ using namespace std;
 
 class DeclareCommand : public Command {
 public:
-	DeclareCommand(shared_ptr<Process> process, string& varName, uint16_t value);
+	DeclareCommand(shared_ptr<Process> process, const string& varName, uint16_t value);
 	void execute() override;
 
 private:
