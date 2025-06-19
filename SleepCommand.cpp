@@ -19,7 +19,7 @@ SleepCommand::SleepCommand(shared_ptr<Process> process, uint16_t X) : Command(pr
 void SleepCommand::execute() {
 	// Check if the variable already exists in the symbol table
 	std::this_thread::sleep_for(chrono::milliseconds(X));
-	cout << "Process " << process->getPid() << " is sleeping for " << X << " milliseconds." << endl;
+	cout << "Process " << process->getPID() << " is sleeping for " << X << " milliseconds." << endl;
 	// Make it leave the CPU
 	this->process->setCpuCoreID(-1);
 }

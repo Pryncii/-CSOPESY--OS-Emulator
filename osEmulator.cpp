@@ -3,6 +3,8 @@
 #include <cstdlib>
 #include <unordered_map>
 #include "Console.h"
+#include "Scheduler.h"
+#include "PrintCommand.h"
 
 using namespace std;
 
@@ -105,6 +107,38 @@ bool inScreenMap(string name)
 int main(){
 
     string command;
+
+    // Create Processes
+    auto p1 = make_shared<Process>(1, "Process 1");
+    auto p2 = make_shared<Process>(2, "Process 2");
+    auto p3 = make_shared<Process>(3, "Process 3");
+    auto p4 = make_shared<Process>(4, "Process 4");
+
+    // Add Print Commands
+    p1->addCommand(make_shared<PrintCommand>(p1, "Hello from P1 - Step 1"));
+    p1->addCommand(make_shared<PrintCommand>(p1, "Hello from P1 - Step 2"));
+    p1->addCommand(make_shared<PrintCommand>(p1, "Hello from P1 - Step 3"));
+
+    p2->addCommand(make_shared<PrintCommand>(p2, "P2 Starting"));
+    p2->addCommand(make_shared<PrintCommand>(p2, "P2 Doing work..."));
+    p2->addCommand(make_shared<PrintCommand>(p2, "P2 Ending"));
+
+    p3->addCommand(make_shared<PrintCommand>(p3, "P3 Init"));
+    p3->addCommand(make_shared<PrintCommand>(p3, "P3 Compute A"));
+    p3->addCommand(make_shared<PrintCommand>(p3, "P3 Compute B"));
+    p3->addCommand(make_shared<PrintCommand>(p3, "P3 Done"));
+
+    p4->addCommand(make_shared<PrintCommand>(p4, "P4 Init"));
+    p4->addCommand(make_shared<PrintCommand>(p4, "P4 Compute A"));
+    p4->addCommand(make_shared<PrintCommand>(p4, "P4 Compute B"));
+    p4->addCommand(make_shared<PrintCommand>(p4, "P4 Done"));
+
+    Scheduler scheduler(Scheduler::Mode::FCFS, 2, 2); // 2-command quantum, 4 cores
+    scheduler.addProcess(p1);
+    scheduler.addProcess(p2);
+    scheduler.addProcess(p3);
+    scheduler.addProcess(p4);
+    scheduler.run();
     
     header();
     do{

@@ -127,6 +127,7 @@
     <ClCompile Include="osEmulator.cpp" />
     <ClCompile Include="PrintCommand.cpp" />
     <ClCompile Include="Process.cpp" />
+    <ClCompile Include="Scheduler.cpp" />
     <ClCompile Include="SleepCommand.cpp" />
     <ClCompile Include="SubtractCommand.cpp" />
   </ItemGroup>
@@ -141,6 +142,7 @@
     <ClInclude Include="ForLoopCommand.h" />
     <ClInclude Include="PrintCommand.h" />
     <ClInclude Include="Process.h" />
+    <ClInclude Include="Scheduler.h" />
     <ClInclude Include="SleepCommand.h" />
     <ClInclude Include="SubtractCommand.h" />
   </ItemGroup>
