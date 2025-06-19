@@ -12,6 +12,7 @@ using namespace std;
 std::unordered_map<std::string, shared_ptr<Console>> screens;
 int cpuCycles = 0;
 int globalPID = 1000;
+bool processGeneration = false;
 
 void initialize(){
     cout << "\x1B[32m\x1B[1minitialize\x1B[22m\x1B[0m command recognized. Doing something.\n";
@@ -23,6 +24,20 @@ void screen(){
 
 void scheduler_test(){
     cout << "\x1B[32m\x1B[1mscheduler-test\x1B[22m\x1B[0m command recognized. Doing something.\n";
+    processGeneration = true;
+    while (processGeneration) {
+        // Generate a new process every second
+        this_thread::sleep_for(chrono::seconds(1));
+        
+        // Create a new process with a unique PID
+        auto newProcess = make_shared<Process>(globalPID++, "Generated Process " + to_string(globalPID));
+       
+        // Add the process to the scheduler's queue
+        Scheduler scheduler(Scheduler::Mode::FCFS, 2, 2);
+        scheduler.addProcess(newProcess);
+        
+        cout << "New process " << newProcess->getName() << " added to the scheduler.\n";
+	}
 }
 
 void scheduler_stop(){
