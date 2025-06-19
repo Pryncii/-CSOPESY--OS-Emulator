@@ -3,6 +3,7 @@
 #include <string>
 #include <iostream>
 #include <mutex>
+#include <random>
 
 using namespace std;
 extern mutex coutMutex;
@@ -13,5 +14,21 @@ PrintCommand::PrintCommand(shared_ptr<Process> process, const string& message) :
 
 void PrintCommand::execute() {
 	//lock_guard<mutex> lock(coutMutex);
-	cout << "Process " << process->getPID() << " prints: " << message << endl;
+	
+    auto symbolTable = process->getSymbolTable();
+
+    if (!symbolTable.empty()) {
+        // Generate a random index
+        size_t randomIndex = std::rand() % symbolTable.size();
+        auto it = symbolTable.begin();
+        std::advance(it, randomIndex);
+
+        // Print the random symbol and its value
+        cout << "Process " << process->getPID() << " prints: " << message
+            << " | Random symbol: " << it->first << " = " << it->second << endl;
+    }
+    else {
+        cout << "Process " << process->getPID() << " prints: " << message
+            << " | No symbols in table." << endl;
+    }
 }
