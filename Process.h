@@ -36,7 +36,7 @@ class Process
 		vector<shared_ptr<Command>> commandList;
 		unordered_map<string, uint16_t> symbolTable;
 
-		int commandCounter;
+		int commandCounter = 0;
 		int cpuCoreID = -1; // -1 means not assigned to any core	
 		ProcessState currentState;
 

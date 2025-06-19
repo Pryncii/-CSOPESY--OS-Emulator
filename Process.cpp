@@ -43,4 +43,20 @@ uint16_t Process::getSymbolValue(const string& symbol) {
 	return symbolTable.at(symbol);
 }
 
+void Process::executeCommand() {
+	if (commandCounter < commandList.size()) {
+		commandList[commandCounter]->execute();
+	}
+}
+
+void Process::moveToNextLine() {
+	commandCounter++;
+}
+
+bool Process::isFinished() const {
+	return commandCounter >= commandList.size();
+}
+
+
+
 	
