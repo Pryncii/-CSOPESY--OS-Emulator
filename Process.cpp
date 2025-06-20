@@ -84,61 +84,66 @@ void Process::generateCommands() {
         Command::CommandType type = static_cast<Command::CommandType>(rand() % 5); // 0 to 4
         
         shared_ptr<Command> cmd;
-		string varName;
-
+		
         switch (type) {
-            case Command::DECLARE:
-                varName = "x" + to_string(i);
-				uint16_t value = rand() % 100;
-				
-				cmd = make_shared<DeclareCommand>(shared_from_this(), varName, value);
-                break;
-            case Command::ADD:
-				while (symbolTable.size() < 2) {
-					string fillerName = "autoVar_" + to_string(symbolTable.size());
-					addSymbol(fillerName, 0); // Automatically add with value 0
-				}
-
-				// Randomly pick two source variables
-				auto it1 = symbolTable.begin();
-				advance(it1, rand() % symbolTable.size());
-
-				auto it2 = symbolTable.begin();
-				advance(it2, rand() % symbolTable.size());
-
-				varName = "x" + to_string(i);
-				uint16_t val1 = it1->second;
-    			uint16_t val2 = it2->second;
-
-				cmd = make_shared<AddCommand>(shared_from_this(), varName, val1, val2);
-                break;
-            case Command::SUBTRACT:
-				while (symbolTable.size() < 2) {
-					string fillerName = "autoVar_" + to_string(symbolTable.size());
-					addSymbol(fillerName, 0); // Automatically add with value 0
-				}
-
-				// Randomly pick two source variables
-				auto it1 = symbolTable.begin();
-				advance(it1, rand() % symbolTable.size());
-
-				auto it2 = symbolTable.begin();
-				advance(it2, rand() % symbolTable.size());
-
-				varName = "x" + to_string(i);
-				uint16_t val1 = it1->second;
-    			uint16_t val2 = it2->second;
-
-                cmd = make_shared<SubtractCommand>(shared_from_this(), varName, val1, val2);
-                break;
-            case Command::PRINT:
-                cmd = make_shared<PrintCommand>(shared_from_this(), "Value from: ");
-                break;
-            case Command::SLEEP:
-				uint16_t value = rand() % 100;
-                cmd = make_shared<SleepCommand>(shared_from_this(), rand() % 3 + 1); // 1-3 sec
-                break;
+        case Command::DECLARE: {
+            string varName = "x" + to_string(i);
+            uint16_t value = rand() % 100;
+            cmd = make_shared<DeclareCommand>(shared_from_this(), varName, value);
+            break;
         }
+
+        case Command::ADD: {
+            while (symbolTable.size() < 2) {
+                string fillerName = "autoVar_" + to_string(symbolTable.size());
+                addSymbol(fillerName, 0);
+            }
+
+            auto it1 = symbolTable.begin();
+            advance(it1, rand() % symbolTable.size());
+            auto it2 = symbolTable.begin();
+            advance(it2, rand() % symbolTable.size());
+
+            string varName = "x" + to_string(i);
+            uint16_t val1 = it1->second;
+            uint16_t val2 = it2->second;
+
+            cmd = make_shared<AddCommand>(shared_from_this(), varName, val1, val2);
+            break;
+        }
+
+        case Command::SUBTRACT: {
+            while (symbolTable.size() < 2) {
+                string fillerName = "autoVar_" + to_string(symbolTable.size());
+                addSymbol(fillerName, 0);
+            }
+
+            auto it1 = symbolTable.begin();
+            advance(it1, rand() % symbolTable.size());
+            auto it2 = symbolTable.begin();
+            advance(it2, rand() % symbolTable.size());
+
+            string varName = "x" + to_string(i);
+            uint16_t val1 = it1->second;
+            uint16_t val2 = it2->second;
+
+            cmd = make_shared<SubtractCommand>(shared_from_this(), varName, val1, val2);
+            break;
+        }
+
+        case Command::PRINT: {
+            string varName = "x" + to_string(i); // Or use existing variable
+            cmd = make_shared<PrintCommand>(shared_from_this(), varName);
+            break;
+        }
+
+        case Command::SLEEP: {
+            uint16_t value = rand() % 100;
+            cmd = make_shared<SleepCommand>(shared_from_this(), value);
+            break;
+        }
+        }
+
 
         if (cmd) {
             addCommand(cmd);
