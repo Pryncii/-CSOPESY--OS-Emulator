@@ -27,10 +27,8 @@ class Process : public enable_shared_from_this<Process>
 
 		bool isFinished() const;
 		int getPID() const;
-		int getCommandCounter() const;
-		int getCommandListSize();
 		string getName() const;
-		int getCurLines() const;
+		int getCurLine() const;
 		int getTotalLines() const;
 		unordered_map<string, uint16_t> getSymbolTable() const;
 		void addSymbol(const string& symbol, uint16_t value);

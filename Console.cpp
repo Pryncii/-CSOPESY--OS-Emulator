@@ -25,7 +25,7 @@ void Console::drawScreen() const {
     cout << "============================================\n";
     cout << "  Process Name: " << this->process->getName()<< "\n";
     cout << "  Current Line/Total Lines: ";
-    cout << this->process->getCurLines() << "/" << this->process->getTotalLines() << "\n";
+    cout << this->process->getCurLine() << "/" << this->process->getTotalLines() << "\n";
     cout << "  Creation Time: " << timestamp << "\n";
     cout << "============================================\n";
     cout << totalStrings;
