@@ -28,7 +28,7 @@ int Process::getPID() const {
 	return pid; 
 }
 
-int Process::getCurLines() const {
+int Process::getCurLine() const {
 	return this->commandCounter; 
 }
 
