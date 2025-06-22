@@ -170,8 +170,7 @@ void Process::generateCommands() {
         }
 
         case Command::PRINT: {
-            string varName = "x" + to_string(i); // Or use existing variable
-            cmd = make_shared<PrintCommand>(shared_from_this(), varName);
+            cmd = make_shared<PrintCommand>(shared_from_this(), "Value from: ");
             break;
         }
 
