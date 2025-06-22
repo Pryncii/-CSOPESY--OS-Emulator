@@ -5,13 +5,17 @@
 
 mutex coutMutex;
 
-Scheduler::Scheduler(Mode mode, int quantum, int coreCount)
-    : schedulingMode(mode), timeQuantum(quantum), cpuCoreCount(coreCount) {
+Scheduler::Scheduler(Mode mode, uint32_t quantum, int coreCount, uint32_t delay)
+    : schedulingMode(mode), timeQuantum(quantum), cpuCoreCount(coreCount), delay(delay) {
+    //for (auto& busy : coreBusy) busy = false;
 }
 
 void Scheduler::addProcess(shared_ptr<Process> process) {
-    lock_guard<mutex> lock(queueMutex);
-    readyQueue.push(process);
+    {
+        lock_guard<mutex> lock(queueMutex);
+        readyQueue.push(process);
+    }
+    queueCV.notify_one(); // Notify one waiting worker
 }
 
 void Scheduler::run() {
@@ -21,8 +25,22 @@ void Scheduler::run() {
 
     // wait until all cores finish
     for (auto& t : cores) {
+		//coreBusy[t.get_id()] = false; // mark core as free
         t.detach();
     }
+}
+
+int Scheduler::getRunningCores() {
+    return getRunningQueue().size();
+}
+
+
+queue<shared_ptr<Process>> Scheduler::getRunningQueue() {
+    return runningQueue;
+}
+
+queue<shared_ptr<Process>> Scheduler::getFinishedQueue() {
+    return finishedQueue;
 }
 
 void Scheduler::coreWorker(int coreID) {
@@ -30,28 +48,40 @@ void Scheduler::coreWorker(int coreID) {
         shared_ptr<Process> current = nullptr;
 
         {
-            lock_guard<mutex> lock(queueMutex);
-            if (readyQueue.empty()) return;
+            unique_lock<mutex> lock(queueMutex);
+            queueCV.wait(lock, [this] { return !readyQueue.empty(); }); // Wait until queue is not empty
             current = readyQueue.front();
             readyQueue.pop();
+            runningQueue.push(current);
         }
+
+        //coreBusy[coreID] = true; // core is now busy
 
         current->setCpuCoreID(coreID);
         {
             //lock_guard<mutex> lock(coutMutex);
-            cout << "[Core " << coreID << "] Running PID: " << current->getPID() << "\n";
+           // cout << "[Core " << coreID << "] Running PID: " << current->getPID() << "\n";
         }
 
 
         if (schedulingMode == Mode::FCFS) {
             // run until finished
             while (!current->isFinished()) {
+
+
+				
+                // add to running queue
                 current->executeCommand();
                 current->moveToNextLine();
+                this_thread::sleep_for(chrono::milliseconds(delay));
             }
+            
             {
                 //lock_guard<mutex> lock(coutMutex);
-                cout << "Process PID " << current->getPID() << " finished.\n";
+                //cout << "Process PID " << current->getPID() << " finished.\n";
+				finishedQueue.push(current); // add to finished queue
+				runningQueue.pop(); // remove from running queue
+                current->writeLogsToFile(current->getName() + "_logs.txt");
             }
 
         }
@@ -62,6 +92,7 @@ void Scheduler::coreWorker(int coreID) {
                 current->executeCommand();
                 current->moveToNextLine();
                 timestep++;
+                this_thread::sleep_for(chrono::milliseconds(delay));
             }
 
             if (!current->isFinished()) {
@@ -70,8 +101,15 @@ void Scheduler::coreWorker(int coreID) {
             }
             else {
                 //lock_guard<mutex> lock(coutMutex);
-                cout << "Process PID " << current->getPID() << " finished.\n";
+                //cout << "Process PID " << current->getPID() << " finished.\n";
+                //cout << "Process PID " << current->getPID() << " finished.\n";
+
+                finishedQueue.push(current); // add to finished queue
+                runningQueue.pop(); // remove from running queue
             }
         }
+
+        //coreBusy[coreID] = false; // core now free
+        
     }
 }

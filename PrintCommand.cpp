@@ -15,6 +15,7 @@ PrintCommand::PrintCommand(shared_ptr<Process> process, const string& message) :
 void PrintCommand::execute() {
 	//lock_guard<mutex> lock(coutMutex);
 	
+    /*
     auto symbolTable = process->getSymbolTable();
 
     if (!symbolTable.empty()) {
@@ -31,4 +32,17 @@ void PrintCommand::execute() {
         cout << "Process " << process->getPID() << " prints: " << message
             << " | No symbols in table." << endl;
     }
+    */
+    string timestamp;
+    time_t now = time(nullptr);
+    char buffer[80];
+    strftime(buffer, sizeof(buffer), "%m/%d/%Y, %I:%M:%S %p", localtime(&now));
+    timestamp = buffer;
+
+    message = timestamp + " Core:" + to_string(process->getCpuCoreID()) + message + process->getName() + "!";
+    //cout << message;
+}
+
+string PrintCommand::getMessage() const{
+    return message;
 }

@@ -3,6 +3,7 @@
 #include <vector>
 #include <unordered_map>
 #include <memory>
+#include <ctime>
 
 using namespace std;
 
@@ -24,9 +25,13 @@ class Process : public enable_shared_from_this<Process>
 		void executeCommand();
 		void moveToNextLine();
 		void setCpuCoreID(int coreID);
+		void writeLogsToFile(const string& filename) const;
 
 		bool isFinished() const;
 		int getPID() const;
+		int getCpuCoreID() const;
+		string getTime() const;
+		string timestamp;
 		string getName() const;
 		int getCurLine() const;
 		int getTotalLines() const;

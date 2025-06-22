@@ -10,15 +10,21 @@
 #include "AddCommand.h"
 #include "SubtractCommand.h"
 #include "SleepCommand.h"
+#include <fstream>
 
 using namespace std;
 
 Process::Process(int pid, string name) {
+    time_t now = time(nullptr);
+    char buffer[80];
+    strftime(buffer, sizeof(buffer), "%m/%d/%Y, %I:%M:%S %p", localtime(&now));
+    this->timestamp = buffer;
 	this->pid = pid;
 	this->name = name;
 	this->commandCounter = 0;
 	this->currentState = ProcessState::READY;
 }
+
 
 void Process::addCommand(shared_ptr<Command> command) {
 	commandList.push_back(command);
@@ -30,6 +36,10 @@ int Process::getPID() const {
 
 int Process::getCurLine() const {
 	return this->commandCounter; 
+}
+
+string Process::getTime() const {
+    return timestamp;
 }
 
 int Process::getTotalLines() const {
@@ -61,6 +71,10 @@ uint16_t Process::getSymbolValue(const string& symbol) {
 	return symbolTable.at(symbol);
 }
 
+int Process :: getCpuCoreID() const {
+    return cpuCoreID;
+}
+
 void Process::executeCommand() {
 	if (commandCounter < commandList.size()) {
 		commandList[commandCounter]->execute();
@@ -74,17 +88,41 @@ void Process::moveToNextLine() {
 bool Process::isFinished() const {
 	return commandCounter >= commandList.size();
 }
+
+
+
+void Process::writeLogsToFile(const string& filename) const {
+    ofstream outFile(filename);
+    if (!outFile) {
+        cerr << "Failed to open file: " << filename << endl;
+        return;
+    }
+    outFile << "Process Name: " << name << endl;
+    outFile << "Logs:" << endl;
+    for (const auto& cmd : commandList) {
+        // Only log PrintCommand messages
+        auto printCmd = dynamic_pointer_cast<PrintCommand>(cmd);
+        if (printCmd) {
+            outFile << printCmd->getMessage() << endl;
+        }
+    }
+    outFile.close();
+}
 	
 void Process::generateCommands() {
 	srand(static_cast<unsigned int>(time(0))); // Seed once
     
-    int numCommands = 5 + (rand() % 6); // Generate 5 to 10 commands
-
+    int numCommands = 100; // 5 + (rand() % 6); // Generate 5 to 10 commands
+	
     for (int i = 0; i < numCommands; ++i) {
-        Command::CommandType type = static_cast<Command::CommandType>(rand() % 5); // 0 to 4
+       // Command::CommandType type = static_cast<Command::CommandType>(rand() % 5); // 0 to 4
+       
         
         shared_ptr<Command> cmd;
+        string toPrint = " Hello World from: ";
+        cmd = make_shared<PrintCommand>(shared_from_this(), toPrint);
 		
+        /*
         switch (type) {
         case Command::DECLARE: {
             string varName = "x" + to_string(i);
@@ -142,11 +180,17 @@ void Process::generateCommands() {
             cmd = make_shared<SleepCommand>(shared_from_this(), value);
             break;
         }
+        
         }
+        */
 
 
         if (cmd) {
             addCommand(cmd);
         }
+
+       
 	}
+
+	//writeLogsToFile(name + "_logs.txt"); // Write logs to file after generating commands
 }

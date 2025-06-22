@@ -16,6 +16,7 @@ std::unordered_map<std::string, shared_ptr<Console>> screens;
 int cpuCycles = 0;
 int globalPID = 1000;
 bool processGeneration = false;
+int processCount = 0;
 
 struct Config {
     int numCPU; // 1-128
@@ -126,19 +127,24 @@ void screen(){
 }
 
 void scheduler_start(uint32_t delayMs, uint32_t batchFreq, Scheduler& scheduler){
-    cout << "\x1B[32m\x1B[1mscheduler-test\x1B[22m\x1B[0m command recognized. Doing something.\n";
+    //cout << "\x1B[32m\x1B[1mscheduler-test\x1B[22m\x1B[0m command recognized. Doing something.\n";
     processGeneration = true;
-    while (processGeneration) {
+    while (processGeneration && globalPID < 1010) {
         // Generate a new process second
 		//generate a new process every batchFreq cycles
-        std::this_thread::sleep_for(std::chrono::milliseconds(delayMs));
+        this_thread::sleep_for(chrono::milliseconds(delayMs));
         if (cpuCycles % batchFreq == 0) {
 
-            // Create a new process with a unique PID
-            auto newProcess = make_shared<Process>(globalPID++, "Generated Process " + to_string(globalPID));
+            shared_ptr<Process> process = make_shared<Process>(globalPID, "Process_" + to_string(globalPID));
+            process->generateCommands();
+            scheduler.addProcess(process); // add the process to the scheduler
 
-            // Add the process to the scheduler's queue
-            scheduler.addProcess(newProcess);
+            Console temp(process);
+            shared_ptr<Console> consolePtr = make_shared<Console>(temp);
+            screens.insert({ "Process_" + to_string(globalPID), consolePtr });
+            globalPID++;
+
+            // Create a new process with a unique PID
 
             //cout << "New process " << newProcess->getName() << " added to the scheduler.\n";
         }
@@ -173,7 +179,7 @@ void header(){
     cout << "| Welcome! Here are the available commands:        |\n";
     cout << "|   - initialize        - report-util              |\n";
     cout << "|   - screen            - screen -s <name>         |\n";
-    cout << "|   - scheduler-test    - screen -r <name>         |\n";
+    cout << "|   - scheduler-start   - screen -r <name>         |\n";
     cout << "|   - scheduler-stop    - screen -ls               |\n";
     cout << "|   - clear             - exit                     |\n";
     cout << "+==================================================+\n";
@@ -253,7 +259,7 @@ int main(){
         return 1;
     }
 
-    Scheduler scheduler(mode, config.quantum, config.numCPU);
+    Scheduler scheduler(mode, config.quantum, config.numCPU, config.delay);
 
     cout << "CPUs: " << config.numCPU << "\n";
     cout << "Scheduler: " << config.schedulerMode << "\n";
@@ -297,6 +303,8 @@ int main(){
     scheduler.addProcess(p4);
     scheduler.run();
     */
+    scheduler.run();
+    
     
     header();
     do{
@@ -336,6 +344,9 @@ int main(){
                 screenName = rawScreenName;
                 if (inScreenMap(screenName) == false) { // ensures screen name doesn't exist yet
                     shared_ptr<Process> process = make_shared<Process>(globalPID, screenName);
+					process->generateCommands(); 
+					scheduler.addProcess(process); // add the process to the scheduler
+                    
                     Console temp(process);
                     shared_ptr<Console> consolePtr = make_shared<Console>(temp);
                     screens.insert({ screenName, consolePtr });
@@ -370,10 +381,49 @@ int main(){
             if (screens.empty()) {
                 std::cout << "No screens available.\n";
             } else {
+                /*
                 std::cout << "Available screens:\n";
                 for (const auto& pair : screens) {
                     std::cout << "- " << pair.first << "\n";
                 }
+                */
+                cout << "CPU Utilization: " << ((scheduler.getRunningCores()*100)/(config.numCPU*100)) << "%\n";
+				cout << "Cores used: " << scheduler.getRunningCores() << "\n";
+				cout << "Cores available: " << config.numCPU - scheduler.getRunningCores() << "\n";
+
+                cout << "+============================================================+\n";
+                cout << "Running processes:\n";
+                
+                std::queue<std::shared_ptr<Process>> runningQueueCopy = scheduler.getRunningQueue();
+
+                while (!runningQueueCopy.empty()) {
+                    const auto& process = runningQueueCopy.front();
+
+                    cout << process->getName() << " " << "(" << process->getTime() << ")"
+                        << " Core: " << process->getCpuCoreID() // note: add ()
+                        << " " << process->getCurLine() << "/" << process->getTotalLines() << "\n";
+
+                    runningQueueCopy.pop();
+                }
+
+                cout << "\nFinished processes:\n";
+
+                std::queue<std::shared_ptr<Process>> finishedQueueCopy = scheduler.getFinishedQueue();
+
+                while (!finishedQueueCopy.empty()) {
+                    const auto& process = finishedQueueCopy.front();
+
+                    cout << process->getName() << " " << "(" << process->getTime() << ")"
+                        << " Finished"
+                        << " " << process->getCurLine() << "/" << process->getTotalLines() << "\n";
+
+                    finishedQueueCopy.pop();
+                }
+
+                cout << "+============================================================+\n";
+
+                
+
             }
         } else {
             cout << "\x1B[31m\x1B[1mUnknown command:\x1B[22m " << command << "\x1B[0m\n";
