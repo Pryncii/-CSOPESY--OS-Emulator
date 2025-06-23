@@ -17,6 +17,7 @@ int cpuCycles = 0;
 int globalPID = 1000;
 bool processGeneration = false;
 int processCount = 0;
+string history = "";
 
 struct Config {
     int numCPU; // 1-128
@@ -56,6 +57,11 @@ uint32_t parsecheckWithinRange(const string& stringvalue, const string& key, uin
         cerr << "Failed to parse value for " << key << ": " << stringvalue << "\n";
         exit(1);
     }
+}
+
+void log(const string& msg, string& history) {
+    cout << msg;
+    history += msg;
 }
 
 Config loadConfig() {
@@ -143,25 +149,28 @@ void scheduler_start(Config config, Scheduler& scheduler){
 	}
 }
 
-void help(){
-    cout << "+============================================================+\n";
-    cout << "|                     Available Commands                     |\n";
-    cout << "+============================================================+\n";
-    cout << "| SYSTEM COMMANDS                                            |\n";
-    cout << "|   - initialize         : Set up processor configuration    |\n";
-    cout << "|   - exit               : Exit the application              |\n";
-    cout << "|   - clear              : Clear the console                 |\n";
-    cout << "+------------------------------------------------------------+\n";
-    cout << "| SCREEN COMMANDS                                            |\n";
-    cout << "|   - screen -s <name>   : Create a new screen               |\n";
-    cout << "|   - screen -r <name>   : Reattach to an existing screen    |\n";
-    cout << "|   - screen -ls         : List all screens                  |\n";
-    cout << "+------------------------------------------------------------+\n";
-    cout << "| SCHEDULER COMMANDS                                         |\n";
-    cout << "|   - scheduler-start    : Start the scheduler               |\n";
-    cout << "|   - scheduler-stop     : Stop the scheduler                |\n";
-    cout << "|   - report-util        : Display CPU utilization report    |\n";
-    cout << "+============================================================+\n";
+void help(string& history) {
+    string msg =
+        "+============================================================+\n"
+        "|                     Available Commands                     |\n"
+        "+============================================================+\n"
+        "| SYSTEM COMMANDS                                            |\n"
+        "|   - initialize         : Set up processor configuration    |\n"
+        "|   - exit               : Exit the application              |\n"
+        "|   - clear              : Clear the console                 |\n"
+        "+------------------------------------------------------------+\n"
+        "| SCREEN COMMANDS                                            |\n"
+        "|   - screen -s <name>   : Create a new screen               |\n"
+        "|   - screen -r <name>   : Reattach to an existing screen    |\n"
+        "|   - screen -ls         : List all screens                  |\n"
+        "+------------------------------------------------------------+\n"
+        "| SCHEDULER COMMANDS                                         |\n"
+        "|   - scheduler-start    : Start the scheduler               |\n"
+        "|   - scheduler-stop     : Stop the scheduler                |\n"
+        "|   - report-util        : Display CPU utilization report    |\n"
+        "+============================================================+\n";
+
+    log(msg, history);
 }
 
 void scheduler_stop(){
@@ -189,9 +198,16 @@ void header(){
     cout << "|\x1B[48;5;195m\x1B[38;5;66m\x1B[1m        Buencamino, Chua, Ruiz, Seperidad         \033[0m|\n";
     cout << "|\x1B[48;5;195m\x1B[38;5;66m                                                  \033[0m|\n";
     cout << "+==================================================+\n";
+    cout << history;
 }
 
-void clear(){
+void backToMain(){
+    system("cls"); // Windows
+    header();
+}
+
+void clear() {
+    history = "";
     system("cls"); // Windows
     header();
 }
@@ -211,7 +227,7 @@ void screenInterface(string screenName){
 
         screens[screenName]->setStrings(screenInput);
     } while (screenInput != "exit");
-    clear();
+    backToMain();
 }
 
 bool inScreenMap(string name)
@@ -241,22 +257,21 @@ int main(){
         string screenName = "";
         cout << "Enter command: ";
         getline(cin, command);
+        history += "Enter command: " + command + "\n";
 
         // initialize first before giving access to other commands
         if (!initialized) {
             if (command == "initialize") {
                 config = loadConfig();
 
-                cout << endl;
-                cout << "\x1B[32m\x1B[1mSuccessfully initialized system\x1B[22m\x1B[0m" << "\n";
-                cout << "CPUs: " << config.numCPU << "\n";
-                cout << "Scheduler: " << config.schedulerMode << "\n";
-                cout << "Quantum: " << config.quantum << "\n";
-                cout << "Batch Freq: " << config.batchFreq << "\n";
-                cout << "Min Instructions: " << config.minIns << "\n";
-                cout << "Max Instructions: " << config.maxIns << "\n";
-                cout << "Delay: " << config.delay << "\n";
-                cout << endl;
+                log("\n\x1B[32m\x1B[1mSuccessfully initialized system\x1B[22m\x1B[0m\n", history);
+                log("CPUs: " + to_string(config.numCPU) + "\n", history);
+                log("Scheduler: " + config.schedulerMode + "\n", history);
+                log("Quantum: " + to_string(config.quantum) + "\n", history);
+                log("Batch Freq: " + to_string(config.batchFreq) + "\n", history);
+                log("Min Instructions: " + to_string(config.minIns) + "\n", history);
+                log("Max Instructions: " + to_string(config.maxIns) + "\n", history);
+                log("Delay: " + to_string(config.delay) + "\n\n", history);
 
                 initialized = true;
             }
@@ -264,7 +279,7 @@ int main(){
                 exit(0);
             }
             else {
-                cout << "\x1B[31m\x1B[1mError:\x1B[0m System not initialized. Please run 'initialize' first or 'exit' to quit.\n";
+                log("\x1B[31m\x1B[1mError:\x1B[0m System not initialized. Please run 'initialize' first or 'exit' to quit.\n", history);
             }
             continue;
         }
@@ -326,9 +341,9 @@ int main(){
         if (command == "clear") {
             clear();
         } else if (command == "help") {
-            help();
+            help(history);
         } else if (command == "initialize") {
-            cout << "\x1B[31m\x1B[1mError:\x1B[0m System already initialized.\n";
+            log("\x1B[31m\x1B[1mError:\x1B[0m System already initialized.\n", history);
         } else if (command == "scheduler-start") {
 			thread schedulerThread(scheduler_start, config, ref(scheduler));
 			schedulerThread.detach(); // Detach the thread to run scheduler_start in the background
@@ -348,7 +363,7 @@ int main(){
             rawScreenName.erase(rawScreenName.find_last_not_of(" \t\n\r") + 1); // right trim ("CSOPESY " becomes "CSOPESY")
 
             if (rawScreenName.empty()) { // makes sure theres a proper screen name
-                cout << "\x1B[31m\x1B[1mError:\x1B[0m Screen name cannot be empty.\n";
+                log("\x1B[31m\x1B[1mError:\x1B[0m Screen name cannot be empty.\n", history);
             }
             else {
                 screenName = rawScreenName;
@@ -364,7 +379,7 @@ int main(){
                     globalPID++;
                 }
                 else {
-                    cout << "\x1B[31m\x1B[1mError:\x1B[0m Screen name already exist! Use 'screen -r <process name>' to view the screen.\n";
+                    log("\x1B[31m\x1B[1mError:\x1B[0m Screen name already exist! Use 'screen -r <process name>' to view the screen.\n", history);
                 }
             }
         } else if (command.rfind("screen -r", 0) == 0){
@@ -376,7 +391,7 @@ int main(){
             rawScreenName.erase(rawScreenName.find_last_not_of(" \t\n\r") + 1);
 
             if (rawScreenName.empty()) { // makes sure theres a proper screen name
-                cout << "\x1B[31m\x1B[1mError:\x1B[0m Screen name cannot be empty.\n";
+                log("\x1B[31m\x1B[1mError:\x1B[0m Screen name cannot be empty.\n", history);
             }
             else {
                 screenName = rawScreenName;
@@ -384,29 +399,33 @@ int main(){
                     screenInterface(screenName);
                 }
                 else {
-                    cout << "\x1B[31m\x1B[1mError:\x1B[0m Screen name doesn't exist! Use 'screen -s <process name>' to create the screen.\n";
+                    log("\x1B[31m\x1B[1mError:\x1B[0m Screen name doesn't exist! Use 'screen -s <process name>' to create the screen.\n", history);
                 }
             }
         } else if (command == "screen -ls"){
             if (screens.empty()) {
-                cout << "No screens available.\n";
+                log("No screens available.\n", history);
             } else {
                 /*cout << "Available screens:\n";
                 for (const auto& pair : screens) {
                     cout << "- " << pair.first << "\n";
                 }*/
 
-                cout << "CPU Utilization: " << ((scheduler.getRunningCores()*100)/(config.numCPU*100)) << "%\n";
-				cout << "Cores used: " << scheduler.getRunningCores() << "\n";
-				cout << "Cores available: " << config.numCPU - scheduler.getRunningCores() << "\n";
-
-                cout << "+============================================================+\n";
-                cout << "Running processes:\n";
+                log("CPU Utilization: " + to_string((scheduler.getRunningCores() * 100) / (config.numCPU * 100)) + "%\n", history);
+                log("Cores used: " + to_string(scheduler.getRunningCores()) + "\n", history);
+                log("Cores available: " + to_string(config.numCPU - scheduler.getRunningCores()) + "\n", history);
+                log("+============================================================+\n", history);
+                log("Running processes:\n", history);
                 
                 queue<shared_ptr<Process>> runningQueueCopy = scheduler.getRunningQueue();
 
                 while (!runningQueueCopy.empty()) {
                     const auto& process = runningQueueCopy.front();
+
+                    log(process->getName() + " (" + process->getTime() + ") Core: " +
+                        to_string(process->getCpuCoreID()) + " " +
+                        to_string(process->getCurLine()) + "/" +
+                        to_string(process->getTotalLines()) + "\n", history);
 
                     cout << process->getName() << " " << "(" << process->getTime() << ")"
                         << " Core: " << process->getCpuCoreID() // note: add ()
@@ -415,12 +434,16 @@ int main(){
                     runningQueueCopy.pop();
                 }
 
-                cout << "\nFinished processes:\n";
+                log("\nFinished processes:\n", history);
 
                 queue<shared_ptr<Process>> finishedQueueCopy = scheduler.getFinishedQueue();
 
                 while (!finishedQueueCopy.empty()) {
                     const auto& process = finishedQueueCopy.front();
+
+                    log(process->getName() + " (" + process->getTime() + ") Finished " +
+                        to_string(process->getCurLine()) + "/" +
+                        to_string(process->getTotalLines()) + "\n", history);
 
                     cout << process->getName() << " " << "(" << process->getTime() << ")"
                         << " Finished"
@@ -429,10 +452,10 @@ int main(){
                     finishedQueueCopy.pop();
                 }
 
-                cout << "+============================================================+\n";
+                log("+============================================================+\n", history);
             }
         } else {
-            cout << "\x1B[31m\x1B[1mUnknown command:\x1B[22m " << command << "\x1B[0m\n";
+            log("\x1B[31m\x1B[1mUnknown command:\x1B[22m " + command + "\x1B[0m\n", history);
         }
     } while (true);
    
