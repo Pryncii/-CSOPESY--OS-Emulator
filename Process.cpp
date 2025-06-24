@@ -111,7 +111,7 @@ void Process::generateCommands(const uint32_t minIns, const uint32_t maxIns) {
     int numCommands = static_cast<int>(minIns) + (rand() % range); // inclusive range [minIns, maxIns]
 	
     for (int i = 0; i < numCommands; ++i) {
-       Command::CommandType type = static_cast<Command::CommandType>(rand() % 6); // 0 to 5
+       Command::CommandType type = static_cast<Command::CommandType>(rand() % 4); // 0 to 5
        
         shared_ptr<Command> cmd;
         /*string toPrint = " Hello World from: ";
