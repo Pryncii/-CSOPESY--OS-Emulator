@@ -21,7 +21,7 @@ class Process : public enable_shared_from_this<Process>
 
 		Process(int pid, string name);
 		void addCommand(shared_ptr<Command> command);
-		void generateCommands(const uint32_t minIns, const uint32_t maxIns);
+		void generateCommands();
 		void executeCommand();
 		void moveToNextLine();
 		void setCpuCoreID(int coreID);

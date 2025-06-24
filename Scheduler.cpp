@@ -81,7 +81,7 @@ void Scheduler::coreWorker(int coreID) {
                 //cout << "Process PID " << current->getPID() << " finished.\n";
 				finishedQueue.push(current); // add to finished queue
 				runningQueue.pop(); // remove from running queue
-                //current->writeLogsToFile(current->getName() + "_logs.txt");
+                current->writeLogsToFile(current->getName() + "_logs.txt");
             }
 
         }
