@@ -18,7 +18,9 @@ DeclareCommand::DeclareCommand(shared_ptr<Process> process, const string& varNam
 void DeclareCommand::execute() {
 	// Check if the variable already exists in the symbol table
 	
-	if (process->getSymbolTable().find(varName) != process->getSymbolTable().end()) {
+	auto tableCopy = process->getSymbolTable(); // creates one copy
+
+	if (tableCopy.find(varName) != tableCopy.end()) {
 		cerr << "Error: Variable '" << varName << "' already declared in process " << process->getPID() << endl;
 		return;
 	}
@@ -27,6 +29,6 @@ void DeclareCommand::execute() {
 		process->addSymbol(varName, value);
 	}
 	
-	cout << "Executing DeclareCommand for process " << process->getPID() << ": declaring variable '" << varName << "' with value " << value << endl;
+	//cout << "Executing DeclareCommand for process " << process->getPID() << ": declaring variable '" << varName << "' with value " << value << endl;
 }
 
