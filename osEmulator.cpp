@@ -359,7 +359,7 @@ int main(){
                     cout << "- " << pair.first << "\n";
                 }*/
 
-                cout << "CPU Utilization: " << ((scheduler.getRunningCores()*100)/(config.numCPU*100)) << "%\n";
+                cout << "CPU Utilization: " << ((scheduler.getRunningCores()*100)/(config.numCPU)) << "%\n";
 				cout << "Cores used: " << scheduler.getRunningCores() << "\n";
 				cout << "Cores available: " << config.numCPU - scheduler.getRunningCores() << "\n";
 

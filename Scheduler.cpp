@@ -60,7 +60,7 @@ void Scheduler::coreWorker(int coreID) {
         current->setCpuCoreID(coreID);
         {
             //lock_guard<mutex> lock(coutMutex);
-           // cout << "[Core " << coreID << "] Running PID: " << current->getPID() << "\n";
+            //cout << "\n[Core " << coreID << "] Running PID: " << current->getPID() << "\n";
         }
 
 
@@ -68,8 +68,6 @@ void Scheduler::coreWorker(int coreID) {
             // run until finished
             while (!current->isFinished()) {
 
-
-				
                 // add to running queue
                 current->executeCommand();
                 current->moveToNextLine();
@@ -77,10 +75,24 @@ void Scheduler::coreWorker(int coreID) {
             }
             
             {
-                //lock_guard<mutex> lock(coutMutex);
-                //cout << "Process PID " << current->getPID() << " finished.\n";
-				finishedQueue.push(current); // add to finished queue
-				runningQueue.pop(); // remove from running queue
+                lock_guard<mutex> lock(queueMutex);
+                queue<shared_ptr<Process>> tempQueue;
+                
+                cout << "\nProcess PID " << current->getPID() << " finished.\n";
+
+                while (!runningQueue.empty()) {
+                    auto proc = runningQueue.front();
+                    runningQueue.pop(); // remove from running queue
+
+                    if (proc != current) {
+                        tempQueue.push(proc);
+                    }
+                }
+
+                // Swap back the filtered queue
+                swap(runningQueue, tempQueue);
+                finishedQueue.push(current); // add to finished queue
+				
                 //current->writeLogsToFile(current->getName() + "_logs.txt");
             }
 
@@ -96,16 +108,47 @@ void Scheduler::coreWorker(int coreID) {
             }
 
             if (!current->isFinished()) {
+                //cout << "\nTime slice ended for Process PID " << current->getPID() << current->getCurLine() << "\n";
                 lock_guard<mutex> lock(queueMutex);
+                queue<shared_ptr<Process>> tempQueue;
+
+                // remove the current from runningQueue if not done running and time quantum reached
+                while (!runningQueue.empty()) {
+                    auto proc = runningQueue.front();
+                    runningQueue.pop(); // remove from running queue
+
+                    if (proc != current) {
+                        tempQueue.push(proc);
+                    }
+                }
+
+                // Swap back the filtered queue
+                swap(runningQueue, tempQueue);
+
                 readyQueue.push(current); // not done, add back to queue
             }
             else {
-                //lock_guard<mutex> lock(coutMutex);
-                //cout << "Process PID " << current->getPID() << " finished.\n";
-                //cout << "Process PID " << current->getPID() << " finished.\n";
+                {
+                    lock_guard<mutex> lock(queueMutex);
+                    queue<shared_ptr<Process>> tempQueue;
 
-                finishedQueue.push(current); // add to finished queue
-                runningQueue.pop(); // remove from running queue
+                    //cout << "\nProcess PID " << current->getPID() << " finished.\n";
+
+                    while (!runningQueue.empty()) {
+                        auto proc = runningQueue.front();
+                        runningQueue.pop(); // remove from running queue
+
+                        if (proc != current) {
+                            tempQueue.push(proc);
+                        }
+                    }
+
+                    // Swap back the filtered queue
+                    swap(runningQueue, tempQueue);
+                    finishedQueue.push(current); // add to finished queue
+
+                    //current->writeLogsToFile(current->getName() + "_logs.txt");
+                }
             }
         }
 
