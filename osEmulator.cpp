@@ -121,7 +121,7 @@ Config loadConfig() {
 void scheduler_start(Config config, Scheduler& scheduler){
     //cout << "\x1B[32m\x1B[1mscheduler-test\x1B[22m\x1B[0m command recognized. Doing something.\n";
     processGeneration = true;
-    while (processGeneration && globalPID < 1010) {
+    while (processGeneration && globalPID < 1010) { // !!!!!!!!!! remember to remove the && second part for actual nonstop generation !!!!!!!!!!
         // Generate a new process second
 		//generate a new process every batchFreq cycles
         this_thread::sleep_for(chrono::milliseconds(config.delay));
@@ -164,12 +164,50 @@ void help(){
     cout << "+============================================================+\n";
 }
 
-void scheduler_stop(){
-    cout << "\x1B[32m\x1B[1mscheduler-stop\x1B[22m\x1B[0m command recognized. Doing something.\n";
-}
+//void scheduler_stop(){
+//    cout << "\x1B[32m\x1B[1mscheduler-stop\x1B[22m\x1B[0m command recognized. Doing something.\n";
+//}
 
-void report_util(){
+void report_util(Config config, Scheduler& scheduler){
     cout << "\x1B[32m\x1B[1mreport-util\x1B[22m\x1B[0m command recognized. Doing something.\n";
+
+    ofstream outFile("csopesy-log.txt");
+
+    if (screens.empty()) {
+        outFile << "No screens available.\n";
+        return;
+    }
+    else {
+        outFile << "CPU Utilization: " << ((scheduler.getRunningCores() * 100) / (config.numCPU)) << "%\n";
+        outFile << "Cores used: " << scheduler.getRunningCores() << "\n";
+        outFile << "Cores available: " << config.numCPU - scheduler.getRunningCores() << "\n";
+
+        outFile << "+============================================================+\n";
+        outFile << "Running processes:\n";
+
+        queue<shared_ptr<Process>> runningQueueCopy = scheduler.getRunningQueue();
+        while (!runningQueueCopy.empty()) {
+            const auto& process = runningQueueCopy.front();
+            outFile << process->getName() << "    (" << process->getTime() << ")   "
+                << " Core: " << process->getCpuCoreID()
+                << "    " << process->getCurLine() << "/" << process->getTotalLines() << "\n";
+            runningQueueCopy.pop();
+        }
+
+        outFile << "\nFinished processes:\n";
+        queue<shared_ptr<Process>> finishedQueueCopy = scheduler.getFinishedQueue();
+        while (!finishedQueueCopy.empty()) {
+            const auto& process = finishedQueueCopy.front();
+            outFile << process->getName() << "    (" << process->getTime() << ")   "
+                << " Finished"
+                << "    " << process->getCurLine() << "/" << process->getTotalLines() << "\n";
+            finishedQueueCopy.pop();
+        }
+
+        outFile << "+============================================================+\n";
+    }
+
+    outFile.close();
 }
 
 // feel free to change the colors
@@ -296,10 +334,16 @@ int main(){
 			thread schedulerThread(scheduler_start, config, ref(scheduler));
 			schedulerThread.detach(); // Detach the thread to run scheduler_start in the background
         } else if (command == "scheduler-stop") {
-            processGeneration = false;
-            scheduler_stop();
+            if (processGeneration == true) {
+                processGeneration = false;
+                cout << "\x1B[32m\x1B[1mscheduler-stop\x1B[22m\x1B[0m command recognized. Stopping generation.\n";
+            }
+            else
+                cout << "\x1B[31m\x1B[1mError:\x1B[0m scheduler-start is not initialized/has stopped already.\n\n";
+            
+            //scheduler_stop();
         } else if (command == "report-util") {
-            report_util();
+            report_util(config, scheduler);
         } else if (command == "exit") {
             exit(0); 
         } else if (command.rfind("screen -s", 0) == 0){
@@ -371,9 +415,9 @@ int main(){
                 while (!runningQueueCopy.empty()) {
                     const auto& process = runningQueueCopy.front();
 
-                    cout << process->getName() << " " << "(" << process->getTime() << ")"
+                    cout << process->getName() << "    (" << process->getTime() << ")   "
                         << " Core: " << process->getCpuCoreID() // note: add ()
-                        << " " << process->getCurLine() << "/" << process->getTotalLines() << "\n";
+                        << "    " << process->getCurLine() << "/" << process->getTotalLines() << "\n";
 
                     runningQueueCopy.pop();
                 }
@@ -385,9 +429,9 @@ int main(){
                 while (!finishedQueueCopy.empty()) {
                     const auto& process = finishedQueueCopy.front();
 
-                    cout << process->getName() << " " << "(" << process->getTime() << ")"
+                    cout << process->getName() << "    (" << process->getTime() << ")   "
                         << " Finished"
-                        << " " << process->getCurLine() << "/" << process->getTotalLines() << "\n";
+                        << "    " << process->getCurLine() << "/" << process->getTotalLines() << "\n";
 
                     finishedQueueCopy.pop();
                 }
