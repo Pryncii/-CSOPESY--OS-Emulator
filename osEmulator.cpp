@@ -9,6 +9,7 @@
 #include "Console.h"
 #include "Scheduler.h"
 #include "PrintCommand.h"
+#include "SleepCommand.h"
 
 using namespace std;
 
@@ -121,7 +122,7 @@ Config loadConfig() {
 void scheduler_start(Config config, Scheduler& scheduler){
     //cout << "\x1B[32m\x1B[1mscheduler-test\x1B[22m\x1B[0m command recognized. Doing something.\n";
     processGeneration = true;
-    while (processGeneration && globalPID < 1010) { // !!!!!!!!!! remember to remove the && second part for actual nonstop generation !!!!!!!!!!
+    while (processGeneration && globalPID < 1005) { // !!!!!!!!!! remember to remove the && second part for actual nonstop generation !!!!!!!!!!
         // Generate a new process second
 		//generate a new process every batchFreq cycles
         this_thread::sleep_for(chrono::milliseconds(config.delay));
@@ -169,7 +170,7 @@ void help(){
 //}
 
 void report_util(Config config, Scheduler& scheduler){
-    cout << "\x1B[32m\x1B[1mreport-util\x1B[22m\x1B[0m command recognized. Doing something.\n";
+    cout << "\x1B[32m\x1B[1mreport-util\x1B[22m\x1B[0m command recognized. Generating logs.\n";
 
     ofstream outFile("csopesy-log.txt");
 
@@ -185,23 +186,19 @@ void report_util(Config config, Scheduler& scheduler){
         outFile << "+============================================================+\n";
         outFile << "Running processes:\n";
 
-        queue<shared_ptr<Process>> runningQueueCopy = scheduler.getRunningQueue();
-        while (!runningQueueCopy.empty()) {
-            const auto& process = runningQueueCopy.front();
+        vector<shared_ptr<Process>> runningQueueCopy = scheduler.getRunningQueue();
+        for (const auto& process : runningQueueCopy) {
             outFile << process->getName() << "    (" << process->getTime() << ")   "
                 << " Core: " << process->getCpuCoreID()
                 << "    " << process->getCurLine() << "/" << process->getTotalLines() << "\n";
-            runningQueueCopy.pop();
         }
 
         outFile << "\nFinished processes:\n";
-        queue<shared_ptr<Process>> finishedQueueCopy = scheduler.getFinishedQueue();
-        while (!finishedQueueCopy.empty()) {
-            const auto& process = finishedQueueCopy.front();
+        vector<shared_ptr<Process>> finishedQueueCopy = scheduler.getFinishedQueue();
+        for (const auto& process : finishedQueueCopy) {
             outFile << process->getName() << "    (" << process->getTime() << ")   "
                 << " Finished"
                 << "    " << process->getCurLine() << "/" << process->getTotalLines() << "\n";
-            finishedQueueCopy.pop();
         }
 
         outFile << "+============================================================+\n";
@@ -265,7 +262,7 @@ void cpuCycleThread(uint32_t delayMs) {
     while (true) {
         this_thread::sleep_for(chrono::milliseconds(delayMs));
         ++cpuCycles;
-		//cout <<  cpuCycles << "\n"; // Print CPU cycles every delayMs milliseconds
+	    //cout << "Cycle: " << cpuCycles << "\n"; // Print CPU cycles every delayMs milliseconds
     }
 }
 int main(){
@@ -290,7 +287,6 @@ int main(){
     }
 
     Scheduler scheduler(mode, config.quantum, config.numCPU, config.delay);
-
     scheduler.run();
 
     header();
@@ -410,30 +406,19 @@ int main(){
                 cout << "+============================================================+\n";
                 cout << "Running processes:\n";
                 
-                queue<shared_ptr<Process>> runningQueueCopy = scheduler.getRunningQueue();
-
-                while (!runningQueueCopy.empty()) {
-                    const auto& process = runningQueueCopy.front();
-
+                vector<shared_ptr<Process>> runningQueueCopy = scheduler.getRunningQueue();
+                for (const auto& process : runningQueueCopy) {
                     cout << process->getName() << "    (" << process->getTime() << ")   "
-                        << " Core: " << process->getCpuCoreID() // note: add ()
+                        << " Core: " << process->getCpuCoreID()
                         << "    " << process->getCurLine() << "/" << process->getTotalLines() << "\n";
-
-                    runningQueueCopy.pop();
                 }
 
                 cout << "\nFinished processes:\n";
-
-                queue<shared_ptr<Process>> finishedQueueCopy = scheduler.getFinishedQueue();
-
-                while (!finishedQueueCopy.empty()) {
-                    const auto& process = finishedQueueCopy.front();
-
+                vector<shared_ptr<Process>> finishedQueueCopy = scheduler.getFinishedQueue();
+                for (const auto& process : finishedQueueCopy) {
                     cout << process->getName() << "    (" << process->getTime() << ")   "
                         << " Finished"
                         << "    " << process->getCurLine() << "/" << process->getTotalLines() << "\n";
-
-                    finishedQueueCopy.pop();
                 }
 
                 cout << "+============================================================+\n";
@@ -469,35 +454,47 @@ int main(){
 
 /*
     // FOR TESTING
-    // Create Processes
     auto p1 = make_shared<Process>(1, "Process 1");
     auto p2 = make_shared<Process>(2, "Process 2");
     auto p3 = make_shared<Process>(3, "Process 3");
     auto p4 = make_shared<Process>(4, "Process 4");
 
     // Add Print Commands
+    p1->addCommand(make_shared<SleepCommand>(p1, 10));
     p1->addCommand(make_shared<PrintCommand>(p1, "Hello from P1 - Step 1"));
     p1->addCommand(make_shared<PrintCommand>(p1, "Hello from P1 - Step 2"));
     p1->addCommand(make_shared<PrintCommand>(p1, "Hello from P1 - Step 3"));
+    p1->addCommand(make_shared<PrintCommand>(p1, "Hello from P1 - Step 4"));
+    p1->addCommand(make_shared<PrintCommand>(p1, "Hello from P1 - Step 5"));
+    p1->addCommand(make_shared<PrintCommand>(p1, "Hello from P1 - Step 6"));
+    p1->addCommand(make_shared<PrintCommand>(p1, "Hello from P1 - Step 7"));
+    p1->addCommand(make_shared<PrintCommand>(p1, "Hello from P1 - Step 8"));
+    p1->addCommand(make_shared<PrintCommand>(p1, "Hello from P1 - Step 9"));
+    p1->addCommand(make_shared<PrintCommand>(p1, "Hello from P1 - Step 10"));
+    p1->addCommand(make_shared<PrintCommand>(p1, "Hello from P1 - Step 11"));
+    p1->addCommand(make_shared<PrintCommand>(p1, "Hello from P1 - Step 12"));
+    p2->addCommand(make_shared<SleepCommand>(p2, 25));
+    p2->addCommand(make_shared<PrintCommand>(p2, "Hello from P2 - Step 1"));
+    p2->addCommand(make_shared<PrintCommand>(p2, "Hello from P2 - Step 2"));
+    p2->addCommand(make_shared<PrintCommand>(p2, "Hello from P2 - Step 3"));
+    p2->addCommand(make_shared<PrintCommand>(p2, "Hello from P2 - Step 4"));
+    p2->addCommand(make_shared<PrintCommand>(p2, "Hello from P2 - Step 5"));
+    p2->addCommand(make_shared<PrintCommand>(p2, "Hello from P2 - Step 6"));
+    p3->addCommand(make_shared<SleepCommand>(p3, 30));
+    p3->addCommand(make_shared<PrintCommand>(p3, "Hello from P3 - Step 1"));
+    p3->addCommand(make_shared<PrintCommand>(p3, "Hello from P3 - Step 2"));
+    p4->addCommand(make_shared<SleepCommand>(p4, 20));
+    p4->addCommand(make_shared<PrintCommand>(p4, "Hello from P4 - Step 1"));
+    p4->addCommand(make_shared<PrintCommand>(p4, "Hello from P4 - Step 2"));
+    p4->addCommand(make_shared<PrintCommand>(p4, "Hello from P4 - Step 3"));
 
-    p2->addCommand(make_shared<PrintCommand>(p2, "P2 Starting"));
-    p2->addCommand(make_shared<PrintCommand>(p2, "P2 Doing work..."));
-    p2->addCommand(make_shared<PrintCommand>(p2, "P2 Ending"));
-
-    p3->addCommand(make_shared<PrintCommand>(p3, "P3 Init"));
-    p3->addCommand(make_shared<PrintCommand>(p3, "P3 Compute A"));
-    p3->addCommand(make_shared<PrintCommand>(p3, "P3 Compute B"));
-    p3->addCommand(make_shared<PrintCommand>(p3, "P3 Done"));
-
-    p4->addCommand(make_shared<PrintCommand>(p4, "P4 Init"));
-    p4->addCommand(make_shared<PrintCommand>(p4, "P4 Compute A"));
-    p4->addCommand(make_shared<PrintCommand>(p4, "P4 Compute B"));
-    p4->addCommand(make_shared<PrintCommand>(p4, "P4 Done"));
-
-    Scheduler scheduler(Scheduler::Mode::FCFS, 2, 2); // 2-command quantum, 4 cores
     scheduler.addProcess(p1);
     scheduler.addProcess(p2);
     scheduler.addProcess(p3);
     scheduler.addProcess(p4);
-    scheduler.run();
-    */
+
+    shared_ptr<Process> process = make_shared<Process>(globalPID, "screenName");
+    Console temp(process);
+    shared_ptr<Console> consolePtr = make_shared<Console>(temp);
+    screens.insert({ "screenName", consolePtr });
+*/

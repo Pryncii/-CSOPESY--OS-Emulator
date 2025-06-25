@@ -20,8 +20,8 @@ public:
     Scheduler(Mode mode, uint32_t timeQuantum = 1, int coreCount = 1, uint32_t delay = 1);
     void addProcess(shared_ptr<Process> process);
     void run();
-    queue<shared_ptr<Process>> getRunningQueue();
-    queue<shared_ptr<Process>> getFinishedQueue();
+    vector<shared_ptr<Process>> getRunningQueue();
+    vector<shared_ptr<Process>> getFinishedQueue();
     int getRunningCores();
     int getFreeCores();
 
@@ -36,8 +36,10 @@ private:
     mutex queueMutex;
     condition_variable queueCV;
 
-    queue<shared_ptr<Process>> runningQueue;
-    queue<shared_ptr<Process>> finishedQueue;
+    vector<shared_ptr<Process>> runningQueue;
+    vector<shared_ptr<Process>> finishedQueue;
+    vector<shared_ptr<Process>> sleepQueue;
     vector<thread> cores;
 	//vector<atomic<bool>> coreBusy; // Track if a core is busy
+    void tickSleepers();
 };

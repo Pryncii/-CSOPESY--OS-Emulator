@@ -23,10 +23,40 @@ void Scheduler::run() {
         cores.emplace_back(&Scheduler::coreWorker, this, i); // create and start a new thread running coreWorker(i) on core i
     }
 
+    thread sleeperThread(&Scheduler::tickSleepers, this);
+    sleeperThread.detach();
+
     // wait until all cores finish
     for (auto& t : cores) {
 		//coreBusy[t.get_id()] = false; // mark core as free
         t.detach();
+    }
+}
+
+void Scheduler::tickSleepers() {
+    
+    while (true) {
+        {
+            lock_guard<mutex> lock(queueMutex);
+            
+            auto it = sleepQueue.begin();
+            while (it != sleepQueue.end()) {
+                auto& proc = *it;
+                proc->decrementSleepTick();
+                cout << proc->getName() << "Honk shoo mimimimi\n";
+                if (proc->getSleepTicks() <= 0) {
+                    proc->setSleeping(false);
+                    cout << proc->getName() << "Woke up\n";
+                    readyQueue.push(proc);
+                    queueCV.notify_one();
+                    it = sleepQueue.erase(it);  // remove from sleep queue
+                }
+                else {
+                    ++it;
+                }
+            }
+        }
+        this_thread::sleep_for(std::chrono::milliseconds(delay));
     }
 }
 
@@ -35,11 +65,11 @@ int Scheduler::getRunningCores() {
 }
 
 
-queue<shared_ptr<Process>> Scheduler::getRunningQueue() {
+vector<shared_ptr<Process>> Scheduler::getRunningQueue() {
     return runningQueue;
 }
 
-queue<shared_ptr<Process>> Scheduler::getFinishedQueue() {
+vector<shared_ptr<Process>> Scheduler::getFinishedQueue() {
     return finishedQueue;
 }
 
@@ -51,13 +81,16 @@ void Scheduler::coreWorker(int coreID) {
             unique_lock<mutex> lock(queueMutex);
             queueCV.wait(lock, [this] { return !readyQueue.empty(); }); // Wait until queue is not empty
             current = readyQueue.front();
+            cout << "Process " << current->getName() << " now in running queue\n";
+
             readyQueue.pop();
-            runningQueue.push(current);
+            runningQueue.push_back(current);
+            current->setCpuCoreID(coreID);
         }
 
         //coreBusy[coreID] = true; // core is now busy
 
-        current->setCpuCoreID(coreID);
+        
         {
             //lock_guard<mutex> lock(coutMutex);
             //cout << "\n[Core " << coreID << "] Running PID: " << current->getPID() << "\n";
@@ -66,90 +99,93 @@ void Scheduler::coreWorker(int coreID) {
 
         if (schedulingMode == Mode::FCFS) {
             // run until finished
+            bool didSleep = false;
             while (!current->isFinished()) {
 
                 // add to running queue
                 current->executeCommand();
                 current->moveToNextLine();
+
+                if (current->isSleeping()) {
+                    lock_guard<mutex> lock(queueMutex);
+
+                    // Remove from runningQueue
+                    for (size_t i = 0; i < runningQueue.size(); ++i) {
+                        if (runningQueue[i]->getPID() == current->getPID()) {
+                            runningQueue.erase(runningQueue.begin() + i);
+                            break;
+                        }
+                    }
+                    sleepQueue.push_back(current);  // Move to sleepQueue
+                    didSleep = true;
+                    cout << current->getName() << " is sleeping!\n";
+                    break;  // Stop executing this process
+                }
                 this_thread::sleep_for(chrono::milliseconds(delay));
             }
             
-            {
+            if (!didSleep) {
                 lock_guard<mutex> lock(queueMutex);
-                queue<shared_ptr<Process>> tempQueue;
                 
                 cout << "\nProcess PID " << current->getPID() << " finished.\n";
 
-                while (!runningQueue.empty()) {
-                    auto proc = runningQueue.front();
-                    runningQueue.pop(); // remove from running queue
-
-                    if (proc != current) {
-                        tempQueue.push(proc);
+                for (size_t i = 0; i < runningQueue.size(); ++i) {
+                    if (runningQueue[i]->getPID() == current->getPID()) {
+                        runningQueue.erase(runningQueue.begin() + i);  // remove the process
+                        break; // break when found and removed
                     }
                 }
-
-                // Swap back the filtered queue
-                swap(runningQueue, tempQueue);
-                finishedQueue.push(current); // add to finished queue
+                finishedQueue.push_back(current); // add to finished queue
 				
                 //current->writeLogsToFile(current->getName() + "_logs.txt");
             }
-
         }
+
         else if (schedulingMode == Mode::RR) {
             int timestep = 0;
+            bool didSleep = false;
             // until finished or timeQuantum is reached
             while (!current->isFinished() && timestep < timeQuantum) {
                 current->executeCommand();
                 current->moveToNextLine();
+
+                if (current->isSleeping()) {
+                    lock_guard<mutex> lock(queueMutex);
+
+                    // Remove from runningQueue
+                    for (size_t i = 0; i < runningQueue.size(); ++i) {
+                        if (runningQueue[i]->getPID() == current->getPID()) {
+                            runningQueue.erase(runningQueue.begin() + i);
+                            break;
+                        }
+                    }
+                    sleepQueue.push_back(current);  // Move to sleepQueue
+                    didSleep = true;
+                    break;  // Stop executing this process
+                }
+                    
                 timestep++;
                 this_thread::sleep_for(chrono::milliseconds(delay));
             }
 
-            if (!current->isFinished()) {
-                //cout << "\nTime slice ended for Process PID " << current->getPID() << current->getCurLine() << "\n";
+            if (!didSleep) {
                 lock_guard<mutex> lock(queueMutex);
-                queue<shared_ptr<Process>> tempQueue;
-
                 // remove the current from runningQueue if not done running and time quantum reached
-                while (!runningQueue.empty()) {
-                    auto proc = runningQueue.front();
-                    runningQueue.pop(); // remove from running queue
-
-                    if (proc != current) {
-                        tempQueue.push(proc);
+                for (size_t i = 0; i < runningQueue.size(); ++i) {
+                    if (runningQueue[i]->getPID() == current->getPID()) {
+                        runningQueue.erase(runningQueue.begin() + i);  // remove the process
+                        break; // break when found and removed
                     }
                 }
-
-                // Swap back the filtered queue
-                swap(runningQueue, tempQueue);
-
-                readyQueue.push(current); // not done, add back to queue
-            }
-            else {
-                {
-                    lock_guard<mutex> lock(queueMutex);
-                    queue<shared_ptr<Process>> tempQueue;
-
-                    //cout << "\nProcess PID " << current->getPID() << " finished.\n";
-
-                    while (!runningQueue.empty()) {
-                        auto proc = runningQueue.front();
-                        runningQueue.pop(); // remove from running queue
-
-                        if (proc != current) {
-                            tempQueue.push(proc);
-                        }
-                    }
-
-                    // Swap back the filtered queue
-                    swap(runningQueue, tempQueue);
-                    finishedQueue.push(current); // add to finished queue
-
+                if (!current->isFinished()) {
+                    //cout << "\nTime slice ended for Process PID " << current->getPID() << current->getCurLine() << "\n";
+                    readyQueue.push(current); // not done, add back to queue
+                }
+                else {
+                    finishedQueue.push_back(current); // add to finished queue
                     //current->writeLogsToFile(current->getName() + "_logs.txt");
                 }
-            }
+            }    
         }
 
         //coreBusy[coreID] = false; // core now free
