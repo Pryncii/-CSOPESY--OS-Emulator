@@ -43,10 +43,10 @@ void Scheduler::tickSleepers() {
             while (it != sleepQueue.end()) {
                 auto& proc = *it;
                 proc->decrementSleepTick();
-                cout << proc->getName() << "Honk shoo mimimimi\n";
+                //cout << proc->getName() << "Honk shoo mimimimi\n";
                 if (proc->getSleepTicks() <= 0) {
                     proc->setSleeping(false);
-                    cout << proc->getName() << "Woke up\n";
+                    //cout << proc->getName() << "Woke up\n";
                     readyQueue.push(proc);
                     queueCV.notify_one();
                     it = sleepQueue.erase(it);  // remove from sleep queue
@@ -81,7 +81,7 @@ void Scheduler::coreWorker(int coreID) {
             unique_lock<mutex> lock(queueMutex);
             queueCV.wait(lock, [this] { return !readyQueue.empty(); }); // Wait until queue is not empty
             current = readyQueue.front();
-            cout << "Process " << current->getName() << " now in running queue\n";
+            //cout << "Process " << current->getName() << " now in running queue\n";
 
             readyQueue.pop();
             runningQueue.push_back(current);
@@ -118,7 +118,7 @@ void Scheduler::coreWorker(int coreID) {
                     }
                     sleepQueue.push_back(current);  // Move to sleepQueue
                     didSleep = true;
-                    cout << current->getName() << " is sleeping!\n";
+                    //cout << current->getName() << " is sleeping!\n";
                     break;  // Stop executing this process
                 }
                 this_thread::sleep_for(chrono::milliseconds(delay));
@@ -127,7 +127,7 @@ void Scheduler::coreWorker(int coreID) {
             if (!didSleep) {
                 lock_guard<mutex> lock(queueMutex);
                 
-                cout << "\nProcess PID " << current->getPID() << " finished.\n";
+                //cout << "\nProcess PID " << current->getPID() << " finished.\n";
 
                 for (size_t i = 0; i < runningQueue.size(); ++i) {
                     if (runningQueue[i]->getPID() == current->getPID()) {
@@ -161,10 +161,15 @@ void Scheduler::coreWorker(int coreID) {
                     }
                     sleepQueue.push_back(current);  // Move to sleepQueue
                     didSleep = true;
+                    //cout << current->getCpuCoreID() << current->getName() << " is sleeping!\n";
                     break;  // Stop executing this process
                 }
                     
                 timestep++;
+                //cout << current->getCpuCoreID() << "'s Time step: " << timestep << "\n";
+                //if (timestep == timeQuantum) {
+                //    cout << current->getName() << " kicked out of " << current->getCpuCoreID() << "!\n";
+                //}
                 this_thread::sleep_for(chrono::milliseconds(delay));
             }
 
@@ -182,6 +187,7 @@ void Scheduler::coreWorker(int coreID) {
                     readyQueue.push(current); // not done, add back to queue
                 }
                 else {
+                    //cout << "\nProcess PID " << current->getPID() << " finished.\n";
                     finishedQueue.push_back(current); // add to finished queue
                     //current->writeLogsToFile(current->getName() + "_logs.txt");
                 }
