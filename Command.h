@@ -21,6 +21,10 @@ public:
 	CommandType getCommandType();
 	virtual void execute();
 
+	virtual string toString() const {
+		return "[Command]";
+	}
+
 protected:
 	shared_ptr<Process> process;
 	CommandType commandType;

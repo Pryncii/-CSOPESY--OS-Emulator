@@ -14,6 +14,10 @@ public:
 	AddCommand(shared_ptr<Process> process, const string& var1, const string& var2, uint16_t var3);
 	void execute() override;
 
+	string toString() const override {
+		return "[ADD]";
+	}
+
 private:
 	string var1;
 	string var2Str;

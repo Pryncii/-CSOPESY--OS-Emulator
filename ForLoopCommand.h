@@ -12,6 +12,10 @@ public:
 	void execute() override;
 	void nested(const vector<shared_ptr<Command>>& commands, vector<shared_ptr<Command>>& flatList, int repeats, int depth);
 
+	string toString() const override {
+		return "[FOR]";
+	}
+
 private:
 	shared_ptr<Process> process;
 	vector<shared_ptr<Command>> commandList;

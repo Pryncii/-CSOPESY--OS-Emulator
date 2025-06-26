@@ -32,10 +32,23 @@ void ForLoopCommand::nested(const vector<shared_ptr<Command>>& commands, vector<
 }
 
 void ForLoopCommand::execute() {
-    //lock_guard<mutex> lock(coutMutex);
     vector<shared_ptr<Command>> flatList;
-    nested(commandList, flatList, repeats, 1);
+
+    try {
+        nested(commandList, flatList, repeats, 1);
+    }
+    catch (const std::exception& e) {
+        cerr << "[ForLoopCommand ERROR] " << e.what() << "\n";
+        return;
+    }
+
     for (auto& cmd : flatList) {
+        if (!cmd) {
+            cerr << "[ForLoopCommand] Skipping null command\n";
+            continue;
+        }
+
+        //cout << "process rn: " << cmd->toString() << "\n";
         cmd->execute();
     }
 }

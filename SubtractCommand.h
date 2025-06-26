@@ -12,6 +12,10 @@ public:
     SubtractCommand(std::shared_ptr<Process> process, const std::string& var1, const std::string& var2, uint16_t var3);
     void execute() override;
 
+    string toString() const override {
+        return "[SUBTRACT]";
+    }
+
 private:
     std::string var1;
     std::string var2Str;

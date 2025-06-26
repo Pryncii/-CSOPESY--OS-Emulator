@@ -10,6 +10,7 @@
 #include "AddCommand.h"
 #include "SubtractCommand.h"
 #include "SleepCommand.h"
+#include "ForLoopCommand.h"
 #include <fstream>
 
 using namespace std;
@@ -137,46 +138,45 @@ string Process::saveLogs() {
 //    outFile.close();
 //}
 	
-void Process::generateCommands(const uint32_t minIns, const uint32_t maxIns) {
+vector<shared_ptr<Command>> Process::generateRandomCommandList(const uint32_t minIns, const uint32_t maxIns, int depth) {
+    vector<shared_ptr<Command>> commands;
+
+    if (depth >= 3) {
+        //cout << "WTF DEPTH: " << depth << "\n";
+        return commands;
+    }
+
 	int range = static_cast<int>(maxIns - minIns + 1); // number of values for the range
     int numCommands = static_cast<int>(minIns) + (rand() % range); // inclusive range [minIns, maxIns]
                                                                    // 0 to range-1
-	
+
+   // cout << "GENERATE COMMANDS START, DEPTH: " << depth << "\n";
+
+    
+
     for (int i = 0; i < numCommands; ++i) {
-       Command::CommandType type = static_cast<Command::CommandType>(rand() % 5); // 0 to 5
+        //int typeLimit = (depth >= 2) ? 5 : 6; // 0 to 4 only if depth >= 2 (exclude FOR)
+        Command::CommandType type = static_cast<Command::CommandType>(rand() % 6); // 0 to 5
+        //cout << "INSIDE NUMCOMMAND LOOP, LOOP TRIGGERED, DEPTH: " << depth << "\n";
        
         shared_ptr<Command> cmd;
         /*string toPrint = " Hello World from: ";
         cmd = make_shared<PrintCommand>(shared_from_this(), toPrint);*/
 		
         switch (type) {
+            //cout << "INSIDE TYPE, DEPTH: " << depth << "\n";
             case Command::DECLARE: {
-                string varName = "x" + to_string(i);
+                //cout << "INSIDE DECLARE: " << depth << "\n";
+                string varName = to_string(pid) + "x" + to_string(depth) + "_" + to_string(i);
                 uint16_t value = rand() % 100;
                 cmd = make_shared<DeclareCommand>(shared_from_this(), varName, value);
+                //cout << "AFTER DECLARE: " << depth << "\n";
                 break;
             }
 
-            case Command::ADD: {
-                while (symbolTable.size() < 2) {
-                    string fillerName = "autoVar_" + to_string(symbolTable.size());
-                    addSymbol(fillerName, 0);
-                }
-
-                auto it1 = symbolTable.begin();
-                advance(it1, rand() % symbolTable.size());
-                auto it2 = symbolTable.begin();
-                advance(it2, rand() % symbolTable.size());
-
-                string varName = "x" + to_string(i);
-                uint16_t val1 = it1->second;
-                uint16_t val2 = it2->second;
-
-                cmd = make_shared<AddCommand>(shared_from_this(), varName, val1, val2);
-                break;
-            }
-
+            case Command::ADD:
             case Command::SUBTRACT: {
+                //cout << "INSIDE ADD/SUB: " << depth << "\n";
                 while (symbolTable.size() < 2) {
                     string fillerName = "autoVar_" + to_string(symbolTable.size());
                     addSymbol(fillerName, 0);
@@ -191,30 +191,52 @@ void Process::generateCommands(const uint32_t minIns, const uint32_t maxIns) {
                 uint16_t val1 = it1->second;
                 uint16_t val2 = it2->second;
 
-                cmd = make_shared<SubtractCommand>(shared_from_this(), varName, val1, val2);
+                if (type == Command::ADD)
+                    cmd = make_shared<AddCommand>(shared_from_this(), varName, val1, val2);
+                else
+                    cmd = make_shared<SubtractCommand>(shared_from_this(), varName, val1, val2);
+
+                //cout << "AFTER ADD/SUB: " << depth << "\n";
                 break;
             }
 
             case Command::PRINT: {
+                //cout << "INSIDE PRINT: " << depth << "\n";
                 cmd = make_shared<PrintCommand>(shared_from_this(), " Hello World from: ");
+                //cout << "AFTER PRINT: " << depth << "\n";
                 break;
             }
 
             case Command::SLEEP: {
+                //cout << "INSIDE SLEEP: " << depth << "\n";
                 uint16_t value = rand() % 100;
                 cmd = make_shared<SleepCommand>(shared_from_this(), value);
+                //cout << "AFTER SLEEP: " << depth << "\n";
                 break;
             }
 
             case Command::FOR: {
-                // put FOR code here
+                //cout << "LOOP TRIGGERED, DEPTH: " << depth << "\n";
+                auto nestedCommands = generateRandomCommandList(minIns, maxIns, depth + 1);
+                //cout << "RETURNED FROM NEST\n";
+                int repeats = 1 + rand() % 4;
+                if (!nestedCommands.empty()) {
+                    //cout << "NOT EMPTY WAHOO\n";
+                    cmd = make_shared<ForLoopCommand>(shared_from_this(), nestedCommands, repeats);
+                }
                 break;
             }
         }
 
         if (cmd) {
-            addCommand(cmd);
+            commands.push_back(cmd);
         }
 	}
+    return commands;
 	//writeLogsToFile(name + "_logs.txt"); // Write logs to file after generating commands
+}
+
+void Process::generateCommands(uint32_t minIns, uint32_t maxIns, int depth) {
+    auto cmds = generateRandomCommandList(minIns, maxIns, depth);
+    for (auto& c : cmds) addCommand(c);
 }

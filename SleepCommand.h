@@ -11,6 +11,10 @@ public:
 	SleepCommand(shared_ptr<Process> process, uint16_t X);
 	void execute() override;
 
+	string toString() const override {
+		return "[SLEEP]";
+	}
+
 private:
 	shared_ptr<Process> process;
 	uint16_t X;

@@ -10,6 +10,10 @@ public:
 	void execute() override;
 	string getMessage() const;
 
+	string toString() const override {
+		return "[PRINT]";
+	}
+
 private:
 	string message;
 

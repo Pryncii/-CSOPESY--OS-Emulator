@@ -10,6 +10,8 @@
 #include "Scheduler.h"
 #include "PrintCommand.h"
 #include "SleepCommand.h"
+#include "ForLoopCommand.h"
+#include "SubtractCommand.h"
 
 using namespace std;
 
@@ -130,7 +132,7 @@ void scheduler_start(Config config, Scheduler& scheduler){
         if (cpuCycles % config.batchFreq == 0) {
 
             shared_ptr<Process> process = make_shared<Process>(globalPID, "Process_" + to_string(globalPID));
-            process->generateCommands(config.minIns, config.maxIns);
+            process->generateCommands(config.minIns, config.maxIns, 1);
             scheduler.addProcess(process); // add the process to the scheduler
 
             Console temp(process);
@@ -414,7 +416,7 @@ int main(){
                 screenName = rawScreenName;
                 if (inScreenMap(screenName) == false) { // ensures screen name doesn't exist yet
                     shared_ptr<Process> process = make_shared<Process>(globalPID, screenName);
-					process->generateCommands(config.minIns, config.maxIns);
+					process->generateCommands(config.minIns, config.maxIns, 1);
 					scheduler->addProcess(process); // add the process to the scheduler
                     
                     Console temp(process);

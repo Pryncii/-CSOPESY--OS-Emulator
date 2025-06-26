@@ -11,6 +11,10 @@ public:
 	DeclareCommand(shared_ptr<Process> process, const string& varName, uint16_t value);
 	void execute() override;
 
+	string toString() const override {
+    return "[DECLARE]";
+}
+
 private:
 	shared_ptr<Process> process;
 	string varName;
