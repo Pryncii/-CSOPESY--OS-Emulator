@@ -17,6 +17,7 @@ int cpuCycles = 0;
 int globalPID = 1000;
 bool processGeneration = false;
 int processCount = 0;
+string consoleStrings = "";
 
 struct Config {
     int numCPU; // 1-128
@@ -235,21 +236,30 @@ void clear(){
 }
 
 void screenInterface(string screenName){
-    string screenInput = "";
+    string screenInput = "process-smi";
     system("cls");
     screens[screenName]->drawScreen(); 
-    do{
+    do {
         cout << "Enter command: ";
         getline(cin, screenInput);
 
-        if (screenInput != "exit") {
-            cout << "\x1B[31m\x1B[1mUnknown command:\x1B[22m " << screenInput << ". \x1B[31m\x1B[1m'exit' is the only available command right now.\x1B[0m\n";
-            screenInput = screenInput + "\n\x1B[31m\x1B[1mUnknown command:\x1B[22m " + screenInput + ". 'exit' is the only available command right now.\x1B[0m";
+
+        if (screenInput != "exit" && screenInput != "process-smi") {
+            cout << "\x1B[31m\x1B[1mUnknown command:\x1B[22m " << screenInput; //<< ". \x1B[31m\x1B[1m'exit' is the only available command right now.\x1B[0m\n";
+            screenInput = screenInput + "\n\x1B[31m\x1B[1mUnknown command:\x1B[22m " + screenInput; //+ ". 'exit' is the only available command right now.\x1B[0m";
+        }
+        
+        screens[screenName]->setStrings(screenInput);
+
+        if (screenInput == "process-smi") {
+			screens[screenName]->getProcess()->printLogs(); // Redraw the screen
+            screens[screenName]->setStrings(screens[screenName]->getProcess()->saveLogs());
         }
 
-        screens[screenName]->setStrings(screenInput);
+       
     } while (screenInput != "exit");
     clear();
+    cout << consoleStrings;
 }
 
 bool inScreenMap(string name)
@@ -298,6 +308,7 @@ int main(){
         string screenName = "";
         cout << "Enter command: ";
         getline(cin, command);
+        consoleStrings.append("Enter Command: " + command + "\n");
 
         // initialize first before giving access to other commands
         if (!initialized) {

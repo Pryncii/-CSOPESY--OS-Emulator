@@ -17,7 +17,7 @@ using namespace std;
 Process::Process(int pid, string name) {
     time_t now = time(nullptr);
     char buffer[80];
-    strftime(buffer, sizeof(buffer), "%m/%d/%Y, %I:%M:%S %p", localtime(&now));
+    strftime(buffer, sizeof(buffer), "%m/%d/%Y %I:%M:%S%p", localtime(&now));
     this->timestamp = buffer;
 	this->pid = pid;
 	this->name = name;
@@ -88,6 +88,33 @@ bool Process::isFinished() const {
 	return commandCounter >= commandList.size();
 }
 
+void Process::addLogLine(const string& logLine) {
+    logLines.push_back(logLine);
+}
+
+void Process::printLogs() const {
+    cout << endl;
+    cout << "Process Name: " << name << endl;
+	cout << "ID: " << pid << endl;
+    cout << "Logs:" << endl;
+    for (const auto& log : logLines) {
+        cout << log << endl;
+    }
+}
+
+string Process::saveLogs() {
+
+    string logtemp = "";
+    for (const auto& log : logLines) {
+        logtemp = logtemp + log + "\n";
+    }
+
+    string temp = "\nProcess Name: " + name + "\n"
+        + "ID: " + to_string(pid) + "\n"
+        + "Logs:\n" + logtemp;
+
+    return temp;
+}
 //void Process::writeLogsToFile(const string& filename) const {
 //    ofstream outFile(filename);
 //    if (!outFile) {
