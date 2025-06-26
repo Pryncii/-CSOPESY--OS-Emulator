@@ -41,6 +41,15 @@ class Process : public enable_shared_from_this<Process>
 		void addSymbol(const string& symbol, uint16_t value);
 		uint16_t getSymbolValue(const string& symbol);
 		string saveLogs();
+
+		// for sleep command
+		void setSleepTicks(int ticks) { sleepTicks = ticks; }
+		int getSleepTicks() const { return sleepTicks; }
+
+		void decrementSleepTick() { if (sleepTicks > 0) --sleepTicks; }
+		bool isSleeping() const { return sleeping; }
+		void setSleeping(bool value) { sleeping = value; }
+
 	
 	private:
 		int pid;
@@ -53,5 +62,9 @@ class Process : public enable_shared_from_this<Process>
 		int cpuCoreID = -1; // -1 means not assigned to any core	
 		ProcessState currentState;
 
+		int sleepTicks = 0;
+		bool sleeping = false;
+
+		
 
 };
