@@ -107,11 +107,12 @@ bool Process::isFinished() const {
 //}
 	
 void Process::generateCommands(const uint32_t minIns, const uint32_t maxIns) {
-	int range = static_cast<int>(maxIns - minIns + 1);
+	int range = static_cast<int>(maxIns - minIns + 1); // number of values for the range
     int numCommands = static_cast<int>(minIns) + (rand() % range); // inclusive range [minIns, maxIns]
+                                                                   // 0 to range-1
 	
     for (int i = 0; i < numCommands; ++i) {
-       Command::CommandType type = static_cast<Command::CommandType>(rand() % 4); // 0 to 5
+       Command::CommandType type = static_cast<Command::CommandType>(rand() % 5); // 0 to 5
        
         shared_ptr<Command> cmd;
         /*string toPrint = " Hello World from: ";
@@ -169,8 +170,8 @@ void Process::generateCommands(const uint32_t minIns, const uint32_t maxIns) {
             }
 
             case Command::SLEEP: {
-                /*uint16_t value = rand() % 100;
-                cmd = make_shared<SleepCommand>(shared_from_this(), value);*/
+                uint16_t value = rand() % 100;
+                cmd = make_shared<SleepCommand>(shared_from_this(), value);
                 break;
             }
 
