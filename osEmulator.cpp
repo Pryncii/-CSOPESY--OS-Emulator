@@ -123,7 +123,7 @@ Config loadConfig() {
 void scheduler_start(Config config, Scheduler& scheduler){
     //cout << "\x1B[32m\x1B[1mscheduler-test\x1B[22m\x1B[0m command recognized. Doing something.\n";
     processGeneration = true;
-    while (processGeneration && globalPID < 1005) { // !!!!!!!!!! remember to remove the && second part for actual nonstop generation !!!!!!!!!!
+    while (processGeneration) { // !!!!!!!!!! remember to remove the && second part for actual nonstop generation !!!!!!!!!!
         // Generate a new process second
 		//generate a new process every batchFreq cycles
         this_thread::sleep_for(chrono::milliseconds(config.delay));
@@ -242,8 +242,8 @@ void screenInterface(string screenName){
 
 
         if (screenInput != "exit" && screenInput != "process-smi") {
-            cout << "\x1B[31m\x1B[1mUnknown command:\x1B[22m " << screenInput; //<< ". \x1B[31m\x1B[1m'exit' is the only available command right now.\x1B[0m\n";
-            screenInput = screenInput + "\n\x1B[31m\x1B[1mUnknown command:\x1B[22m " + screenInput; //+ ". 'exit' is the only available command right now.\x1B[0m";
+            cout << "\x1B[31m\x1B[1mUnknown command:\x1B[22m " << screenInput + "\n"; //<< ". \x1B[31m\x1B[1m'exit' is the only available command right now.\x1B[0m\n";
+            screenInput = screenInput + "\n\x1B[31m\x1B[1mUnknown command:\x1B[22m " + screenInput + "\n"; //+ ". 'exit' is the only available command right now.\x1B[0m";
         }
         
         screens[screenName]->setStrings(screenInput);
