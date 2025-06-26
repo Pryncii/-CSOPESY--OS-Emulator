@@ -1,15 +1,10 @@
-CPU Utilization: 100%
-Cores used: 4
-Cores available: 0
+CPU Utilization: 0%
+Cores used: 0
+Cores available: 2
 +============================================================+
 Running processes:
-Process_1001    (06/25/2025, 10:36:00 PM)   1    179/311
-Process_1004    (06/25/2025, 10:36:01 PM)   3    59/115
-Process_1005    (06/25/2025, 10:36:02 PM)   0    41/184
-Process_1006    (06/25/2025, 10:36:02 PM)   2    8/165
 
 Finished processes:
-Process_1003    (06/25/2025, 10:36:01 PM)    Finished    114/114
-Process_1000    (06/25/2025, 10:36:00 PM)    Finished    141/141
-Process_1002    (06/25/2025, 10:36:01 PM)    Finished    168/168
+meow    (06/26/2025 07:57:35PM)    Finished    14/14
+woof    (06/26/2025 08:00:56PM)    Finished    20/20
 +============================================================+

@@ -121,7 +121,7 @@ Config loadConfig() {
 }
 
 void scheduler_start(Config config, Scheduler& scheduler){
-    cout << "\x1B[32m\x1B[1mscheduler-test\x1B[22m\x1B[0m command recognized. Generating Processes.\n";
+    //cout << "\x1B[32m\x1B[1mscheduler-start\x1B[22m\x1B[0m command recognized. Generating Processes.\n";
     processGeneration = true;
     while (processGeneration) { // !!!!!!!!!! remember to remove the && second part for actual nonstop generation !!!!!!!!!!
         // Generate a new process second
@@ -243,8 +243,8 @@ void screenInterface(string screenName){
 
 
         if (screenInput != "exit" && screenInput != "process-smi") {
-            cout << "\x1B[31m\x1B[1mUnknown command:\x1B[22m " << screenInput + "\n"; //<< ". \x1B[31m\x1B[1m'exit' is the only available command right now.\x1B[0m\n";
-            screenInput = screenInput + "\n\x1B[31m\x1B[1mUnknown command:\x1B[22m " + screenInput + "\n"; //+ ". 'exit' is the only available command right now.\x1B[0m";
+            cout << "\x1B[31m\x1B[1mUnknown command:\x1B[22m " << screenInput + "\x1B[0m\n"; //<< ". \x1B[31m\x1B[1m'exit' is the only available command right now.\x1B[0m\n";
+            screenInput = screenInput + "\n\x1B[31m\x1B[1mUnknown command:\x1B[22m " + screenInput + "\x1B[0m"; //+ ". 'exit' is the only available command right now.\x1B[0m";
         }
         
         screens[screenName]->setStrings(screenInput);
@@ -313,25 +313,8 @@ int main(){
     srand(static_cast<unsigned int>(time(0)));
     string command;
     bool initialized = false;
-    Config config = loadConfig();
-    
-    thread cycleThread(cpuCycleThread, config.delay);
-    cycleThread.detach();
-
-    Scheduler::Mode mode;
-    if (config.schedulerMode == "rr") {
-        mode = Scheduler::Mode::RR;
-    }
-    else if (config.schedulerMode == "fcfs") {
-        mode = Scheduler::Mode::FCFS;
-    }
-    else {
-        cout << "Invalid scheduler mode!\n";
-        return 1;
-    }
-
-    Scheduler scheduler(mode, config.quantum, config.numCPU, config.delay);
-    scheduler.run();
+    Config config;
+    shared_ptr<Scheduler> scheduler;
 
     header();
     do {
@@ -343,6 +326,26 @@ int main(){
         // initialize first before giving access to other commands
         if (!initialized) {
             if (command == "initialize") {
+                config = loadConfig();
+
+                thread cycleThread(cpuCycleThread, config.delay);
+                cycleThread.detach();
+
+                Scheduler::Mode mode;
+                if (config.schedulerMode == "rr") {
+                    mode = Scheduler::Mode::RR;
+                }
+                else if (config.schedulerMode == "fcfs") {
+                    mode = Scheduler::Mode::FCFS;
+                }
+                else {
+                    cout << "Invalid scheduler mode!\n";
+                    return 1;
+                }
+
+                scheduler = make_shared<Scheduler>(mode, config.quantum, config.numCPU, config.delay);
+                scheduler->run();
+
                 string initialize = "\n"
                     "\x1B[32m\x1B[1mSuccessfully initialized system\x1B[22m\x1B[0m\n"
                     "CPUs: " + std::to_string(config.numCPU) + "\n" +
@@ -376,7 +379,8 @@ int main(){
             cout << "\x1B[31m\x1B[1mError:\x1B[0m System already initialized.\n";
 			consoleStrings.append("\x1B[31m\x1B[1mError:\x1B[0m System already initialized.\n");
         } else if (command == "scheduler-start") {
-			thread schedulerThread(scheduler_start, config, ref(scheduler));
+            cout << "\x1B[32m\x1B[1mscheduler-start\x1B[22m\x1B[0m command recognized. Generating Processes.\n";
+			thread schedulerThread(scheduler_start, config, ref(*scheduler));
 			schedulerThread.detach(); // Detach the thread to run scheduler_start in the background
         } else if (command == "scheduler-stop") {
             if (processGeneration == true) {
@@ -391,7 +395,7 @@ int main(){
             
             //scheduler_stop();
         } else if (command == "report-util") {
-            report_util(config, scheduler);
+            report_util(config, *scheduler);
         } else if (command == "exit") {
             exit(0); 
         } else if (command.rfind("screen -s", 0) == 0){
@@ -411,7 +415,7 @@ int main(){
                 if (inScreenMap(screenName) == false) { // ensures screen name doesn't exist yet
                     shared_ptr<Process> process = make_shared<Process>(globalPID, screenName);
 					process->generateCommands(config.minIns, config.maxIns);
-					scheduler.addProcess(process); // add the process to the scheduler
+					scheduler->addProcess(process); // add the process to the scheduler
                     
                     Console temp(process);
                     shared_ptr<Console> consolePtr = make_shared<Console>(temp);
@@ -462,14 +466,14 @@ int main(){
                     cout << "- " << pair.first << "\n";
                 }*/
 
-                cout << "CPU Utilization: " << ((scheduler.getRunningCores()*100)/(config.numCPU)) << "%\n";
-				cout << "Cores used: " << scheduler.getRunningCores() << "\n";
-				cout << "Cores available: " << config.numCPU - scheduler.getRunningCores() << "\n";
+                cout << "CPU Utilization: " << ((scheduler->getRunningCores()*100)/(config.numCPU)) << "%\n";
+				cout << "Cores used: " << scheduler->getRunningCores() << "\n";
+				cout << "Cores available: " << config.numCPU - scheduler->getRunningCores() << "\n";
 
                 cout << "+============================================================+\n";
                 cout << "Running processes:\n";
                 
-                vector<shared_ptr<Process>> runningQueueCopy = scheduler.getRunningQueue();
+                vector<shared_ptr<Process>> runningQueueCopy = scheduler->getRunningQueue();
                 for (const auto& process : runningQueueCopy) {
                     cout << process->getName() << "    (" << process->getTime() << ")   "
                         << " Core: " << process->getCpuCoreID()
@@ -477,7 +481,7 @@ int main(){
                 }
 
                 cout << "\nFinished processes:\n";
-                vector<shared_ptr<Process>> finishedQueueCopy = scheduler.getFinishedQueue();
+                vector<shared_ptr<Process>> finishedQueueCopy = scheduler->getFinishedQueue();
                 for (const auto& process : finishedQueueCopy) {
                     cout << process->getName() << "    (" << process->getTime() << ")   "
                         << " Finished"
@@ -486,7 +490,7 @@ int main(){
 
                 cout << "+============================================================+\n";
 
-                saveLs(ref(scheduler), config);
+                saveLs(ref(*scheduler), config);
                 
             }
         } else {
