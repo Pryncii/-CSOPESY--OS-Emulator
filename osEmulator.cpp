@@ -121,7 +121,7 @@ Config loadConfig() {
 }
 
 void scheduler_start(Config config, Scheduler& scheduler){
-    //cout << "\x1B[32m\x1B[1mscheduler-test\x1B[22m\x1B[0m command recognized. Doing something.\n";
+    cout << "\x1B[32m\x1B[1mscheduler-test\x1B[22m\x1B[0m command recognized. Generating Processes.\n";
     processGeneration = true;
     while (processGeneration) { // !!!!!!!!!! remember to remove the && second part for actual nonstop generation !!!!!!!!!!
         // Generate a new process second
@@ -439,7 +439,13 @@ int main(){
             else {
                 screenName = rawScreenName;
                 if (inScreenMap(screenName) == true) { // ensures screen name already exists
-                    screenInterface(screenName);
+                    if (screens[screenName]->getProcess()->isFinished()) { // if the process is finished, it will not be able to run commands
+                        cout << "\x1B[31m\x1B[1mError:\x1B[0m Process " << screens[screenName]->getProcess()->getName() << " not found.\n\n";
+                        consoleStrings.append("\x1B[31m\x1B[1mError:\x1B[0m Process " + screens[screenName]->getProcess()->getName() + " not found.\n\n");
+                    }
+                    else {
+                        screenInterface(screenName);
+                    }
                 }
                 else {
                     cout << "\x1B[31m\x1B[1mError:\x1B[0m Screen name doesn't exist! Use 'screen -s <process name>' to create the screen.\n";

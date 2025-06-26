@@ -100,6 +100,10 @@ void Process::printLogs() const {
     for (const auto& log : logLines) {
         cout << log << endl;
     }
+
+    if (commandCounter >= commandList.size()) {
+        cout << "Finished!" << endl;
+    }
 }
 
 string Process::saveLogs() {
