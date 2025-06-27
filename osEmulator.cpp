@@ -426,8 +426,8 @@ int main(){
                     globalPID++;
                 }
                 else {
-                    cout << "\x1B[31m\x1B[1mError:\x1B[0m Screen name already exist! Use 'screen -r <process name>' to view the screen.\n";
-					consoleStrings.append("\x1B[31m\x1B[1mError:\x1B[0m Screen name already exist! Use 'screen -r <process name>' to view the screen.\n");
+                    cout << "\x1B[31m\x1B[1mError:\x1B[0m Screen name already exist/has finished executing!\n";
+					consoleStrings.append("\x1B[31m\x1B[1mError:\x1B[0m Screen name already exist/has finished executing!\n");
                 }
             }
         } else if (command.rfind("screen -r", 0) == 0){
