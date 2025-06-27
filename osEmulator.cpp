@@ -307,7 +307,7 @@ void saveLs(Scheduler& scheduler, Config config) {
     }
 
     output += "+============================================================+\n";
-
+    cout << output;
     consoleStrings.append(output);
 
 }
@@ -468,7 +468,7 @@ int main(){
                     cout << "- " << pair.first << "\n";
                 }*/
 
-                cout << "CPU Utilization: " << ((scheduler->getRunningCores()*100)/(config.numCPU)) << "%\n";
+                /*cout << "CPU Utilization: " << ((scheduler->getRunningCores() * 100) / (config.numCPU)) << "%\n";
 				cout << "Cores used: " << scheduler->getRunningCores() << "\n";
 				cout << "Cores available: " << config.numCPU - scheduler->getRunningCores() << "\n";
 
@@ -490,7 +490,7 @@ int main(){
                         << "    " << process->getCurLine() << "/" << process->getTotalLines() << "\n";
                 }
 
-                cout << "+============================================================+\n";
+                cout << "+============================================================+\n";*/
 
                 saveLs(ref(*scheduler), config);
                 
