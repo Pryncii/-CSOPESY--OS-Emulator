@@ -1,5 +1,8 @@
 # CSOPESY OS-Emulator
-Buencamino, Prince, Chua, Micole, Ruiz, Chester, Seperidad, Abigail
+Buencamino, Prince
+Chua, Micole
+Ruiz, Chester
+Seperidad, Abigail
 
 ## To run: 
 Open Visual Studio
