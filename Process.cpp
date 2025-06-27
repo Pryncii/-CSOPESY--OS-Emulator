@@ -167,7 +167,8 @@ vector<shared_ptr<Command>> Process::generateRandomCommandList(const uint32_t mi
             //cout << "INSIDE TYPE, DEPTH: " << depth << "\n";
             case Command::DECLARE: {
                 //cout << "INSIDE DECLARE: " << depth << "\n";
-                string varName = to_string(pid) + "x" + to_string(depth) + "_" + to_string(i);
+                srand(time(0));
+                string varName = to_string(pid) + "x" + to_string(depth) + "_" + to_string(i) + "_" + to_string(rand() % 1000);
                 uint16_t value = rand() % 100;
                 cmd = make_shared<DeclareCommand>(shared_from_this(), varName, value);
                 //cout << "AFTER DECLARE: " << depth << "\n";

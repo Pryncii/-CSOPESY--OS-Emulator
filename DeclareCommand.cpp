@@ -2,7 +2,9 @@
 #include "Command.h"
 #include "Process.h"
 #include <string>
+#include <cstdlib>
 #include <iostream>
+#include <ctime>
 #include <unordered_map>
 
 
@@ -17,17 +19,29 @@ DeclareCommand::DeclareCommand(shared_ptr<Process> process, const string& varNam
 
 void DeclareCommand::execute() {
 	// Check if the variable already exists in the symbol table
-	
+	int random = 0;
 	auto tableCopy = process->getSymbolTable(); // creates one copy
 
-	if (tableCopy.find(varName) != tableCopy.end()) {
-		cerr << "Error: Variable '" << varName << "' already declared in process " << process->getPID() << endl;
-		return;
-	}
-	else {
+	while (true) {
+		if (tableCopy.find(varName) != tableCopy.end()) {
+			
+			srand(time(0));
+			
+			varName.append("_" + to_string(rand()*time(0)/10000 * random));
+			random = (rand() + random + time(0)) * 32 %10000;
+			//cout << varName << endl;
+			
+			//cerr << "Error: Variable '" << varName << "' already declared in process " << process->getPID() << endl;
+
+		}
+		else {
 			// Declare the variable in the process's symbol table
-		process->addSymbol(varName, value);
+			
+			process->addSymbol(varName, value);
+			return;
+		}
 	}
+	
 	
 	//cout << "Executing DeclareCommand for process " << process->getPID() << ": declaring variable '" << varName << "' with value " << value << endl;
 }
