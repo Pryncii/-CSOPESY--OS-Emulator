@@ -8,10 +8,11 @@
 using namespace std;
 extern mutex coutMutex;
 
-ForLoopCommand::ForLoopCommand(shared_ptr<Process> process, vector<shared_ptr<Command>> commandList, int repeats) : Command(process, FOR) {
+ForLoopCommand::ForLoopCommand(shared_ptr<Process> process, vector<shared_ptr<Command>> commandList, int repeats, uint32_t delay) : Command(process, FOR) {
     this->process = process;
     this->commandList = commandList;
     this->repeats = repeats;
+    this->delay = delay;
 }
 
 void ForLoopCommand::nested(const vector<shared_ptr<Command>>& commands, vector<shared_ptr<Command>>& flatList, int repeats, int depth) {
@@ -49,6 +50,14 @@ void ForLoopCommand::execute() {
         }
 
         //cout << "process rn: " << cmd->toString() << "\n";
-        cmd->execute();
+        this_thread::sleep_for(chrono::milliseconds(delay));
+        if (process->getCurLine() < process->getTotalLines()) {
+            cmd->execute();
+            process->moveToNextLine();
+        }
+        
+       // process->moveToNextLine();
+        
     }
+    
 }

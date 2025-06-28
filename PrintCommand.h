@@ -7,6 +7,7 @@ using namespace std;
 class PrintCommand : public Command {
 public:
 	PrintCommand(shared_ptr<Process> process, const string& message);
+	PrintCommand(shared_ptr<Process> process, const string& message, int value);
 	void execute() override;
 	string getMessage() const;
 

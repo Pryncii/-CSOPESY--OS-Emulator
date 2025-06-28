@@ -14,6 +14,7 @@
 #include <fstream>
 
 using namespace std;
+int forhaha = 0;
 
 Process::Process(int pid, string name, uint32_t delay) {
     time_t now = time(nullptr);
@@ -82,7 +83,7 @@ int Process :: getCpuCoreID() const {
 }
 
 void Process::executeCommand() {
-	if (commandCounter < commandList.size()) {
+	if (commandCounter < commandList.size() - forhaha) {
 		commandList[commandCounter]->execute();
 	}
 }
@@ -242,6 +243,7 @@ vector<shared_ptr<Command>> Process::generateRandomCommandList(int depth, int re
                     //cout << "NOT EMPTY WAHOO\n";
                     cmd = make_shared<ForLoopCommand>(shared_from_this(), nestedCommands, looprepeats, delay);
                 }
+                forhaha += 1;
                 break;
             }
         }

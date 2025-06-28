@@ -19,7 +19,7 @@ class Process : public enable_shared_from_this<Process>
 			FINISHED
 		};
 
-		Process(int pid, string name);
+		Process(int pid, string name, uint32_t delay);
 		void addCommand(shared_ptr<Command> command);
 		void generateCommands(const uint32_t minIns, const uint32_t maxIns, int depth);
 		vector<shared_ptr<Command>> generateRandomCommandList(int depth, int repeats, int& instructionBudget);
@@ -70,7 +70,7 @@ class Process : public enable_shared_from_this<Process>
 		int sleepTicks = 0;
 		bool sleeping = false;
 		int totalNumCommands = -1;
-
+		uint32_t delay;
 		
 
 };

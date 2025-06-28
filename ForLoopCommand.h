@@ -8,7 +8,7 @@ using namespace std;
 
 class ForLoopCommand : public Command {
 public:
-	ForLoopCommand(shared_ptr<Process> process, vector<shared_ptr<Command>> commandList, int repeats);
+	ForLoopCommand(shared_ptr<Process> process, vector<shared_ptr<Command>> commandList, int repeats, uint32_t delay);
 	void execute() override;
 	void nested(const vector<shared_ptr<Command>>& commands, vector<shared_ptr<Command>>& flatList, int repeats, int depth);
 
@@ -28,6 +28,7 @@ private:
 	shared_ptr<Process> process;
 	vector<shared_ptr<Command>> commandList;
 	int repeats;
+	uint32_t delay;
 
 
 };
