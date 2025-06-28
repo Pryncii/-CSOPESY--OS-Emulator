@@ -88,7 +88,9 @@ void Process::executeCommand() {
 }
 
 void Process::moveToNextLine() {
-	commandCounter++;
+    if (commandCounter < getTotalLines()) {
+        ++commandCounter;
+    }
 }
 
 bool Process::isFinished() const {

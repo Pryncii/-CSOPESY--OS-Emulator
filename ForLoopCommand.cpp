@@ -51,10 +51,10 @@ void ForLoopCommand::execute() {
 
         //cout << "process rn: " << cmd->toString() << "\n";
         this_thread::sleep_for(chrono::milliseconds(delay));
-        if (process->getCurLine() < process->getTotalLines()) {
-            cmd->execute();
-            process->moveToNextLine();
-        }
+        
+        cmd->execute();
+        process->moveToNextLine();
+        
         
        // process->moveToNextLine();
         
