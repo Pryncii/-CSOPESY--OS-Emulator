@@ -73,7 +73,7 @@ uint16_t Process::getSymbolValue(const string& symbol) {
 	if (symbolTable.find(symbol) == symbolTable.end()) {
 		addSymbol(symbol, 0); // If symbol not found, add it with value 0
 	}
-
+    
 	return symbolTable.at(symbol);
 }
 
@@ -109,8 +109,8 @@ void Process::printLogs() const {
     for (const auto& log : logLines) {
         cout << log << endl;
     }
-
-    if (commandCounter >= commandList.size()) {
+            
+    if (commandCounter >= getTotalLines()){
         cout << "Finished!" << endl;
     }
 }
@@ -168,7 +168,7 @@ vector<shared_ptr<Command>> Process::generateRandomCommandList(int depth, int re
         /*string toPrint = " Hello World from: ";
         cmd = make_shared<PrintCommand>(shared_from_this(), toPrint);*/
 		
-        ///*
+        
         switch (type) {
             //cout << "INSIDE TYPE, DEPTH: " << depth << "\n";
             case Command::DECLARE: {
@@ -247,12 +247,20 @@ vector<shared_ptr<Command>> Process::generateRandomCommandList(int depth, int re
                 break;
             }
         }
-        //*/
+       
 
-        //vector<shared_ptr<Command>> body;
-        //body.push_back(make_shared<AddCommand>(shared_from_this(), "x", "x", 1));
-		//body.push_back(make_shared<PrintCommand>(shared_from_this(), "Hello from Process!"));
+        /*
+        vector<shared_ptr<Command>> body;
+        body.push_back(make_shared<AddCommand>(shared_from_this(), "x", "x", 1));
+		body.push_back(make_shared<PrintCommand>(shared_from_this(), "x", 1));
+        body.push_back(make_shared<AddCommand>(shared_from_this(), "y", "y", 1));
+        body.push_back(make_shared<PrintCommand>(shared_from_this(), "y", 1));
+        body.push_back(make_shared<AddCommand>(shared_from_this(), "z", "z", 1));
+        body.push_back(make_shared<PrintCommand>(shared_from_this(), "z", 1));
+        cmd = make_shared<ForLoopCommand>(shared_from_this(), body, 100, delay);
 
+        instructionBudget -= 600;
+        */
         if (cmd) {
             commands.push_back(cmd);
         }
