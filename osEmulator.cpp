@@ -12,6 +12,7 @@
 #include "SleepCommand.h"
 #include "ForLoopCommand.h"
 #include "SubtractCommand.h"
+#include <algorithm> 
 
 using namespace std;
 
@@ -291,6 +292,11 @@ void saveLs(Scheduler& scheduler, Config config) {
         "Cores available: " + std::to_string(config.numCPU - scheduler.getRunningCores()) + "\n" +
         "+============================================================+\n" +
         "Running processes:\n";
+
+    std::sort(runningQueueCopy.begin(), runningQueueCopy.end(),
+    [](const std::shared_ptr<Process>& a, const std::shared_ptr<Process>& b) {
+        return a->getCpuCoreID() < b->getCpuCoreID();
+    });
 
     for (const auto& process : runningQueueCopy) {
         output += process->getName() + "    (" + process->getTime() + ")   " +

@@ -43,6 +43,8 @@ class Process : public enable_shared_from_this<Process>
 		uint16_t getSymbolValue(const string& symbol);
 		string saveLogs();
 
+		vector<shared_ptr<Command>> Process::getCommandList() const;
+
 		// for sleep command
 		void setSleepTicks(int ticks) { sleepTicks = ticks; }
 		int getSleepTicks() const { return sleepTicks; }
@@ -51,7 +53,7 @@ class Process : public enable_shared_from_this<Process>
 		bool isSleeping() const { return sleeping; }
 		void setSleeping(bool value) { sleeping = value; }
 
-		int countNonForInstructions(const vector<shared_ptr<Command>>& cmds);
+		int countNonForInstructions(const vector<shared_ptr<Command>>& cmds) const;
 
 	
 	private:

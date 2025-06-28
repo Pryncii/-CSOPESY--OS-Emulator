@@ -38,12 +38,16 @@ int Process::getCurLine() const {
 	return this->commandCounter; 
 }
 
+vector<shared_ptr<Command>> Process::getCommandList() const {
+    return this->commandList;
+}
+
 string Process::getTime() const {
     return timestamp;
 }
 
 int Process::getTotalLines() const {
-	return this->commandList.size(); 
+	return countNonForInstructions(getCommandList());
 }
 
 string Process::getName() const {
@@ -86,7 +90,7 @@ void Process::moveToNextLine() {
 }
 
 bool Process::isFinished() const {
-	return commandCounter >= commandList.size();
+	return commandCounter >= getTotalLines();
 }
 
 void Process::addLogLine(const string& logLine) {
@@ -264,7 +268,7 @@ void Process::generateCommands(uint32_t minIns, uint32_t maxIns, int depth) {
     for (auto& c : cmds) addCommand(c);
 }
 
-int Process::countNonForInstructions(const vector<shared_ptr<Command>>& cmds) {
+int Process::countNonForInstructions(const vector<shared_ptr<Command>>& cmds) const {
     int count = 0;
     for (const auto& cmd : cmds) {
         auto forCmd = dynamic_pointer_cast<ForLoopCommand>(cmd);
