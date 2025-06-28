@@ -125,10 +125,10 @@ Config loadConfig() {
 void scheduler_start(Config config, Scheduler& scheduler){
     //cout << "\x1B[32m\x1B[1mscheduler-start\x1B[22m\x1B[0m command recognized. Generating Processes.\n";
     processGeneration = true;
-    while (processGeneration && globalPID < 1010) {
+    while (processGeneration) {
         // Generate a new process second
 		//generate a new process every batchFreq cycles
-        this_thread::sleep_for(chrono::milliseconds(config.delay));
+        this_thread::sleep_for(chrono::milliseconds(1));
         if (cpuCycles % config.batchFreq == 0) {
 
             shared_ptr<Process> process = make_shared<Process>(globalPID, "Process_" + to_string(globalPID));
@@ -275,7 +275,7 @@ bool inScreenMap(string name)
 
 void cpuCycleThread(uint32_t delayMs) {
     while (true) {
-        this_thread::sleep_for(chrono::milliseconds(delayMs));
+        this_thread::sleep_for(chrono::milliseconds(1));
         ++cpuCycles;
 	    //cout << "Cycle: " << cpuCycles << "\n"; // Print CPU cycles every delayMs milliseconds
     }
