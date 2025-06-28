@@ -16,6 +16,14 @@ public:
 		return "[FOR]";
 	}
 
+	int getRepeats() const {
+		return repeats;
+	}
+
+	vector<shared_ptr<Command>> getCommandList() const {
+		return commandList;
+	}
+
 private:
 	shared_ptr<Process> process;
 	vector<shared_ptr<Command>> commandList;

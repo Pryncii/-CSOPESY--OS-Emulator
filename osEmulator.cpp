@@ -125,14 +125,14 @@ Config loadConfig() {
 void scheduler_start(Config config, Scheduler& scheduler){
     //cout << "\x1B[32m\x1B[1mscheduler-start\x1B[22m\x1B[0m command recognized. Generating Processes.\n";
     processGeneration = true;
-    while (processGeneration) { // !!!!!!!!!! remember to remove the && second part for actual nonstop generation !!!!!!!!!!
+    while (processGeneration && globalPID < 1010) {
         // Generate a new process second
 		//generate a new process every batchFreq cycles
-        //this_thread::sleep_for(chrono::milliseconds(config.delay));
+        this_thread::sleep_for(chrono::milliseconds(config.delay));
         if (cpuCycles % config.batchFreq == 0) {
 
             shared_ptr<Process> process = make_shared<Process>(globalPID, "Process_" + to_string(globalPID));
-            process->generateCommands(config.minIns, config.maxIns, 1);
+            process->generateCommands(config.minIns, config.maxIns, 0);
             scheduler.addProcess(process); // add the process to the scheduler
 
             Console temp(process);
@@ -275,7 +275,7 @@ bool inScreenMap(string name)
 
 void cpuCycleThread(uint32_t delayMs) {
     while (true) {
-        //this_thread::sleep_for(chrono::milliseconds(delayMs));
+        this_thread::sleep_for(chrono::milliseconds(delayMs));
         ++cpuCycles;
 	    //cout << "Cycle: " << cpuCycles << "\n"; // Print CPU cycles every delayMs milliseconds
     }
@@ -416,7 +416,7 @@ int main(){
                 screenName = rawScreenName;
                 if (inScreenMap(screenName) == false) { // ensures screen name doesn't exist yet
                     shared_ptr<Process> process = make_shared<Process>(globalPID, screenName);
-					process->generateCommands(config.minIns, config.maxIns, 1);
+					process->generateCommands(config.minIns, config.maxIns, 0);
 					scheduler->addProcess(process); // add the process to the scheduler
                     
                     Console temp(process);

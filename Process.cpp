@@ -138,23 +138,20 @@ string Process::saveLogs() {
 //    outFile.close();
 //}
 	
-vector<shared_ptr<Command>> Process::generateRandomCommandList(const uint32_t minIns, const uint32_t maxIns, int depth) {
+vector<shared_ptr<Command>> Process::generateRandomCommandList(int depth, int repeats, int& instructionBudget) {
     vector<shared_ptr<Command>> commands;
 
     if (depth >= 3) {
         //cout << "WTF DEPTH: " << depth << "\n";
         return commands;
     }
+    //cout << "numcommands in here " << numCommands << "\n";
 
-	int range = static_cast<int>(maxIns - minIns + 1); // number of values for the range
-    int numCommands = static_cast<int>(minIns) + (rand() % range); // inclusive range [minIns, maxIns]
-                                                                   // 0 to range-1
-
-   // cout << "GENERATE COMMANDS START, DEPTH: " << depth << "\n";
-
+    //cout << "GENERATE COMMANDS START, DEPTH: " << depth << "\n";
+    cout << "repeats: " << repeats << "\n";
     
 
-    for (int i = 0; i < numCommands; ++i) {
+    while (instructionBudget >= repeats) {
         //int typeLimit = (depth >= 2) ? 5 : 6; // 0 to 4 only if depth >= 2 (exclude FOR)
         Command::CommandType type = static_cast<Command::CommandType>(rand() % 6); // 0 to 5
         //cout << "INSIDE NUMCOMMAND LOOP, LOOP TRIGGERED, DEPTH: " << depth << "\n";
@@ -166,20 +163,21 @@ vector<shared_ptr<Command>> Process::generateRandomCommandList(const uint32_t mi
         switch (type) {
             //cout << "INSIDE TYPE, DEPTH: " << depth << "\n";
             case Command::DECLARE: {
-                //cout << "INSIDE DECLARE: " << depth << "\n";
+                cout << "INSIDE DECLARE: " << depth << "\n";
 
                 // Seeds the random number generator with the current time (in seconds).
                 srand(time(0));                                                                    // random number from 0-999 for extra unique
-                string varName = to_string(pid) + "x" + to_string(depth) + "_" + to_string(i) + "_" + to_string(rand() % 1000);
+                string varName = to_string(pid) + "x" + to_string(depth) + "_" + to_string(rand() % 1000);
                 uint16_t value = rand() % 100;
                 cmd = make_shared<DeclareCommand>(shared_from_this(), varName, value);
+                instructionBudget -= repeats;
                 //cout << "AFTER DECLARE: " << depth << "\n";
                 break;
             }
 
             case Command::ADD:
             case Command::SUBTRACT: {
-                //cout << "INSIDE ADD/SUB: " << depth << "\n";
+                cout << "INSIDE ADD/SUB: " << depth << "\n";
                 while (symbolTable.size() < 2) {
                     string fillerName = "autoVar_" + to_string(symbolTable.size());
                     addSymbol(fillerName, 0);
@@ -190,7 +188,7 @@ vector<shared_ptr<Command>> Process::generateRandomCommandList(const uint32_t mi
                 auto it2 = symbolTable.begin();
                 advance(it2, rand() % symbolTable.size());
 
-                string varName = "x" + to_string(i);
+                string varName = "x" + to_string(rand() % 1000);
                 uint16_t val1 = it1->second;
                 uint16_t val2 = it2->second;
 
@@ -198,34 +196,39 @@ vector<shared_ptr<Command>> Process::generateRandomCommandList(const uint32_t mi
                     cmd = make_shared<AddCommand>(shared_from_this(), varName, val1, val2);
                 else
                     cmd = make_shared<SubtractCommand>(shared_from_this(), varName, val1, val2);
+                instructionBudget -= repeats;
 
                 //cout << "AFTER ADD/SUB: " << depth << "\n";
                 break;
             }
 
             case Command::PRINT: {
-                //cout << "INSIDE PRINT: " << depth << "\n";
+                cout << "INSIDE PRINT: " << depth << "\n";
                 cmd = make_shared<PrintCommand>(shared_from_this(), " Hello World from: ");
+                instructionBudget -= repeats;
                 //cout << "AFTER PRINT: " << depth << "\n";
                 break;
             }
 
             case Command::SLEEP: {
-                //cout << "INSIDE SLEEP: " << depth << "\n";
+                cout << "INSIDE SLEEP: " << depth << "\n";
                 uint16_t value = rand() % 100;
                 cmd = make_shared<SleepCommand>(shared_from_this(), value);
                 //cout << "AFTER SLEEP: " << depth << "\n";
+                instructionBudget -= repeats;
                 break;
             }
 
             case Command::FOR: {
-                //cout << "LOOP TRIGGERED, DEPTH: " << depth << "\n";
-                auto nestedCommands = generateRandomCommandList(minIns, maxIns, depth + 1);
-                //cout << "RETURNED FROM NEST\n";
-                int repeats = 1 + rand() % 4;
+                cout << "LOOP TRIGGERED, DEPTH: " << depth << "\n";
+                int looprepeats = 1 + rand() % 4;
+                cout << "loop repeats: " << looprepeats << "\n";
+                auto nestedCommands = generateRandomCommandList(depth + 1, looprepeats*repeats, instructionBudget);
+                cout << "RETURNED FROM NEST\n";
+                
                 if (!nestedCommands.empty()) {
                     //cout << "NOT EMPTY WAHOO\n";
-                    cmd = make_shared<ForLoopCommand>(shared_from_this(), nestedCommands, repeats);
+                    cmd = make_shared<ForLoopCommand>(shared_from_this(), nestedCommands, looprepeats);
                 }
                 break;
             }
@@ -235,11 +238,44 @@ vector<shared_ptr<Command>> Process::generateRandomCommandList(const uint32_t mi
             commands.push_back(cmd);
         }
 	}
+
+    
     return commands;
 	//writeLogsToFile(name + "_logs.txt"); // Write logs to file after generating commands
 }
 
 void Process::generateCommands(uint32_t minIns, uint32_t maxIns, int depth) {
-    auto cmds = generateRandomCommandList(minIns, maxIns, depth);
+
+    if (this->totalNumCommands == -1) {
+        int range = static_cast<int>(maxIns - minIns + 1); // number of values for the range
+        this->totalNumCommands = static_cast<int>(minIns) + (rand() % range); // inclusive range [minIns, maxIns]
+        // 0 to range-1
+    }
+    
+    cout << "\nPID: " << this->getPID() << "\n";
+    cout << "numcommands: " << this->totalNumCommands << "\n";
+
+    int instructionBudget = this->totalNumCommands;
+    auto cmds = generateRandomCommandList(depth, 1, instructionBudget);
+    
+    int instructionCount = countNonForInstructions(cmds);
+    cout << "# of generated commands: " << instructionCount << "\n";
+
     for (auto& c : cmds) addCommand(c);
+}
+
+int Process::countNonForInstructions(const vector<shared_ptr<Command>>& cmds) {
+    int count = 0;
+    for (const auto& cmd : cmds) {
+        auto forCmd = dynamic_pointer_cast<ForLoopCommand>(cmd);
+        if (forCmd) {
+            // Recursively count inside the for-loop, multiplied by the number of repeats
+            count += forCmd->getRepeats() * countNonForInstructions(forCmd->getCommandList());
+        }
+        else {
+            // Count this instruction
+            count++;
+        }
+    }
+    return count;
 }

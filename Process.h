@@ -22,7 +22,7 @@ class Process : public enable_shared_from_this<Process>
 		Process(int pid, string name);
 		void addCommand(shared_ptr<Command> command);
 		void generateCommands(const uint32_t minIns, const uint32_t maxIns, int depth);
-		vector<shared_ptr<Command>> generateRandomCommandList(const uint32_t minIns, const uint32_t maxIns, int depth);
+		vector<shared_ptr<Command>> generateRandomCommandList(int depth, int repeats, int& instructionBudget);
 		void executeCommand();
 		void moveToNextLine();
 		void setCpuCoreID(int coreID);
@@ -51,6 +51,8 @@ class Process : public enable_shared_from_this<Process>
 		bool isSleeping() const { return sleeping; }
 		void setSleeping(bool value) { sleeping = value; }
 
+		int countNonForInstructions(const vector<shared_ptr<Command>>& cmds);
+
 	
 	private:
 		int pid;
@@ -65,6 +67,7 @@ class Process : public enable_shared_from_this<Process>
 
 		int sleepTicks = 0;
 		bool sleeping = false;
+		int totalNumCommands = -1;
 
 		
 
