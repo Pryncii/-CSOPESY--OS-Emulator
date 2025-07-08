@@ -246,8 +246,8 @@ void screenInterface(string screenName){
 
 
         if (screenInput != "exit" && screenInput != "process-smi") {
-            cout << "\x1B[31m\x1B[1mUnknown command:\x1B[22m " << screenInput + "\x1B[0m\n"; //<< ". \x1B[31m\x1B[1m'exit' is the only available command right now.\x1B[0m\n";
-            screenInput = screenInput + "\n\x1B[31m\x1B[1mUnknown command:\x1B[22m " + screenInput + "\x1B[0m"; //+ ". 'exit' is the only available command right now.\x1B[0m";
+            cout << "\x1B[31m\x1B[1mUnknown command:\x1B[22m " << screenInput + "\x1B[0m\n";
+            screenInput = screenInput + "\n\x1B[31m\x1B[1mUnknown command:\x1B[22m " + screenInput + "\x1B[0m";
         }
         
         screens[screenName]->setStrings(screenInput);

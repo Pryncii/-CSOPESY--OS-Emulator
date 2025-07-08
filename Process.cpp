@@ -150,43 +150,26 @@ vector<shared_ptr<Command>> Process::generateRandomCommandList(int depth, int re
     vector<shared_ptr<Command>> commands;
 
     if (depth >= 3) {
-        //cout << "WTF DEPTH: " << depth << "\n";
         return commands;
     }
-    //cout << "numcommands in here " << numCommands << "\n";
-
-    //cout << "GENERATE COMMANDS START, DEPTH: " << depth << "\n";
-   // cout << "repeats: " << repeats << "\n";
-    
 
     while (instructionBudget >= repeats) {
-        //int typeLimit = (depth >= 2) ? 5 : 6; // 0 to 4 only if depth >= 2 (exclude FOR)
         Command::CommandType type = static_cast<Command::CommandType>(rand() % 6); // 0 to 5
-        //cout << "INSIDE NUMCOMMAND LOOP, LOOP TRIGGERED, DEPTH: " << depth << "\n";
-       
         shared_ptr<Command> cmd;
-        /*string toPrint = " Hello World from: ";
-        cmd = make_shared<PrintCommand>(shared_from_this(), toPrint);*/
-		
-        
+       
         switch (type) {
-            //cout << "INSIDE TYPE, DEPTH: " << depth << "\n";
             case Command::DECLARE: {
-                //cout << "INSIDE DECLARE: " << depth << "\n";
-
                 // Seeds the random number generator with the current time (in seconds).
-                srand(time(0));                                                                    // random number from 0-999 for extra unique
+                srand(time(0)); // random number from 0-999 for extra unique
                 string varName = to_string(pid) + "x" + to_string(depth) + "_" + to_string(rand() % 1000);
                 uint16_t value = rand() % 100;
                 cmd = make_shared<DeclareCommand>(shared_from_this(), varName, value);
                 instructionBudget -= repeats;
-                //cout << "AFTER DECLARE: " << depth << "\n";
                 break;
             }
 
             case Command::ADD:
             case Command::SUBTRACT: {
-                //cout << "INSIDE ADD/SUB: " << depth << "\n";
                 while (symbolTable.size() < 2) {
                     string fillerName = "autoVar_" + to_string(symbolTable.size());
                     addSymbol(fillerName, 0);
@@ -206,16 +189,12 @@ vector<shared_ptr<Command>> Process::generateRandomCommandList(int depth, int re
                 else
                     cmd = make_shared<SubtractCommand>(shared_from_this(), varName, val1, val2);
                 instructionBudget -= repeats;
-
-                //cout << "AFTER ADD/SUB: " << depth << "\n";
                 break;
             }
 
             case Command::PRINT: {
-                //cout << "INSIDE PRINT: " << depth << "\n";
                 cmd = make_shared<PrintCommand>(shared_from_this(), " Hello World from: ");
                 instructionBudget -= repeats;
-                //cout << "AFTER PRINT: " << depth << "\n";
                 break;
             }
 
@@ -224,43 +203,24 @@ vector<shared_ptr<Command>> Process::generateRandomCommandList(int depth, int re
                     cmd = make_shared<PrintCommand>(shared_from_this(), " Hello World from: ");
                 }
                 else {
-                    //cout << "INSIDE SLEEP: " << depth << "\n";
                     uint16_t value = rand() % 100;
                     cmd = make_shared<SleepCommand>(shared_from_this(), value);
-                    //cout << "AFTER SLEEP: " << depth << "\n";
                 }
                 instructionBudget -= repeats;
                 break;
             }
 
             case Command::FOR: {
-                //cout << "LOOP TRIGGERED, DEPTH: " << depth << "\n";
                 int looprepeats = 1 + rand() % 4;
-                //cout << "loop repeats: " << looprepeats << "\n";
                 auto nestedCommands = generateRandomCommandList(depth + 1, looprepeats*repeats, instructionBudget);
-                //cout << "RETURNED FROM NEST\n";
                 
                 if (!nestedCommands.empty()) {
-                    //cout << "NOT EMPTY WAHOO\n";
                     cmd = make_shared<ForLoopCommand>(shared_from_this(), nestedCommands, looprepeats, delay);
                 }
                 break;
             }
         }
        
-
-        /*
-        vector<shared_ptr<Command>> body;
-        body.push_back(make_shared<AddCommand>(shared_from_this(), "x", "x", 1));
-		body.push_back(make_shared<PrintCommand>(shared_from_this(), "x", 1));
-        body.push_back(make_shared<AddCommand>(shared_from_this(), "y", "y", 1));
-        body.push_back(make_shared<PrintCommand>(shared_from_this(), "y", 1));
-        body.push_back(make_shared<AddCommand>(shared_from_this(), "z", "z", 1));
-        body.push_back(make_shared<PrintCommand>(shared_from_this(), "z", 1));
-        cmd = make_shared<ForLoopCommand>(shared_from_this(), body, 100, delay);
-
-        instructionBudget -= 600;
-        */
         if (cmd) {
             commands.push_back(cmd);
         }

@@ -54,10 +54,6 @@ void ForLoopCommand::execute() {
         
         cmd->execute();
         process->moveToNextLine();
-        
-        
-       // process->moveToNextLine();
-        
     }
     
 }

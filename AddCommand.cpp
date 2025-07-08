@@ -55,6 +55,5 @@ void AddCommand::execute() {
 		result = process->getSymbolValue(var2Str) + process->getSymbolValue(var3Str);
 		process->addSymbol(var1, result);
 	}
-	//cout << "[AddCommand] " << var1 << " = " << result;
 
 }
