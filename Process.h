@@ -63,6 +63,7 @@ class Process : public enable_shared_from_this<Process>
 		vector<string> logLines;
 		unordered_map<string, uint16_t> symbolTable;
 
+		uint16_t memoryRequired;
 		int commandCounter = 0;
 		int cpuCoreID = -1; // -1 means not assigned to any core	
 		ProcessState currentState;
