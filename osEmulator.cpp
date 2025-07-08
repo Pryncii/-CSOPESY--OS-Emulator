@@ -31,6 +31,10 @@ struct Config {
     uint32_t minIns; // 1-2^32
     uint32_t maxIns; // 1-2^32
     uint32_t delay; // 0-2^32
+    uint16_t maxMem;
+	uint16_t memFrame; // 1-2^16
+	uint16_t minMemProc; // 1-2^16
+	uint16_t maxMemProc; // 1-2^16
 };
 
 bool isNonNegativeInteger(const string& s) {
@@ -119,6 +123,10 @@ Config loadConfig() {
     config.minIns = parsecheckWithinRange(textconfig["min-ins"], "min-ins", 1, UINT32_MAX);
     config.maxIns = parsecheckWithinRange(textconfig["max-ins"], "max-ins", 1, UINT32_MAX);
     config.delay = parsecheckWithinRange(textconfig["delay-per-exec"], "delay-per-exec", 0, UINT32_MAX);
+	config.maxMem = parsecheckWithinRange(textconfig["max-overall-mem"], "max-overall-meme", 64, UINT16_MAX);
+	config.memFrame = parsecheckWithinRange(textconfig["mem-per-frame"], "mem-per-frame", 0, UINT16_MAX);
+	config.minMemProc = parsecheckWithinRange(textconfig["min-mem-per-proc"], "min-mem-per-proc", 64, UINT16_MAX);
+	config.maxMemProc = parsecheckWithinRange(textconfig["max-mem-per-proc"], "max-mem-per-proc", 64, UINT16_MAX);
 
     return config;
 }
@@ -362,7 +370,11 @@ int main(){
                     "Batch Freq: " + std::to_string(config.batchFreq) + "\n" +
                     "Min Instructions: " + std::to_string(config.minIns) + "\n" +
                     "Max Instructions: " + std::to_string(config.maxIns) + "\n" +
-                    "Delay: " + std::to_string(config.delay) + "\n\n";
+                    "Delay: " + std::to_string(config.delay) + "\n" +
+                    "Max Overall Memory: " + to_string(config.maxMem) + "\n" +
+					"Max Memory per Frame: " + to_string(config.memFrame) + "\n" +
+					"Min Memory per Process: " + to_string(config.minMemProc) + "\n" +
+					"Max Memory per Process: " + to_string(config.maxMemProc) + "\n";
 
                 cout << initialize;
                 consoleStrings.append(initialize);
