@@ -15,17 +15,17 @@
 
 using namespace std;
 
-Process::Process(int pid, string name, uint32_t delay) {
+Process::Process(int pid, string name, uint32_t delay, uint16_t memReq) {
     time_t now = time(nullptr);
     char buffer[80];
     strftime(buffer, sizeof(buffer), "%m/%d/%Y %I:%M:%S%p", localtime(&now));
-    this->timestamp = buffer;
+    timestamp = buffer;
 	this->pid = pid;
 	this->name = name;
 	this->commandCounter = 0;
 	this->currentState = ProcessState::READY;
     this->delay = delay;
-    
+    this->memoryRequired = memReq;
 }
 
 void Process::addCommand(shared_ptr<Command> command) {

@@ -140,7 +140,7 @@ void scheduler_start(Config config, Scheduler& scheduler){
         this_thread::sleep_for(chrono::milliseconds(1));
         if (cpuCycles % config.batchFreq == 0) {
 
-            shared_ptr<Process> process = make_shared<Process>(globalPID, "Process_" + to_string(globalPID), config.delay);
+            shared_ptr<Process> process = make_shared<Process>(globalPID, "Process_" + to_string(globalPID), config.delay, config.maxMemProc);
             process->generateCommands(config.minIns, config.maxIns, 0);
             scheduler.addProcess(process); // add the process to the scheduler
 
@@ -433,7 +433,7 @@ int main(){
             else {
                 screenName = rawScreenName;
                 if (inScreenMap(screenName) == false) { // ensures screen name doesn't exist yet
-                    shared_ptr<Process> process = make_shared<Process>(globalPID, screenName, config.delay);
+                    shared_ptr<Process> process = make_shared<Process>(globalPID, screenName, config.delay, config.maxMemProc);
 					process->generateCommands(config.minIns, config.maxIns, 0);
 					scheduler->addProcess(process); // add the process to the scheduler
                     
