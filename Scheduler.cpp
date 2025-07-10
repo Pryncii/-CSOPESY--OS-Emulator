@@ -5,8 +5,8 @@
 
 mutex coutMutex;
 
-Scheduler::Scheduler(Mode mode, uint32_t quantum, int coreCount, uint32_t delay)
-    : schedulingMode(mode), timeQuantum(quantum), cpuCoreCount(coreCount), delay(delay) {
+Scheduler::Scheduler(Mode mode, uint32_t quantum, int coreCount, uint32_t delay, MemoryAllocator& memoryAllocator)
+    : schedulingMode(mode), timeQuantum(quantum), cpuCoreCount(coreCount), delay(delay), memoryAllocator(memoryAllocator) {
     //for (auto& busy : coreBusy) busy = false;
 }
 

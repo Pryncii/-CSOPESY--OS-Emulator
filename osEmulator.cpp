@@ -12,6 +12,7 @@
 #include "SleepCommand.h"
 #include "ForLoopCommand.h"
 #include "SubtractCommand.h"
+#include "FlatMemoryAllocator.h"
 #include <algorithm> 
 
 using namespace std;
@@ -359,7 +360,9 @@ int main(){
                     return 1;
                 }
 
-                scheduler = make_shared<Scheduler>(mode, config.quantum, config.numCPU, config.delay);
+                FlatMemoryAllocator memoryAllocator(config.maxMemProc);
+
+                scheduler = make_shared<Scheduler>(mode, config.quantum, config.numCPU, config.delay, memoryAllocator);
                 scheduler->run();
 
                 string initialize = "\n"
