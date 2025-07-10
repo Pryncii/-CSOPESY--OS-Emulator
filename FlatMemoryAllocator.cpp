@@ -13,7 +13,6 @@ FlatMemoryAllocator::~FlatMemoryAllocator() {
 	memory.clear();
 }
 
-
 void* FlatMemoryAllocator::Allocate(uint16_t size) {
 	for(uint16_t i = 0; i < maxSize - size + 1; ++i) {
 		if(!allocationMap[i] && canAllocateAt(i, size)) {
@@ -39,7 +38,11 @@ string FlatMemoryAllocator::visualizeMemory() const {
 void FlatMemoryAllocator::initializeMemory() {
 	// Initialize the memory with a single free block covering the entire size
 	fill(memory.begin(), memory.end(), '.');
-	fill(allocationMap.begin(), allocationMap.end(), false);
+
+	allocationMap.clear();
+	for (uint16_t i = 0; i < maxSize; ++i) {
+		allocationMap[i] = false; // mark each byte index as free
+	}
 }
 
 bool FlatMemoryAllocator::canAllocateAt(uint16_t index, uint16_t size) const {
@@ -47,7 +50,9 @@ bool FlatMemoryAllocator::canAllocateAt(uint16_t index, uint16_t size) const {
 }
 
 void FlatMemoryAllocator::allocateAt(uint16_t index, uint16_t size) {
-	fill(allocationMap.begin() + index, allocationMap.begin() + index + size, true);
+	for (uint16_t i = index; i < index + size; ++i) { // [index, index+size)
+		allocationMap[i] = true;  // Mark as allocated
+	}
 	allocatedSize += size;
 }
 
