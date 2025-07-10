@@ -14,8 +14,8 @@ FlatMemoryAllocator::~FlatMemoryAllocator() {
 }
 
 void* FlatMemoryAllocator::Allocate(uint16_t size) {
-	for(uint16_t i = 0; i < maxSize - size + 1; ++i) {
-		if(!allocationMap[i] && canAllocateAt(i, size)) {
+	for (uint16_t i = 0; i < maxSize - size + 1; ++i) {
+		if (!allocationMap[i] && canAllocateAt(i, size)) {
 			allocateAt(i, size);
 			return &memory[i];
 		}
@@ -26,7 +26,7 @@ void* FlatMemoryAllocator::Allocate(uint16_t size) {
 
 void FlatMemoryAllocator::Deallocate(void* ptr) {
 	uint16_t index = static_cast<char*>(ptr) - &memory[0];
-	if(allocationMap[index]) {
+	if (allocationMap[index]) {
 		deallocateAt(index);
 	}
 }
@@ -50,6 +50,7 @@ bool FlatMemoryAllocator::canAllocateAt(uint16_t index, uint16_t size) const {
 }
 
 void FlatMemoryAllocator::allocateAt(uint16_t index, uint16_t size) {
+	blockSizes[index] = size; // save size for deallocation purposes
 	for (uint16_t i = index; i < index + size; ++i) { // [index, index+size)
 		allocationMap[i] = true;  // Mark as allocated
 	}
@@ -57,5 +58,10 @@ void FlatMemoryAllocator::allocateAt(uint16_t index, uint16_t size) {
 }
 
 void FlatMemoryAllocator::deallocateAt(uint16_t index) {
-	allocationMap[index] = false;
+	uint16_t size = blockSizes[index];
+	for (uint16_t i = index; i < index + size; ++i) {
+		allocationMap[i] = false;
+	}
+	blockSizes.erase(index);
+	allocatedSize -= size;
 }

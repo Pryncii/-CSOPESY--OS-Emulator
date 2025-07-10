@@ -18,8 +18,9 @@ public:
 private:
 	uint16_t maxSize;
 	uint16_t allocatedSize;
-	vector<char> memory; 
+	vector<char> memory;
 	unordered_map<uint16_t, bool> allocationMap; // Maps start address to allocation status
+	unordered_map<uint16_t, uint16_t> blockSizes; // start index -> size; for deallocation purposes
 	void initializeMemory();
 	bool canAllocateAt(uint16_t index, uint16_t size) const;
 	void allocateAt(uint16_t index, uint16_t size);
@@ -28,4 +29,3 @@ private:
 
 
 };
-

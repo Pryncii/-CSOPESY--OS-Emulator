@@ -123,7 +123,9 @@
     <ClCompile Include="Command.cpp" />
     <ClCompile Include="Console.cpp" />
     <ClCompile Include="DeclareCommand.cpp" />
+    <ClCompile Include="FlatMemoryAllocator.cpp" />
     <ClCompile Include="ForLoopCommand.cpp" />
+    <ClCompile Include="MemoryAllocator.cpp" />
     <ClCompile Include="osEmulator.cpp" />
     <ClCompile Include="PrintCommand.cpp" />
     <ClCompile Include="Process.cpp" />
@@ -139,7 +141,9 @@
     <ClInclude Include="Command.h" />
     <ClInclude Include="Console.h" />
     <ClInclude Include="DeclareCommand.h" />
+    <ClInclude Include="FlatMemoryAllocator.h" />
     <ClInclude Include="ForLoopCommand.h" />
+    <ClInclude Include="MemoryAllocator.h" />
     <ClInclude Include="PrintCommand.h" />
     <ClInclude Include="Process.h" />
     <ClInclude Include="Scheduler.h" />
