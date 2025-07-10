@@ -35,6 +35,7 @@ class Process : public enable_shared_from_this<Process>
 		string getTime() const;
 		string timestamp;
 		string getName() const;
+		uint16_t getMemoryRequired() const;
 		int getCurLine() const;
 		int getTotalLines() const;
 		void addLogLine(const string& line);

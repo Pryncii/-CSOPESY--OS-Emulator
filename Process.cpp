@@ -56,6 +56,10 @@ string Process::getName() const {
 	return name;
 }
 
+uint16_t Process::getMemoryRequired() const {
+    return this->memoryRequired;
+}
+
 void Process::setCpuCoreID(int cpuCoreID) {
 	this->cpuCoreID = cpuCoreID;
 }

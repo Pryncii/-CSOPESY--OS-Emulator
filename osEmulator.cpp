@@ -360,7 +360,7 @@ int main(){
                     return 1;
                 }
 
-                FlatMemoryAllocator memoryAllocator(config.maxMemProc);
+                FlatMemoryAllocator memoryAllocator(config.maxMem);
 
                 scheduler = make_shared<Scheduler>(mode, config.quantum, config.numCPU, config.delay, memoryAllocator);
                 scheduler->run();
