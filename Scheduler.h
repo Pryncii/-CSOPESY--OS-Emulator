@@ -18,7 +18,7 @@ public:
         RR
     };
 
-    Scheduler(Mode mode, uint32_t timeQuantum = 1, int coreCount = 1, uint32_t delay = 1, MemoryAllocator& memoryAllocator);
+    Scheduler(Mode mode, uint32_t timeQuantum, int coreCount, uint32_t delay, MemoryAllocator& memoryAllocator);
     void addProcess(shared_ptr<Process> process);
     void run();
     vector<shared_ptr<Process>> getRunningQueue();

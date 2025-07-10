@@ -100,19 +100,6 @@ void Scheduler::coreWorker(int coreID) {
         if (schedulingMode == Mode::FCFS) {
             // run until finished
             bool didSleep = false;
-
-            // Allocate once
-            void* memory = memoryAllocator.Allocate(current->getMemoryRequired());
-
-            if (memory == nullptr) {
-                cout << "Insufficient memory for process " << current->getName() << " (ID: " << current->getPID() << ")\n";
-                lock_guard<mutex> lock(queueMutex);
-                readyQueue.push(current); // push back to ready queue to try again later
-                continue; // skip this process for now
-            } else {
-                cout << "Allocated memory for process " << current->getName() << " (ID: " << current->getPID() << ")\n";
-                cout << "Memory state: " << memoryAllocator.visualizeMemory() << "\n";
-            }
             
             while (!current->isFinished()) {
                 // add to running queue
@@ -149,7 +136,6 @@ void Scheduler::coreWorker(int coreID) {
                     }
                 }
                 finishedQueue.push_back(current); // add to finished queue
-				memoryAllocator.Deallocate(memory); // deallocate after process is finished executing
                 //current->writeLogsToFile(current->getName() + "_logs.txt");
             }
         }
@@ -213,3 +199,19 @@ void Scheduler::coreWorker(int coreID) {
         
     }
 }
+
+// Allocate once
+//void* memory = memoryAllocator.Allocate(current->getMemoryRequired());
+//
+//if (memory == nullptr) {
+//    cout << "Insufficient memory for process " << current->getName() << " (ID: " << current->getPID() << ")\n";
+//    lock_guard<mutex> lock(queueMutex);
+//    readyQueue.push(current); // push back to ready queue to try again later
+//    continue; // skip this process for now
+//}
+//else {
+//    cout << "Allocated memory for process " << current->getName() << " (ID: " << current->getPID() << ")\n";
+//    cout << "Memory state: " << memoryAllocator.visualizeMemory() << "\n";
+//}
+//
+//memoryAllocator.Deallocate(memory); // deallocate after process is finished executing
