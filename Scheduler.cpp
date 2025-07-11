@@ -76,16 +76,29 @@ vector<shared_ptr<Process>> Scheduler::getFinishedQueue() {
 void Scheduler::coreWorker(int coreID) {
     while (true) {
         shared_ptr<Process> current = nullptr;
-
+        void* memory = nullptr;
         {
             unique_lock<mutex> lock(queueMutex);
             queueCV.wait(lock, [this] { return !readyQueue.empty(); }); // Wait until queue is not empty
             current = readyQueue.front();
             //cout << "Process " << current->getName() << " now in running queue\n";
 
+			// Allocate memory for the process
+			memory = memoryAllocator.Allocate(current->getMemoryRequired());
+            if (memory != nullptr) {
+				cout << "Allocated memory for process " << current->getName() << " (ID: " << current->getPID() << ")\n";
+				cout << "Memory state: " << memoryAllocator.visualizeMemory() << "\n";
+                
+                }
+            else {
+                cout << "Insufficient memory for process " << current->getName() << " (ID: " << current->getPID() << ")\n";
+                readyQueue.pop(); // Remove from ready queue
+				continue; // Skip this process for now
+            }
             readyQueue.pop();
             runningQueue.push_back(current);
             current->setCpuCoreID(coreID);
+            
         }
 
         //coreBusy[coreID] = true; // core is now busy
