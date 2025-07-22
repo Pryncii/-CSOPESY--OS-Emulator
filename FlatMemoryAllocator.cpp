@@ -2,10 +2,10 @@
 #include <string>
 #include <memory>
 
-FlatMemoryAllocator::FlatMemoryAllocator(uint16_t size) {
-	maxSize = size;
-	allocatedSize = 0;
-	memory.reserve(maxSize);
+FlatMemoryAllocator::FlatMemoryAllocator(uint16_t maxSize) {
+	this->maxSize = maxSize;
+	this->allocatedSize = 0;
+	memory.resize(maxSize);
 	initializeMemory();
 }
 
@@ -25,8 +25,20 @@ void* FlatMemoryAllocator::Allocate(uint16_t size) {
 }
 
 void FlatMemoryAllocator::Deallocate(void* ptr) {
-	uint16_t index = static_cast<char*>(ptr) - &memory[0];
-	if (allocationMap[index]) {
+	if (!ptr) return; // Ignore null pointers
+
+	char* base = &memory[0];
+	char* end = base + memory.size();
+	char* cptr = static_cast<char*>(ptr);
+
+	if (cptr < base || cptr >= end) {
+		// Invalid pointer, ignore or handle error
+		return;
+	}
+
+	uint16_t index = static_cast<uint16_t>(cptr - base);
+	// Only deallocate if this is the start of a block
+	if (blockSizes.count(index) > 0) {
 		deallocateAt(index);
 	}
 }
@@ -53,6 +65,7 @@ void FlatMemoryAllocator::allocateAt(uint16_t index, uint16_t size) {
 	blockSizes[index] = size; // save size for deallocation purposes
 	for (uint16_t i = index; i < index + size; ++i) { // [index, index+size)
 		allocationMap[i] = true;  // Mark as allocated
+		memory[i] = 'X'; // Mark allocated memory with 'X'
 	}
 	allocatedSize += size;
 }

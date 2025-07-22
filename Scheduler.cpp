@@ -1,12 +1,13 @@
 #pragma once
 #include "Scheduler.h"
+#include "MemoryAllocator.h"
 #include <iostream>
 #include <mutex>
 
 mutex coutMutex;
 
-Scheduler::Scheduler(Mode mode, uint32_t quantum, int coreCount, uint32_t delay)
-    : schedulingMode(mode), timeQuantum(quantum), cpuCoreCount(coreCount), delay(delay) {
+Scheduler::Scheduler(Mode mode, uint32_t quantum, int coreCount, uint32_t delay, shared_ptr<MemoryAllocator> memoryAllocator)
+    : schedulingMode(mode), timeQuantum(quantum), cpuCoreCount(coreCount), delay(delay), memoryAllocator(memoryAllocator) {
     //for (auto& busy : coreBusy) busy = false;
 }
 
@@ -74,18 +75,35 @@ vector<shared_ptr<Process>> Scheduler::getFinishedQueue() {
 }
 
 void Scheduler::coreWorker(int coreID) {
+    void* allocatedMemory = nullptr;
     while (true) {
         shared_ptr<Process> current = nullptr;
-
+        
         {
             unique_lock<mutex> lock(queueMutex);
             queueCV.wait(lock, [this] { return !readyQueue.empty(); }); // Wait until queue is not empty
             current = readyQueue.front();
             //cout << "Process " << current->getName() << " now in running queue\n";
+            if (current->getAllocatedMemory() == nullptr) {
+                allocatedMemory = memoryAllocator->Allocate(current->getMemReq());
+                if (allocatedMemory == nullptr) {
+                    //std::cout << "Insufficient memory for process " << current->getName() << " (ID: " << current->getPID() << ")\n";
+                    readyQueue.pop();
+                    readyQueue.push(current);
+                    continue; // Skip to next iteration, don't run this process
+                }
+                current->setAllocatedMemory(allocatedMemory);
+                cout << "Process " << current->getName() << " (ID: " << current->getPID() << ") allocated memory at address: " << allocatedMemory << "\n";
+                std::cout << "Allocated memory for process " << current->getName() << " (ID: " << current->getPID() << ")\n";
+                std::cout << "Memory state: " << memoryAllocator->visualizeMemory() << "\n";
+            }
 
+            // If already has memory, just proceed
             readyQueue.pop();
             runningQueue.push_back(current);
             current->setCpuCoreID(coreID);
+
+   
         }
 
         //coreBusy[coreID] = true; // core is now busy
@@ -136,6 +154,12 @@ void Scheduler::coreWorker(int coreID) {
                     }
                 }
                 finishedQueue.push_back(current); // add to finished queue
+                if (current->getAllocatedMemory() != nullptr) {
+                    memoryAllocator->Deallocate(current->getAllocatedMemory());
+					current->setAllocatedMemory(nullptr);
+                    std::cout << "Deallocated memory for process " << current->getName() << " (ID: " << current->getPID() << ")\n";
+                    std::cout << "Memory state: " << memoryAllocator->visualizeMemory() << "\n";
+                }
 				
                 //current->writeLogsToFile(current->getName() + "_logs.txt");
             }
@@ -190,6 +214,13 @@ void Scheduler::coreWorker(int coreID) {
                     //cout << "\nProcess PID " << current->getPID() << " finished.\n";
                     finishedQueue.push_back(current); // add to finished queue
                     //current->writeLogsToFile(current->getName() + "_logs.txt");
+                    if (current->getAllocatedMemory() != nullptr) {
+                        memoryAllocator->Deallocate(current->getAllocatedMemory());
+                        current->setAllocatedMemory(nullptr);
+                        std::cout << "Deallocated memory for process " << current->getName() << " (ID: " << current->getPID() << ")\n";
+                        std::cout << "Memory state: " << memoryAllocator->visualizeMemory() << "\n";
+                    }
+                    
                 }
             }    
         }

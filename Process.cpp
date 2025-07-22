@@ -12,10 +12,11 @@
 #include "SleepCommand.h"
 #include "ForLoopCommand.h"
 #include <fstream>
+#include <mutex>
 
 using namespace std;
 
-Process::Process(int pid, string name, uint32_t delay) {
+Process::Process(int pid, string name, uint32_t delay, uint16_t memoryRequired) {
     time_t now = time(nullptr);
     char buffer[80];
     strftime(buffer, sizeof(buffer), "%m/%d/%Y %I:%M:%S%p", localtime(&now));
@@ -25,6 +26,8 @@ Process::Process(int pid, string name, uint32_t delay) {
 	this->commandCounter = 0;
 	this->currentState = ProcessState::READY;
     this->delay = delay;
+    this->memoryRequired = memoryRequired;
+	this->allocatedMemory = nullptr;
     
 }
 
@@ -38,6 +41,18 @@ int Process::getPID() const {
 
 int Process::getCurLine() const {
 	return this->commandCounter; 
+}
+
+void Process::setAllocatedMemory(void* memory) {
+    this->allocatedMemory = memory;
+}
+
+void *Process::getAllocatedMemory() const {
+    return this->allocatedMemory;
+}
+
+uint16_t Process::getMemReq() const {
+    return this->memoryRequired;
 }
 
 vector<shared_ptr<Command>> Process::getCommandList() const {

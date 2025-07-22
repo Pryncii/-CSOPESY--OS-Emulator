@@ -19,7 +19,7 @@ class Process : public enable_shared_from_this<Process>
 			FINISHED
 		};
 
-		Process(int pid, string name, uint32_t delay);
+		Process(int pid, string name, uint32_t delay, uint16_t memoryRequired);
 		void addCommand(shared_ptr<Command> command);
 		void generateCommands(const uint32_t minIns, const uint32_t maxIns, int depth);
 		vector<shared_ptr<Command>> generateRandomCommandList(int depth, int repeats, int& instructionBudget);
@@ -27,6 +27,8 @@ class Process : public enable_shared_from_this<Process>
 		void moveToNextLine();
 		void setCpuCoreID(int coreID);
 		void writeLogsToFile(const string& filename) const;
+		// In Process.h (add this member)
+		
 
 		bool isFinished() const;
 		int getPID() const;
@@ -41,7 +43,10 @@ class Process : public enable_shared_from_this<Process>
 		unordered_map<string, uint16_t> getSymbolTable() const;
 		void addSymbol(const string& symbol, uint16_t value);
 		uint16_t getSymbolValue(const string& symbol);
+		uint16_t getMemReq() const;
 		string saveLogs();
+		void setAllocatedMemory(void* memory);
+		void* getAllocatedMemory() const;
 
 		vector<shared_ptr<Command>> Process::getCommandList() const;
 
@@ -62,6 +67,7 @@ class Process : public enable_shared_from_this<Process>
 		vector<shared_ptr<Command>> commandList;
 		vector<string> logLines;
 		unordered_map<string, uint16_t> symbolTable;
+		void* allocatedMemory;
 
 		uint16_t memoryRequired;
 		int commandCounter = 0;

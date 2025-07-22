@@ -9,7 +9,7 @@ using namespace std;
 
 class FlatMemoryAllocator : public MemoryAllocator {
 public:
-	FlatMemoryAllocator(uint16_t size);
+	FlatMemoryAllocator(uint16_t maxSize);
 	~FlatMemoryAllocator();
 	void* Allocate(uint16_t size) override;
 	void Deallocate(void* ptr) override;
