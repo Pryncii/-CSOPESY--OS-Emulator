@@ -74,6 +74,7 @@ void FlatMemoryAllocator::deallocateAt(uint16_t index) {
 	uint16_t size = blockSizes[index];
 	for (uint16_t i = index; i < index + size; ++i) {
 		allocationMap[i] = false;
+		memory[i] = '.'; // Mark deallocated memory with '.'
 	}
 	blockSizes.erase(index);
 	allocatedSize -= size;
