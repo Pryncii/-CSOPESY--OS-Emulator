@@ -4,6 +4,7 @@
 #include <vector>
 #include <unordered_map>
 #include "MemoryAllocator.h"
+#include <mutex>
 
 using namespace std;
 
@@ -23,6 +24,9 @@ private:
 	uint16_t maxSize;
 	uint16_t allocatedSize;
 	vector<char> memory;
+
+	mutable mutex memMutex;
+
 	unordered_map<uint16_t, bool> allocationMap; // Maps start address to allocation status
 	unordered_map<uint16_t, uint16_t> blockSizes; // start index -> size; for deallocation purposes
 	void initializeMemory();

@@ -62,6 +62,7 @@ bool FlatMemoryAllocator::canAllocateAt(uint16_t index, uint16_t size) const {
 }
 
 void FlatMemoryAllocator::allocateAt(uint16_t index, uint16_t size) {
+	lock_guard<mutex> lock(memMutex);
 	blockSizes[index] = size; // save size for deallocation purposes
 	for (uint16_t i = index; i < index + size; ++i) { // [index, index+size)
 		allocationMap[i] = true;  // Mark as allocated
@@ -71,6 +72,7 @@ void FlatMemoryAllocator::allocateAt(uint16_t index, uint16_t size) {
 }
 
 void FlatMemoryAllocator::deallocateAt(uint16_t index) {
+	lock_guard<mutex> lock(memMutex);
 	uint16_t size = blockSizes[index];
 	for (uint16_t i = index; i < index + size; ++i) {
 		allocationMap[i] = false;
@@ -97,13 +99,6 @@ uint16_t FlatMemoryAllocator::getMaxSize() const {
 }
 
 size_t FlatMemoryAllocator::getTotalExtFrag() const {
-	size_t totalFree = 0;
-
-	for (char byte : memory) {
-		if (byte != 'X') {
-			totalFree++;
-		}
-	}
-
-	return totalFree;
+	lock_guard<mutex> lock(memMutex);
+	return count(memory.begin(), memory.end(), '.');
 }

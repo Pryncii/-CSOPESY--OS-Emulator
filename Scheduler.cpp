@@ -81,6 +81,7 @@ vector<shared_ptr<Process>> Scheduler::getFinishedQueue() {
 }
 
 void Scheduler::writeMemorySnapshot(int quantumCycle) {
+    lock_guard<mutex> lock(queueMutex);
     ostringstream filename;
     filename << "memory_stamp_" << setw(2) << setfill('0') << quantumCycle << ".txt";
     ofstream out(filename.str());
@@ -95,18 +96,43 @@ void Scheduler::writeMemorySnapshot(int quantumCycle) {
     vector<tuple<uint16_t, string, uint16_t>> memoryBlocks;
     int processCount = 0;
 
+    vector<shared_ptr<Process>> allProcesses;
+
+    // From runningQueue (vector)
+    for (const auto& process : runningQueue) {
+        if (process) allProcesses.push_back(process);
+    }
+
+    // From sleepQueue (vector)
+    for (const auto& process : sleepQueue) {
+        if (process) allProcesses.push_back(process);
+    }
+
+    // From readyQueue (queue)
+    queue<shared_ptr<Process>> tempQueue = readyQueue; // copy so we don't modify the original
+    while (!tempQueue.empty()) {
+        auto process = tempQueue.front();
+        tempQueue.pop();
+        if (process) allProcesses.push_back(process);
+    }
+
     {
-        for (const auto& process : runningQueue) {
-            void* ptr = process->getAllocatedMemory();
-            if (ptr != nullptr) {
-                char* base = memoryAllocator->getMemoryBase();
-                char* cptr = static_cast<char*>(ptr);
-                uint16_t lower = static_cast<uint16_t>(cptr - base);
-                uint16_t size = memoryAllocator->getBlockSizeAt(lower);
-                uint16_t upper = lower + size;
-                memoryBlocks.emplace_back(upper, process->getName(), lower);
-                ++processCount;
+        
+        for (const auto& process : allProcesses) {
+            if (process != nullptr) {
+                void* ptr = process->getAllocatedMemory();
+                if (ptr != nullptr) {
+                    char* base = memoryAllocator->getMemoryBase();
+                    char* cptr = static_cast<char*>(ptr);
+                    uint16_t lower = static_cast<uint16_t>(cptr - base);
+                    uint16_t size = memoryAllocator->getBlockSizeAt(lower);
+                    uint16_t upper = lower + size;
+                    memoryBlocks.emplace_back(upper, process->getName(), lower);
+                    ++processCount;
+                }
+
             }
+            
         }
     }
 
@@ -152,9 +178,9 @@ void Scheduler::coreWorker(int coreID) {
                     continue; // Skip to next iteration, don't run this process
                 }
                 current->setAllocatedMemory(allocatedMemory);
-                cout << "Process " << current->getName() << " (ID: " << current->getPID() << ") allocated memory at address: " << allocatedMemory << "\n";
-                std::cout << "Allocated memory for process " << current->getName() << " (ID: " << current->getPID() << ")\n";
-                std::cout << "Memory state: " << memoryAllocator->visualizeMemory() << "\n";
+                //cout << "Process " << current->getName() << " (ID: " << current->getPID() << ") allocated memory at address: " << allocatedMemory << "\n";
+                //std::cout << "Allocated memory for process " << current->getName() << " (ID: " << current->getPID() << ")\n";
+                //std::cout << "Memory state: " << memoryAllocator->visualizeMemory() << "\n";
             }
 
             // If already has memory, just proceed
@@ -216,8 +242,8 @@ void Scheduler::coreWorker(int coreID) {
                 if (current->getAllocatedMemory() != nullptr) {
                     memoryAllocator->Deallocate(current->getAllocatedMemory());
 					current->setAllocatedMemory(nullptr);
-                    std::cout << "Deallocated memory for process " << current->getName() << " (ID: " << current->getPID() << ")\n";
-                    std::cout << "Memory state: " << memoryAllocator->visualizeMemory() << "\n";
+                    //std::cout << "Deallocated memory for process " << current->getName() << " (ID: " << current->getPID() << ")\n";
+                    //std::cout << "Memory state: " << memoryAllocator->visualizeMemory() << "\n";
                 }
 				
                 //current->writeLogsToFile(current->getName() + "_logs.txt");
@@ -227,6 +253,8 @@ void Scheduler::coreWorker(int coreID) {
         else if (schedulingMode == Mode::RR) {
             int timestep = 0;
             bool didSleep = false;
+            bool justFinished = false;
+
             // until finished or timeQuantum is reached
             while (!current->isFinished() && timestep < timeQuantum) {
                 current->executeCommand();
@@ -248,10 +276,15 @@ void Scheduler::coreWorker(int coreID) {
                     break;  // Stop executing this process
                 }
 
+                
+
+                timestep++;
                 // THIS WRITES THE MEMORY TEXT FILES, NOT SURE IF THIS IS THE BEST PLACE FOR THIS TBH
                 writeMemorySnapshot(timestep);
 
-                timestep++;
+
+
+
                 //cout << current->getCpuCoreID() << "'s Time step: " << timestep << "\n";
                 //if (timestep == timeQuantum) {
                 //    cout << current->getName() << " kicked out of " << current->getCpuCoreID() << "!\n";
@@ -279,12 +312,18 @@ void Scheduler::coreWorker(int coreID) {
                     if (current->getAllocatedMemory() != nullptr) {
                         memoryAllocator->Deallocate(current->getAllocatedMemory());
                         current->setAllocatedMemory(nullptr);
-                        std::cout << "Deallocated memory for process " << current->getName() << " (ID: " << current->getPID() << ")\n";
-                        std::cout << "Memory state: " << memoryAllocator->visualizeMemory() << "\n";
+                        //std::cout << "Deallocated memory for process " << current->getName() << " (ID: " << current->getPID() << ")\n";
+                        //std::cout << "Memory state: " << memoryAllocator->visualizeMemory() << "\n";
                     }
-                    
+                    justFinished = true;  // Mark for later
                 }
-            }    
+            }
+
+            // COMMENTED OUT BC IDK IF NEED
+            // THIS MAKES IT SO THAT THERE WILL ALWAYS BE A TEXT FILE AT THE END THAT HAS EMPTY MEMORY
+            //if (justFinished) {
+            //    writeMemorySnapshot(timestep);
+            //}
         }
 
         //coreBusy[coreID] = false; // core now free
