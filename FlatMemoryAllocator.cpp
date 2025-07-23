@@ -79,3 +79,31 @@ void FlatMemoryAllocator::deallocateAt(uint16_t index) {
 	blockSizes.erase(index);
 	allocatedSize -= size;
 }
+
+char* FlatMemoryAllocator::getMemoryBase() {
+	return memory.data();
+}
+
+uint16_t FlatMemoryAllocator::getBlockSizeAt(uint16_t index) const {
+	auto it = blockSizes.find(index);
+	if (it != blockSizes.end()) {
+		return it->second;
+	}
+	return 0;
+}
+
+uint16_t FlatMemoryAllocator::getMaxSize() const {
+	return maxSize;
+}
+
+size_t FlatMemoryAllocator::getTotalExtFrag() const {
+	size_t totalFree = 0;
+
+	for (char byte : memory) {
+		if (byte != 'X') {
+			totalFree++;
+		}
+	}
+
+	return totalFree;
+}

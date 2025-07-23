@@ -3,6 +3,12 @@
 #include "MemoryAllocator.h"
 #include <iostream>
 #include <mutex>
+#include <fstream>
+#include <iomanip>
+#include <sstream>
+#include <chrono>
+#include <ctime>
+#include <algorithm>
 
 mutex coutMutex;
 
@@ -73,6 +79,59 @@ vector<shared_ptr<Process>> Scheduler::getRunningQueue() {
 vector<shared_ptr<Process>> Scheduler::getFinishedQueue() {
     return finishedQueue;
 }
+
+void Scheduler::writeMemorySnapshot(int quantumCycle) {
+    ostringstream filename;
+    filename << "memory_stamp_" << setw(2) << setfill('0') << quantumCycle << ".txt";
+    ofstream out(filename.str());
+
+    // Generate timestamp
+    auto now = chrono::system_clock::now();
+    time_t now_c = chrono::system_clock::to_time_t(now);
+    tm* now_tm = localtime(&now_c);
+    out << "Timestamp: (" << put_time(now_tm, "%m/%d/%Y %I:%M:%S%p") << ")\n";
+
+    // Lock queue before accessing runningQueue
+    vector<tuple<uint16_t, string, uint16_t>> memoryBlocks;
+    int processCount = 0;
+
+    {
+        for (const auto& process : runningQueue) {
+            void* ptr = process->getAllocatedMemory();
+            if (ptr != nullptr) {
+                char* base = memoryAllocator->getMemoryBase();
+                char* cptr = static_cast<char*>(ptr);
+                uint16_t lower = static_cast<uint16_t>(cptr - base);
+                uint16_t size = memoryAllocator->getBlockSizeAt(lower);
+                uint16_t upper = lower + size;
+                memoryBlocks.emplace_back(upper, process->getName(), lower);
+                ++processCount;
+            }
+        }
+    }
+
+    out << "Number of processes in memory: " << processCount << "\n";
+
+    uint16_t fragmentationBytes = memoryAllocator->getTotalExtFrag();
+    out << "Total external fragmentation in KB: " << fragmentationBytes << "\n\n";
+
+    out << "----end---- = " << memoryAllocator->getMaxSize() << "\n\n";
+
+    sort(memoryBlocks.rbegin(), memoryBlocks.rend()); // Sort by upper in descending order
+
+    for (const auto& block : memoryBlocks) {
+        uint16_t upper, lower;
+        string name;
+        tie(upper, name, lower) = block;
+
+        out << upper << "\n" << name << "\n" << lower << "\n\n";
+    }
+
+    out << "----start---- = 0\n";
+    out.close();
+}
+
+
 
 void Scheduler::coreWorker(int coreID) {
     void* allocatedMemory = nullptr;
@@ -188,7 +247,10 @@ void Scheduler::coreWorker(int coreID) {
                     //cout << current->getCpuCoreID() << current->getName() << " is sleeping!\n";
                     break;  // Stop executing this process
                 }
-                    
+
+                // THIS WRITES THE MEMORY TEXT FILES, NOT SURE IF THIS IS THE BEST PLACE FOR THIS TBH
+                writeMemorySnapshot(timestep);
+
                 timestep++;
                 //cout << current->getCpuCoreID() << "'s Time step: " << timestep << "\n";
                 //if (timestep == timeQuantum) {

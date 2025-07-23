@@ -14,6 +14,10 @@ public:
 	void* Allocate(uint16_t size) override;
 	void Deallocate(void* ptr) override;
 	string visualizeMemory() const override;
+	char* getMemoryBase();
+	uint16_t getBlockSizeAt(uint16_t index) const;
+	uint16_t getMaxSize() const;
+	size_t getTotalExtFrag() const;
 
 private:
 	uint16_t maxSize;
