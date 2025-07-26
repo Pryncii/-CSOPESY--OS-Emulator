@@ -433,6 +433,28 @@ int main(){
         } else if (command == "exit") {
             exit(0); 
         } else if (command.rfind("screen -s", 0) == 0){
+
+            uint16_t processMemory = 0;
+            // Find the last space in the command string
+            size_t lastSpace = command.find_last_of(' ');
+            if (lastSpace == std::string::npos || lastSpace == command.length() - 1) {
+                cout << "Error: No memory value provided.\n";
+                continue;
+            }
+            std::string memStr = command.substr(lastSpace + 1);
+            // Validate that memStr is a non-negative integer
+            if (!isNonNegativeInteger(memStr)) {
+                cout << "Error: Memory value must be a non-negative integer.\n";
+                continue;
+            }
+            int memVal = stoi(memStr);
+            if (memVal < 64 || memVal > config.maxMem) {
+                cout << "invalid memory allocation\n";
+                continue;
+            }
+
+            processMemory = static_cast<uint16_t>(memVal);
+
             string rawScreenName;
             rawScreenName = command.substr(9); // get text after -s
 
@@ -448,7 +470,7 @@ int main(){
                 screenName = rawScreenName;
                 if (inScreenMap(screenName) == false) { // ensures screen name doesn't exist yet
                     uint16_t memoryRequired = generateMem(config);
-                    shared_ptr<Process> process = make_shared<Process>(globalPID, screenName, config.delay, memoryRequired);
+                    shared_ptr<Process> process = make_shared<Process>(globalPID, screenName, config.delay, processMemory);
 					process->generateCommands(config.minIns, config.maxIns, 0);
 					scheduler->addProcess(process); // add the process to the scheduler
                     

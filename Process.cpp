@@ -27,7 +27,6 @@ Process::Process(int pid, string name, uint32_t delay, uint16_t memoryRequired) 
 	this->currentState = ProcessState::READY;
     this->delay = delay;
     this->memoryRequired = memoryRequired;
-	this->allocatedMemory = nullptr;
     
 }
 
