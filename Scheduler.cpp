@@ -284,7 +284,6 @@ void Scheduler::coreWorker(int coreID) {
 
 
 
-
                 //cout << current->getCpuCoreID() << "'s Time step: " << timestep << "\n";
                 //if (timestep == timeQuantum) {
                 //    cout << current->getName() << " kicked out of " << current->getCpuCoreID() << "!\n";
@@ -321,9 +320,14 @@ void Scheduler::coreWorker(int coreID) {
 
             // COMMENTED OUT BC IDK IF NEED
             // THIS MAKES IT SO THAT THERE WILL ALWAYS BE A TEXT FILE AT THE END THAT HAS EMPTY MEMORY
-            //if (justFinished) {
-            //    writeMemorySnapshot(timestep);
-            //}
+            if (justFinished) {
+                if (timestep == 0) {
+                    writeMemorySnapshot(timestep+1);
+                }
+                else {
+                    writeMemorySnapshot(timestep);
+                }
+            }
         }
 
         //coreBusy[coreID] = false; // core now free
