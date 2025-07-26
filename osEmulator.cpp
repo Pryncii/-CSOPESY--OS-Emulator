@@ -13,6 +13,8 @@
 #include "ForLoopCommand.h"
 #include "SubtractCommand.h"
 #include <algorithm> 
+#include <random>
+#include "FlatMemoryAllocator.h"
 
 using namespace std;
 
@@ -131,6 +133,14 @@ Config loadConfig() {
     return config;
 }
 
+uint16_t generateMem(Config config) {
+    random_device rd;
+    mt19937 gen(rd());
+    uniform_int_distribution<uint16_t> memDist(config.minMemProc, config.maxMemProc);
+    uint16_t memoryRequired = memDist(gen);
+
+    return memoryRequired;
+}
 void scheduler_start(Config config, Scheduler& scheduler){
     //cout << "\x1B[32m\x1B[1mscheduler-start\x1B[22m\x1B[0m command recognized. Generating Processes.\n";
     processGeneration = true;
@@ -140,7 +150,10 @@ void scheduler_start(Config config, Scheduler& scheduler){
         this_thread::sleep_for(chrono::milliseconds(1));
         if (cpuCycles % config.batchFreq == 0) {
 
-            shared_ptr<Process> process = make_shared<Process>(globalPID, "Process_" + to_string(globalPID), config.delay);
+            
+            uint16_t memoryRequired = generateMem(config);
+
+            shared_ptr<Process> process = make_shared<Process>(globalPID, "Process_" + to_string(globalPID), config.delay, memoryRequired);
             process->generateCommands(config.minIns, config.maxIns, 0);
             scheduler.addProcess(process); // add the process to the scheduler
 
@@ -359,7 +372,8 @@ int main(){
                     return 1;
                 }
 
-                scheduler = make_shared<Scheduler>(mode, config.quantum, config.numCPU, config.delay);
+                shared_ptr<FlatMemoryAllocator> allocator = make_shared<FlatMemoryAllocator>(config.maxMem);
+                scheduler = std::make_shared<Scheduler>(mode, config.quantum, config.numCPU, config.delay, allocator);
                 scheduler->run();
 
                 string initialize = "\n"
@@ -433,14 +447,15 @@ int main(){
             else {
                 screenName = rawScreenName;
                 if (inScreenMap(screenName) == false) { // ensures screen name doesn't exist yet
-                    shared_ptr<Process> process = make_shared<Process>(globalPID, screenName, config.delay);
+                    uint16_t memoryRequired = generateMem(config);
+                    shared_ptr<Process> process = make_shared<Process>(globalPID, screenName, config.delay, memoryRequired);
 					process->generateCommands(config.minIns, config.maxIns, 0);
 					scheduler->addProcess(process); // add the process to the scheduler
                     
                     Console temp(process);
                     shared_ptr<Console> consolePtr = make_shared<Console>(temp);
                     screens.insert({ screenName, consolePtr });
-					screenInterface(screenName); // open the screen interface
+					//screenInterface(screenName); // open the screen interface
                     globalPID++;
                 }
                 else {

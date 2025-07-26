@@ -6,6 +6,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <atomic>
+#include "MemoryAllocator.h"
 
 
 using namespace std;
@@ -17,13 +18,14 @@ public:
         RR
     };
 
-    Scheduler(Mode mode, uint32_t timeQuantum = 1, int coreCount = 1, uint32_t delay = 1);
+    Scheduler(Mode mode, uint32_t timeQuantum = 1, int coreCount = 1, uint32_t delay = 1, shared_ptr<MemoryAllocator> memoryAllocator = nullptr);
     void addProcess(shared_ptr<Process> process);
     void run();
     vector<shared_ptr<Process>> getRunningQueue();
     vector<shared_ptr<Process>> getFinishedQueue();
     int getRunningCores();
     int getFreeCores();
+    void writeMemorySnapshot(int quantumCycle);
 
 private:
     void coreWorker(int coreID); // Worker function per core
@@ -32,6 +34,7 @@ private:
     uint32_t cpuCoreCount;
     uint32_t delay;
 
+    shared_ptr<MemoryAllocator> memoryAllocator;
     queue<shared_ptr<Process>> readyQueue;
     mutex queueMutex;
     condition_variable queueCV;
