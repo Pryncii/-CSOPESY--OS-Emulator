@@ -77,22 +77,18 @@ vector<size_t> PagingAllocator::allocateFrames(uint16_t numFrames, uint16_t proc
 //}
 
 char* PagingAllocator::getMemoryBase() {
-    return nullptr;//memory.data();
+    return nullptr;
 }
 
 uint16_t PagingAllocator::getBlockSizeAt(uint16_t index) const {
-    /*auto it = blockSizes.find(index);
-    if (it != blockSizes.end()) {
-        return it->second;
-    }*/
+    return 0;
+}
+
+size_t PagingAllocator::getTotalExtFrag() const {
     return 0;
 }
 
 uint16_t PagingAllocator::getMaxSize() const {
-    return 0;//maxSize;
+    return 0;
 }
 
-size_t PagingAllocator::getTotalExtFrag() const {
-    //lock_guard<mutex> lock(memMutex);
-    return 0;//count(memory.begin(), memory.end(), '.');
-}

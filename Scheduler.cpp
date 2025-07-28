@@ -80,82 +80,82 @@ vector<shared_ptr<Process>> Scheduler::getFinishedQueue() {
     return finishedQueue;
 }
 
-void Scheduler::writeMemorySnapshot(int quantumCycle) {
-    lock_guard<mutex> lock(queueMutex);
-    ostringstream filename;
-    filename << "memory_stamp_" << setw(2) << setfill('0') << quantumCycle << ".txt";
-    ofstream out(filename.str());
-
-    // Generate timestamp
-    auto now = chrono::system_clock::now();
-    time_t now_c = chrono::system_clock::to_time_t(now);
-    tm* now_tm = localtime(&now_c);
-    out << "Timestamp: (" << put_time(now_tm, "%m/%d/%Y %I:%M:%S%p") << ")\n";
-
-    // Lock queue before accessing runningQueue
-    vector<tuple<uint16_t, string, uint16_t>> memoryBlocks;
-    int processCount = 0;
-
-    vector<shared_ptr<Process>> allProcesses;
-
-    // From runningQueue (vector)
-    for (const auto& process : runningQueue) {
-        if (process) allProcesses.push_back(process);
-    }
-
-    // From sleepQueue (vector)
-    for (const auto& process : sleepQueue) {
-        if (process) allProcesses.push_back(process);
-    }
-
-    // From readyQueue (queue)
-    queue<shared_ptr<Process>> tempQueue = readyQueue; // copy so we don't modify the original
-    while (!tempQueue.empty()) {
-        auto process = tempQueue.front();
-        tempQueue.pop();
-        if (process) allProcesses.push_back(process);
-    }
-
-    {
-        
-        for (const auto& process : allProcesses) {
-            if (process != nullptr) {
-                void* ptr = process->getAllocatedMemory();
-                if (ptr != nullptr) {
-                    char* base = memoryAllocator->getMemoryBase();
-                    char* cptr = static_cast<char*>(ptr);
-                    uint16_t lower = static_cast<uint16_t>(cptr - base);
-                    uint16_t size = memoryAllocator->getBlockSizeAt(lower);
-                    uint16_t upper = lower + size;
-                    memoryBlocks.emplace_back(upper, process->getName(), lower);
-                    ++processCount;
-                }
-
-            }
-            
-        }
-    }
-
-    out << "Number of processes in memory: " << processCount << "\n";
-
-    uint16_t fragmentationBytes = memoryAllocator->getTotalExtFrag();
-    out << "Total external fragmentation in KB: " << fragmentationBytes << "\n\n";
-
-    out << "----end---- = " << memoryAllocator->getMaxSize() << "\n\n";
-
-    sort(memoryBlocks.rbegin(), memoryBlocks.rend()); // Sort by upper in descending order
-
-    for (const auto& block : memoryBlocks) {
-        uint16_t upper, lower;
-        string name;
-        tie(upper, name, lower) = block;
-
-        out << upper << "\n" << name << "\n" << lower << "\n\n";
-    }
-
-    out << "----start---- = 0\n";
-    out.close();
-}
+//void Scheduler::writeMemorySnapshot(int quantumCycle) {
+//    lock_guard<mutex> lock(queueMutex);
+//    ostringstream filename;
+//    filename << "memory_stamp_" << setw(2) << setfill('0') << quantumCycle << ".txt";
+//    ofstream out(filename.str());
+//
+//    // Generate timestamp
+//    auto now = chrono::system_clock::now();
+//    time_t now_c = chrono::system_clock::to_time_t(now);
+//    tm* now_tm = localtime(&now_c);
+//    out << "Timestamp: (" << put_time(now_tm, "%m/%d/%Y %I:%M:%S%p") << ")\n";
+//
+//    // Lock queue before accessing runningQueue
+//    vector<tuple<uint16_t, string, uint16_t>> memoryBlocks;
+//    int processCount = 0;
+//
+//    vector<shared_ptr<Process>> allProcesses;
+//
+//    // From runningQueue (vector)
+//    for (const auto& process : runningQueue) {
+//        if (process) allProcesses.push_back(process);
+//    }
+//
+//    // From sleepQueue (vector)
+//    for (const auto& process : sleepQueue) {
+//        if (process) allProcesses.push_back(process);
+//    }
+//
+//    // From readyQueue (queue)
+//    queue<shared_ptr<Process>> tempQueue = readyQueue; // copy so we don't modify the original
+//    while (!tempQueue.empty()) {
+//        auto process = tempQueue.front();
+//        tempQueue.pop();
+//        if (process) allProcesses.push_back(process);
+//    }
+//
+//    {
+//        
+//        for (const auto& process : allProcesses) {
+//            if (process != nullptr) {
+//                void* ptr = process->getAllocatedMemory();
+//                if (ptr != nullptr) {
+//                    char* base = memoryAllocator->getMemoryBase();
+//                    char* cptr = static_cast<char*>(ptr);
+//                    uint16_t lower = static_cast<uint16_t>(cptr - base);
+//                    uint16_t size = memoryAllocator->getBlockSizeAt(lower);
+//                    uint16_t upper = lower + size;
+//                    memoryBlocks.emplace_back(upper, process->getName(), lower);
+//                    ++processCount;
+//                }
+//
+//            }
+//            
+//        }
+//    }
+//
+//    out << "Number of processes in memory: " << processCount << "\n";
+//
+//    uint16_t fragmentationBytes = memoryAllocator->getTotalExtFrag();
+//    out << "Total external fragmentation in KB: " << fragmentationBytes << "\n\n";
+//
+//    out << "----end---- = " << memoryAllocator->getMaxSize() << "\n\n";
+//
+//    sort(memoryBlocks.rbegin(), memoryBlocks.rend()); // Sort by upper in descending order
+//
+//    for (const auto& block : memoryBlocks) {
+//        uint16_t upper, lower;
+//        string name;
+//        tie(upper, name, lower) = block;
+//
+//        out << upper << "\n" << name << "\n" << lower << "\n\n";
+//    }
+//
+//    out << "----start---- = 0\n";
+//    out.close();
+//}
 
 
 
@@ -169,7 +169,7 @@ void Scheduler::coreWorker(int coreID) {
             queueCV.wait(lock, [this] { return !readyQueue.empty(); }); // Wait until queue is not empty
             current = readyQueue.front();
             //cout << "Process " << current->getName() << " now in running queue\n";
-            if (current->getAllocatedMemory() == nullptr) {
+            if (current->getAllocatedFrames().empty()) {
                 allocatedFrames = memoryAllocator->Allocate(current);
                 if (allocatedFrames == nullptr) {
                     //std::cout << "Insufficient memory for process " << current->getName() << " (ID: " << current->getPID() << ")\n";
@@ -179,7 +179,7 @@ void Scheduler::coreWorker(int coreID) {
                 }
                 //cout << "Process " << current->getName() << " (ID: " << current->getPID() << ") allocated memory at address: " << allocatedMemory << "\n";
                 //std::cout << "Allocated memory for process " << current->getName() << " (ID: " << current->getPID() << ")\n";
-                //std::cout << "Memory state: " << memoryAllocator->visualizeMemory() << "\n";
+                memoryAllocator->visualizeMemory();
             }
 
             // If already has memory, just proceed
@@ -238,9 +238,8 @@ void Scheduler::coreWorker(int coreID) {
                     }
                 }
                 finishedQueue.push_back(current); // add to finished queue
-                if (current->getAllocatedMemory() != nullptr) {
+                if (!current->getAllocatedFrames().empty()) {
                     memoryAllocator->Deallocate(current);
-					current->setAllocatedMemory(nullptr);
                     //std::cout << "Deallocated memory for process " << current->getName() << " (ID: " << current->getPID() << ")\n";
                     //std::cout << "Memory state: " << memoryAllocator->visualizeMemory() << "\n";
                 }
@@ -308,10 +307,10 @@ void Scheduler::coreWorker(int coreID) {
                     //cout << "\nProcess PID " << current->getPID() << " finished.\n";
                     finishedQueue.push_back(current); // add to finished queue
                     //current->writeLogsToFile(current->getName() + "_logs.txt");
-                    if (current->getAllocatedMemory() != nullptr) {
+                    if (!current->getAllocatedFrames().empty()) {
                         memoryAllocator->Deallocate(current);
                         //std::cout << "Deallocated memory for process " << current->getName() << " (ID: " << current->getPID() << ")\n";
-                        //std::cout << "Memory state: " << memoryAllocator->visualizeMemory() << "\n";
+                        memoryAllocator->visualizeMemory();
                     }
                     justFinished = true;  // Mark for later
                 }

@@ -72,8 +72,8 @@ class Process : public enable_shared_from_this<Process>
 		vector<string> logLines;
 		unordered_map<string, uint16_t> symbolTable;
 		//void* allocatedMemory;
-		vector<size_t> allocatedFrames;
-		
+		vector<size_t> allocatedFrames; // this contains the frame index
+		unordered_map<size_t, vector<bool>> processMemory; // for read and write; not yet used GO PRINCE WOO
 
 		uint16_t memoryRequired;
 		int commandCounter = 0;
