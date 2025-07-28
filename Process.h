@@ -4,7 +4,6 @@
 #include <unordered_map>
 #include <memory>
 #include <ctime>
-#include "FlatMemoryAllocator.h"
 
 using namespace std;
 
@@ -47,10 +46,11 @@ class Process : public enable_shared_from_this<Process>
 		uint16_t getMemReq() const;
 		uint16_t getNumPages() const;
 		string saveLogs();
-		void setAllocatedMemory(void* memory);
-		void* getAllocatedMemory() const;
+		/*void setAllocatedMemory(void* memory);
+		void* getAllocatedMemory() const;*/
 		void initializeMemory();
-
+		void setAllocatedFrames(const vector<size_t>& frames) { allocatedFrames = frames; }
+		const vector<size_t>& getAllocatedFrames() const { return allocatedFrames; }
 
 		vector<shared_ptr<Command>> Process::getCommandList() const;
 
@@ -71,7 +71,8 @@ class Process : public enable_shared_from_this<Process>
 		vector<shared_ptr<Command>> commandList;
 		vector<string> logLines;
 		unordered_map<string, uint16_t> symbolTable;
-		void* allocatedMemory;
+		//void* allocatedMemory;
+		vector<size_t> allocatedFrames;
 		
 
 		uint16_t memoryRequired;

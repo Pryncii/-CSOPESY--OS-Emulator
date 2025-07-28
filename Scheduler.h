@@ -6,7 +6,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <atomic>
-#include "MemoryAllocator.h"
+#include "IMemoryAllocator.h"
 
 
 using namespace std;
@@ -18,7 +18,7 @@ public:
         RR
     };
 
-    Scheduler(Mode mode, uint32_t timeQuantum = 1, int coreCount = 1, uint32_t delay = 1, shared_ptr<MemoryAllocator> memoryAllocator = nullptr);
+    Scheduler(Mode mode, uint32_t timeQuantum = 1, int coreCount = 1, uint32_t delay = 1, shared_ptr<IMemoryAllocator> memoryAllocator = nullptr);
     void addProcess(shared_ptr<Process> process);
     void run();
     vector<shared_ptr<Process>> getRunningQueue();
@@ -34,7 +34,7 @@ private:
     uint32_t cpuCoreCount;
     uint32_t delay;
 
-    shared_ptr<MemoryAllocator> memoryAllocator;
+    shared_ptr<IMemoryAllocator> memoryAllocator;
     queue<shared_ptr<Process>> readyQueue;
     mutex queueMutex;
     condition_variable queueCV;

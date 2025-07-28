@@ -15,6 +15,7 @@
 #include <algorithm> 
 #include <random>
 #include "FlatMemoryAllocator.h"
+#include "PagingAllocator.h"
 
 using namespace std;
 
@@ -141,12 +142,13 @@ uint16_t generateMem(Config config) {
 
     return memoryRequired;
 }
+
 void scheduler_start(Config config, Scheduler& scheduler){
     //cout << "\x1B[32m\x1B[1mscheduler-start\x1B[22m\x1B[0m command recognized. Generating Processes.\n";
     processGeneration = true;
     while (processGeneration) {
         // Generate a new process second
-		//generate a new process every batchFreq cycles
+		// generate a new process every batchFreq cycles
         this_thread::sleep_for(chrono::milliseconds(1));
         if (cpuCycles % config.batchFreq == 0) {
 
@@ -189,10 +191,6 @@ void help(){
     cout << "|   - report-util        : Display CPU utilization report    |\n";
     cout << "+============================================================+\n";
 }
-
-//void scheduler_stop(){
-//    cout << "\x1B[32m\x1B[1mscheduler-stop\x1B[22m\x1B[0m command recognized. Doing something.\n";
-//}
 
 void report_util(Config config, Scheduler& scheduler){
     cout << "\x1B[32m\x1B[1mreport-util\x1B[22m\x1B[0m command recognized. Generating logs.\n";
@@ -372,7 +370,8 @@ int main(){
                     return 1;
                 }
 
-                shared_ptr<FlatMemoryAllocator> allocator = make_shared<FlatMemoryAllocator>(config.maxMem);
+                //shared_ptr<FlatMemoryAllocator> allocator = make_shared<FlatMemoryAllocator>(config.maxMem);
+                shared_ptr<PagingAllocator> allocator = make_shared<PagingAllocator>(config.maxMem, config.memFrame);
                 scheduler = std::make_shared<Scheduler>(mode, config.quantum, config.numCPU, config.delay, allocator);
                 scheduler->run();
 
@@ -469,7 +468,7 @@ int main(){
             else {
                 screenName = rawScreenName;
                 if (inScreenMap(screenName) == false) { // ensures screen name doesn't exist yet
-                    uint16_t memoryRequired = generateMem(config);
+                    //uint16_t memoryRequired = generateMem(config);
                     shared_ptr<Process> process = make_shared<Process>(globalPID, screenName, config.delay, processMemory);
 					process->generateCommands(config.minIns, config.maxIns, 0);
 					scheduler->addProcess(process); // add the process to the scheduler

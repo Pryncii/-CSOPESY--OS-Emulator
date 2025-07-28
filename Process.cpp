@@ -42,13 +42,13 @@ int Process::getCurLine() const {
 	return this->commandCounter; 
 }
 
-void Process::setAllocatedMemory(void* memory) {
-    this->allocatedMemory = memory;
-}
-
-void *Process::getAllocatedMemory() const {
-    return this->allocatedMemory;
-}
+//void Process::setAllocatedMemory(void* memory) {
+//    this->allocatedMemory = memory;
+//}
+//
+//void *Process::getAllocatedMemory() const {
+//    return this->allocatedMemory;
+//}
 
 uint16_t Process::getMemReq() const {
     return this->memoryRequired;
@@ -73,7 +73,6 @@ string Process::getName() const {
 void Process::setCpuCoreID(int cpuCoreID) {
 	this->cpuCoreID = cpuCoreID;
 }
-
 
 void Process::addSymbol(const string& symbol, uint16_t value) {
 	symbolTable[symbol] = value;
@@ -142,6 +141,7 @@ string Process::saveLogs() {
 
     return temp;
 }
+
 //void Process::writeLogsToFile(const string& filename) const {
 //    ofstream outFile(filename);
 //    if (!outFile) {
@@ -254,7 +254,7 @@ void Process::generateCommands(uint32_t minIns, uint32_t maxIns, int depth) {
     }
     
     //cout << "\nPID: " << this->getPID() << "\n";
-   // cout << "numcommands: " << this->totalNumCommands << "\n";
+    //cout << "numcommands: " << this->totalNumCommands << "\n";
 
     int instructionBudget = this->totalNumCommands;
     auto cmds = generateRandomCommandList(depth, 1, instructionBudget);

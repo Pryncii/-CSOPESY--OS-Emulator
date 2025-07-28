@@ -1,6 +1,6 @@
 #pragma once
 #include "Scheduler.h"
-#include "MemoryAllocator.h"
+#include "IMemoryAllocator.h"
 #include <iostream>
 #include <mutex>
 #include <fstream>
@@ -12,7 +12,7 @@
 
 mutex coutMutex;
 
-Scheduler::Scheduler(Mode mode, uint32_t quantum, int coreCount, uint32_t delay, shared_ptr<MemoryAllocator> memoryAllocator)
+Scheduler::Scheduler(Mode mode, uint32_t quantum, int coreCount, uint32_t delay, shared_ptr<IMemoryAllocator> memoryAllocator)
     : schedulingMode(mode), timeQuantum(quantum), cpuCoreCount(coreCount), delay(delay), memoryAllocator(memoryAllocator) {
     //for (auto& busy : coreBusy) busy = false;
 }
@@ -160,7 +160,7 @@ void Scheduler::writeMemorySnapshot(int quantumCycle) {
 
 
 void Scheduler::coreWorker(int coreID) {
-    void* allocatedMemory = nullptr;
+    void* allocatedFrames = nullptr;
     while (true) {
         shared_ptr<Process> current = nullptr;
         
@@ -170,14 +170,13 @@ void Scheduler::coreWorker(int coreID) {
             current = readyQueue.front();
             //cout << "Process " << current->getName() << " now in running queue\n";
             if (current->getAllocatedMemory() == nullptr) {
-                allocatedMemory = memoryAllocator->Allocate(current->getMemReq());
-                if (allocatedMemory == nullptr) {
+                allocatedFrames = memoryAllocator->Allocate(current);
+                if (allocatedFrames == nullptr) {
                     //std::cout << "Insufficient memory for process " << current->getName() << " (ID: " << current->getPID() << ")\n";
                     readyQueue.pop();
                     readyQueue.push(current);
                     continue; // Skip to next iteration, don't run this process
                 }
-                current->setAllocatedMemory(allocatedMemory);
                 //cout << "Process " << current->getName() << " (ID: " << current->getPID() << ") allocated memory at address: " << allocatedMemory << "\n";
                 //std::cout << "Allocated memory for process " << current->getName() << " (ID: " << current->getPID() << ")\n";
                 //std::cout << "Memory state: " << memoryAllocator->visualizeMemory() << "\n";
@@ -240,7 +239,7 @@ void Scheduler::coreWorker(int coreID) {
                 }
                 finishedQueue.push_back(current); // add to finished queue
                 if (current->getAllocatedMemory() != nullptr) {
-                    memoryAllocator->Deallocate(current->getAllocatedMemory());
+                    memoryAllocator->Deallocate(current);
 					current->setAllocatedMemory(nullptr);
                     //std::cout << "Deallocated memory for process " << current->getName() << " (ID: " << current->getPID() << ")\n";
                     //std::cout << "Memory state: " << memoryAllocator->visualizeMemory() << "\n";
@@ -278,9 +277,9 @@ void Scheduler::coreWorker(int coreID) {
 
                 
 
-                timestep++;
+                //timestep++;
                 // THIS WRITES THE MEMORY TEXT FILES, NOT SURE IF THIS IS THE BEST PLACE FOR THIS TBH
-                writeMemorySnapshot(timestep);
+                //writeMemorySnapshot(timestep);
 
 
 
@@ -310,8 +309,7 @@ void Scheduler::coreWorker(int coreID) {
                     finishedQueue.push_back(current); // add to finished queue
                     //current->writeLogsToFile(current->getName() + "_logs.txt");
                     if (current->getAllocatedMemory() != nullptr) {
-                        memoryAllocator->Deallocate(current->getAllocatedMemory());
-                        current->setAllocatedMemory(nullptr);
+                        memoryAllocator->Deallocate(current);
                         //std::cout << "Deallocated memory for process " << current->getName() << " (ID: " << current->getPID() << ")\n";
                         //std::cout << "Memory state: " << memoryAllocator->visualizeMemory() << "\n";
                     }

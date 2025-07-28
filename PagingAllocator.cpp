@@ -2,8 +2,8 @@
 #include <iostream>
 using namespace std;
 
-PagingAllocator::PagingAllocator(uint16_t maxMem)
-    : maxMem(maxMem), numFrames(maxMem) {
+PagingAllocator::PagingAllocator(uint16_t maxMem, uint16_t memFrame)
+    : maxMem(maxMem), numFrames(maxMem/memFrame), frameSize(memFrame) {
     // Initialize the free frame list
     for (size_t i = 0; i < numFrames; ++i) {
         freeFrameList.push_back(i);
@@ -11,31 +11,27 @@ PagingAllocator::PagingAllocator(uint16_t maxMem)
 }
 
 void* PagingAllocator::Allocate(shared_ptr<Process> process) {
-    size_t processId = process->getPID();
+    size_t processID = process->getPID();
     size_t numFramesNeeded = (process->getMemReq()) / frameSize;
+
     if (numFramesNeeded > freeFrameList.size()) {
-       cout << "Memory allocation failed. Not enough free frames.\n";
-       return nullptr;
+        cout << "Memory allocation failed. Not enough free frames.\n";
+        return nullptr;
     }
 
-    // Allocate frames for the process
-    size_t frameIndex = allocateFrames(numFramesNeeded, processId);
-    return reinterpret_cast<void*>(frameIndex);
+    vector<size_t> allocated = allocateFrames(numFramesNeeded, processID);
+    process->setAllocatedFrames(allocated); // Store in the process
+
+    return reinterpret_cast<void*>(1); // dummy non-null value to show success
 }
 
 void PagingAllocator::Deallocate(shared_ptr<Process> process) {
-    size_t processId = process->getPID();
-
-    // Find frames allocated to the process and deallocate
-    auto it = std::find_if(frameMap.begin(), frameMap.end(),
-        [processId](const auto& entry) { return entry.second == processId; });
-
-    while (it != frameMap.end()) {
-        size_t frameIndex = it->first;
-        deallocateFrames(1, frameIndex);
-        it = std::find_if(frameMap.begin(), frameMap.end(),
-            [processId](const auto& entry) { return entry.second == processId; });
+    for (size_t frame : process->getAllocatedFrames()) {
+        frameMap.erase(frame);
+        freeFrameList.push_back(frame);
     }
+
+    process->setAllocatedFrames({}); // Clear
 }
 
 void PagingAllocator::visualizeMemory() const {
@@ -52,26 +48,51 @@ void PagingAllocator::visualizeMemory() const {
     std::cout << "---------------------------\n";
 }
 
-uint16_t PagingAllocator::allocateFrames(uint16_t numFrames, uint16_t processId) {
-    size_t frameIndex = freeFrameList.back();
-    freeFrameList.pop_back();
+vector<size_t> PagingAllocator::allocateFrames(uint16_t numFrames, uint16_t processID) {
+    vector<size_t> allocatedFrames;
 
-    // Map allocated frames to the process ID
-    for (size_t i = 0; i < numFrames; ++i) {
-        frameMap[frameIndex + i] = processId;
+    for (uint16_t i = 0; i < numFrames; ++i) {
+        if (freeFrameList.empty()) break;
+
+        size_t frame = freeFrameList.back();
+        freeFrameList.pop_back();
+
+        frameMap[frame] = processID;
+        allocatedFrames.push_back(frame);
     }
 
-    return frameIndex;
+    return allocatedFrames;
 }
 
-void PagingAllocator::deallocateFrames(uint16_t numFrames, uint16_t frameIndex) {
-    // Remove mapping of deallocated frames
-    for (size_t i = 0; i < numFrames; ++i) {
-        frameMap.erase(frameIndex + i);
-    }
+//void PagingAllocator::deallocateFrames(uint16_t numFrames, uint16_t frameIndex) {
+//    // Remove mapping of deallocated frames
+//    for (size_t i = 0; i < numFrames; ++i) {
+//        frameMap.erase(frameIndex + i);
+//    }
+//
+//    // Add frames back to the free frame list
+//    for (size_t i = 0; i < numFrames; ++i) {
+//        freeFrameList.push_back(frameIndex + i);
+//    }
+//}
 
-    // Add frames back to the free frame list
-    for (size_t i = 0; i < numFrames; ++i) {
-        freeFrameList.push_back(frameIndex + i);
-    }
+char* PagingAllocator::getMemoryBase() {
+    return nullptr;//memory.data();
+}
+
+uint16_t PagingAllocator::getBlockSizeAt(uint16_t index) const {
+    /*auto it = blockSizes.find(index);
+    if (it != blockSizes.end()) {
+        return it->second;
+    }*/
+    return 0;
+}
+
+uint16_t PagingAllocator::getMaxSize() const {
+    return 0;//maxSize;
+}
+
+size_t PagingAllocator::getTotalExtFrag() const {
+    //lock_guard<mutex> lock(memMutex);
+    return 0;//count(memory.begin(), memory.end(), '.');
 }
