@@ -179,7 +179,7 @@ void Scheduler::coreWorker(int coreID) {
                 }
                 //cout << "Process " << current->getName() << " (ID: " << current->getPID() << ") allocated memory at address: " << allocatedMemory << "\n";
                 //std::cout << "Allocated memory for process " << current->getName() << " (ID: " << current->getPID() << ")\n";
-                memoryAllocator->visualizeMemory();
+                //memoryAllocator->visualizeMemory();
             }
 
             // If already has memory, just proceed
@@ -310,7 +310,7 @@ void Scheduler::coreWorker(int coreID) {
                     if (!current->getAllocatedFrames().empty()) {
                         memoryAllocator->Deallocate(current);
                         //std::cout << "Deallocated memory for process " << current->getName() << " (ID: " << current->getPID() << ")\n";
-                        memoryAllocator->visualizeMemory();
+                        //memoryAllocator->visualizeMemory();
                     }
                     justFinished = true;  // Mark for later
                 }

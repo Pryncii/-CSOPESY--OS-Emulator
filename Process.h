@@ -48,7 +48,7 @@ class Process : public enable_shared_from_this<Process>
 		string saveLogs();
 		/*void setAllocatedMemory(void* memory);
 		void* getAllocatedMemory() const;*/
-		void initializeMemory();
+		void initializeCommands(const vector<string>& instructions);
 		void setAllocatedFrames(const vector<size_t>& frames) { allocatedFrames = frames; }
 		const vector<size_t>& getAllocatedFrames() const { return allocatedFrames; }
 

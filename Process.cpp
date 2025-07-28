@@ -1,5 +1,6 @@
 #include <string>
 #include <iostream>
+#include <sstream>
 #include <memory>
 #include <cstdlib>
 #include <ctime>
@@ -13,6 +14,7 @@
 #include "ForLoopCommand.h"
 #include <fstream>
 #include <mutex>
+#include <algorithm>
 
 using namespace std;
 
@@ -279,4 +281,89 @@ int Process::countNonForInstructions(const vector<shared_ptr<Command>>& cmds) co
         }
     }
     return count;
+}
+
+void Process::initializeCommands(const vector<string>& instructions) {
+    for (const string& instr : instructions) {
+        istringstream iss(instr);
+        string cmdType;
+        iss >> cmdType;
+
+        // Optional: uppercase for case-insensitive match
+        transform(cmdType.begin(), cmdType.end(), cmdType.begin(), ::toupper);
+
+        shared_ptr<Command> cmd = nullptr;
+
+        if (cmdType == "DECLARE") {
+            string varName;
+            uint16_t value;
+            iss >> varName >> value;
+            if (varName.empty() || iss.fail()) {
+                cout << "Invalid DECLARE instruction: " << instr << endl;
+                continue;
+            }
+            cmd = make_shared<DeclareCommand>(shared_from_this(), varName, value);
+        }
+        else if (cmdType == "ADD") {
+            string destVar, srcVar1, srcVar2;
+            iss >> destVar >> srcVar1 >> srcVar2;
+            if (destVar.empty() || srcVar1.empty() || srcVar2.empty()) {
+                cout << "Invalid ADD instruction: " << instr << endl;
+                continue;
+            }
+            cmd = make_shared<AddCommand>(shared_from_this(), destVar, srcVar1, srcVar2);
+        }
+        else if (cmdType == "SUBTRACT") {
+            string destVar, srcVar1, srcVar2;
+            iss >> destVar >> srcVar1 >> srcVar2;
+            if (destVar.empty() || srcVar1.empty() || srcVar2.empty()) {
+                cout << "Invalid SUBTRACT instruction: " << instr << endl;
+                continue;
+            }
+            cmd = make_shared<SubtractCommand>(shared_from_this(), destVar, srcVar1, srcVar2);
+        }
+        else if (cmdType == "PRINT") {
+            string message;
+            getline(iss, message);
+            message.erase(0, message.find_first_not_of(" \t"));
+            cmd = make_shared<PrintCommand>(shared_from_this(), message);
+        }
+        else if (cmdType == "SLEEP") {
+            uint16_t duration;
+            iss >> duration;
+            if (iss.fail()) {
+                cout << "Invalid SLEEP instruction: " << instr << endl;
+                continue;
+            }
+            cmd = make_shared<SleepCommand>(shared_from_this(), duration);
+        }
+        else if (cmdType == "FOR") {
+            int loopCount;
+            iss >> loopCount;
+            if (iss.fail() || loopCount < 1) {
+                cout << "Invalid FOR instruction: " << instr << endl;
+                continue;
+            }
+            vector<shared_ptr<Command>> nestedCommands;
+            cmd = make_shared<ForLoopCommand>(shared_from_this(), nestedCommands, loopCount, delay);
+        }
+        else if (cmdType == "READ") {
+            // TODO: implement READ command later
+            // For now, skip or add placeholder command
+            // cmd = make_shared<ReadCommand>(/* your params */);
+        }
+        else if (cmdType == "WRITE") {
+            // TODO: implement WRITE command later
+            // cmd = make_shared<WriteCommand>(/* your params */);
+        }
+        else {
+            cout << "Unknown instruction: " << instr << endl;
+            continue;
+        }
+
+        if (cmd) {
+            commandList.push_back(cmd);
+        }
+    }
+
 }
