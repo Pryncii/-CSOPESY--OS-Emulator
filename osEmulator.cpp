@@ -548,15 +548,20 @@ int main(){
                     // process intructions
                     vector<string> instructions = parseInstructionsFromCommand(command);
 
-                    shared_ptr<Process> process = make_shared<Process>(globalPID, screenName, config.delay, processMemory);
-                    process->initializeCommands(instructions);
-                    scheduler->addProcess(process); // add the process to the scheduler
+                    // UNCOMMENT FOR VISUALIZATION
+                    /*for (const string& instr : instructions) {
+                        cout << instr << endl;
+                    }*/
 
-                    Console temp(process);
-                    shared_ptr<Console> consolePtr = make_shared<Console>(temp);
-                    screens.insert({ screenName, consolePtr });
-                    //screenInterface(screenName); // open the screen interface
-                    globalPID++;
+                    //shared_ptr<Process> process = make_shared<Process>(globalPID, screenName, config.delay, processMemory);
+                    //process->initializeCommands(instructions);
+                    //scheduler->addProcess(process); // add the process to the scheduler
+
+                    //Console temp(process);
+                    //shared_ptr<Console> consolePtr = make_shared<Console>(temp);
+                    //screens.insert({ screenName, consolePtr });
+                    ////screenInterface(screenName); // open the screen interface
+                    //globalPID++;
                 }
                 else {
                     cout << "\x1B[31m\x1B[1mError:\x1B[0m Screen name already exist/has finished executing!\n";
