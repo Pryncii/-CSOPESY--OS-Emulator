@@ -19,7 +19,7 @@ class Process : public enable_shared_from_this<Process>
 			FINISHED
 		};
 
-		Process(int pid, string name, uint32_t delay, uint16_t memoryRequired);
+		Process(int pid, string name, uint32_t delay, uint16_t memoryRequired, uint16_t memFrame);
 		void addCommand(shared_ptr<Command> command);
 		void generateCommands(const uint32_t minIns, const uint32_t maxIns, int depth);
 		vector<shared_ptr<Command>> generateRandomCommandList(int depth, int repeats, int& instructionBudget);
@@ -49,8 +49,11 @@ class Process : public enable_shared_from_this<Process>
 		/*void setAllocatedMemory(void* memory);
 		void* getAllocatedMemory() const;*/
 		void initializeCommands(const vector<string>& instructions);
-		void setAllocatedFrames(const vector<size_t>& frames) { allocatedFrames = frames; }
+		void setAllocatedFrames(const vector<size_t>& frames);
+		void allocateVariable(const string& name, uint16_t value);
 		const vector<size_t>& getAllocatedFrames() const { return allocatedFrames; }
+		unordered_map<size_t, vector<bool>> getProcessMemory() const { return processMemory; }
+		
 
 		vector<shared_ptr<Command>> Process::getCommandList() const;
 
@@ -61,19 +64,26 @@ class Process : public enable_shared_from_this<Process>
 		void decrementSleepTick() { if (sleepTicks > 0) --sleepTicks; }
 		bool isSleeping() const { return sleeping; }
 		void setSleeping(bool value) { sleeping = value; }
+		void visualizeProcessMemory() const;
 
 		int countNonForInstructions(const vector<shared_ptr<Command>>& cmds) const;
 
 	
 	private:
 		int pid; // Memory allocator for this process
+		uint16_t memFrame; // Memory per frame
 		string name;
 		vector<shared_ptr<Command>> commandList;
 		vector<string> logLines;
+		struct VariableInfo {
+			uint16_t value;
+			size_t address;
+		};
 		unordered_map<string, uint16_t> symbolTable;
 		//void* allocatedMemory;
 		vector<size_t> allocatedFrames; // this contains the frame index
 		unordered_map<size_t, vector<bool>> processMemory; // for read and write; not yet used GO PRINCE WOO
+		unordered_map<size_t, vector<int>> processMemoryRead; // for read operations
 
 		uint16_t memoryRequired;
 		int commandCounter = 0;

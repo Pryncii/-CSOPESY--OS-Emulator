@@ -7,7 +7,11 @@ PagingAllocator::PagingAllocator(uint16_t maxMem, uint16_t memFrame)
     // Initialize the free frame list
     for (size_t i = 0; i < numFrames; ++i) {
         freeFrameList.push_back(i);
+        cout << freeFrameList[i] << ", ";
     }
+    cout << endl;
+
+    
 }
 
 void* PagingAllocator::Allocate(shared_ptr<Process> process) {
@@ -54,13 +58,18 @@ vector<size_t> PagingAllocator::allocateFrames(uint16_t numFrames, uint16_t proc
     for (uint16_t i = 0; i < numFrames; ++i) {
         if (freeFrameList.empty()) break;
 
-        size_t frame = freeFrameList.back();
-        freeFrameList.pop_back();
+        size_t frame = freeFrameList.front();
+        freeFrameList.erase(freeFrameList.begin());
 
         frameMap[frame] = processID;
         allocatedFrames.push_back(frame);
     }
 
+    cout << endl;
+    for (uint16_t bit : freeFrameList) {
+        cout << bit << ", ";
+    }
+    cout << endl;
     return allocatedFrames;
 }
 

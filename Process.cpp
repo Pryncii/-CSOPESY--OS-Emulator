@@ -18,7 +18,7 @@
 
 using namespace std;
 
-Process::Process(int pid, string name, uint32_t delay, uint16_t memoryRequired) {
+Process::Process(int pid, string name, uint32_t delay, uint16_t memoryRequired, uint16_t memFrame) {
     time_t now = time(nullptr);
     char buffer[80];
     strftime(buffer, sizeof(buffer), "%m/%d/%Y %I:%M:%S%p", localtime(&now));
@@ -29,6 +29,7 @@ Process::Process(int pid, string name, uint32_t delay, uint16_t memoryRequired) 
 	this->currentState = ProcessState::READY;
     this->delay = delay;
     this->memoryRequired = memoryRequired;
+	this->memFrame = memFrame;
     
 }
 
@@ -44,6 +45,51 @@ int Process::getCurLine() const {
 	return this->commandCounter; 
 }
 
+void Process::allocateVariable(const string& varName, uint16_t value) {
+    for (size_t frameIdx : allocatedFrames) {
+        auto& frame = processMemory[frameIdx];
+		auto& frameRead = processMemoryRead[frameIdx];
+        // Search for two consecutive free spots
+        for (size_t i = 0; i + 1 < frame.size(); ++i) {
+            if (!frame[i] && !frame[i + 1]) {
+                // Allocate the two spots
+                frame[i] = true;
+                frame[i + 1] = true;
+				frameRead[i] = value; // Store the value in the first spot
+				frameRead[i + 1] = value; // Mark the second spot as unused
+
+                // Save variable info in symbolTable only
+                symbolTable[varName] = value;
+
+                return; // Allocation successful
+            }
+        }
+    }
+
+    cout << "Failed to allocate variable '" << varName << "' with value " << value 
+		<< ". Not enough memory available." << endl;
+}
+
+void Process::setAllocatedFrames(const vector<size_t>& frames) { 
+    this->allocatedFrames = frames;
+    
+    cout << "For Process " << this->name << ":\n";
+    for (const auto& frame : frames) {
+        processMemory[frame] = vector<bool>(memFrame, false);
+        cout << "Frame " << frame << ": ";
+		processMemoryRead[frame] = vector<int>(memFrame, -1);
+        for (bool bit : processMemory[frame]) {
+            cout << bit;
+        }
+        cout << endl;
+    }
+
+   
+}
+
+
+
+
 //void Process::setAllocatedMemory(void* memory) {
 //    this->allocatedMemory = memory;
 //}
@@ -54,6 +100,22 @@ int Process::getCurLine() const {
 
 uint16_t Process::getMemReq() const {
     return this->memoryRequired;
+}
+
+void Process::visualizeProcessMemory() const {
+    cout << "Process Memory Visualization for Process " << name << " (PID: " << pid << "):" << endl;
+    for (size_t frameIdx : allocatedFrames) {
+        cout << "Frame " << frameIdx << ": ";
+        for (bool bit : processMemory.at(frameIdx)) {
+            cout << (bit ? '1' : '0');
+        }
+        cout << endl;
+
+        for (int bit : processMemoryRead.at(frameIdx)) {
+            cout << bit << ", ";
+        }
+        cout << endl;
+    }
 }
 
 vector<shared_ptr<Command>> Process::getCommandList() const {
@@ -169,6 +231,12 @@ vector<shared_ptr<Command>> Process::generateRandomCommandList(int depth, int re
         return commands;
     }
 
+    static bool seeded = false;
+    if (!seeded) {
+        srand(time(0));  // Seed only once
+        seeded = true;
+    }
+
     while (instructionBudget >= repeats) {
         Command::CommandType type = static_cast<Command::CommandType>(rand() % 6); // 0 to 5
         shared_ptr<Command> cmd;
@@ -176,11 +244,12 @@ vector<shared_ptr<Command>> Process::generateRandomCommandList(int depth, int re
         switch (type) {
             case Command::DECLARE: {
                 // Seeds the random number generator with the current time (in seconds).
-                srand(time(0)); // random number from 0-999 for extra unique
+                //srand(time(0)); // random number from 0-999 for extra unique
                 string varName = to_string(pid) + "x" + to_string(depth) + "_" + to_string(rand() % 1000);
                 uint16_t value = rand() % 100;
                 cmd = make_shared<DeclareCommand>(shared_from_this(), varName, value);
                 instructionBudget -= repeats;
+                visualizeProcessMemory();
                 break;
             }
 
