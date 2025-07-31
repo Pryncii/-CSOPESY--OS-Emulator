@@ -12,13 +12,14 @@
 #include "SubtractCommand.h"
 #include "SleepCommand.h"
 #include "ForLoopCommand.h"
+#include "WriteCommand.h"
 #include <fstream>
 #include <mutex>
 #include <algorithm>
 
 using namespace std;
 
-Process::Process(int pid, string name, uint32_t delay, uint16_t memoryRequired, uint16_t memFrame) {
+Process::Process(int pid, string name, uint32_t delay, uint16_t memoryRequired, uint16_t memFrame, uint16_t maxMem) {
     time_t now = time(nullptr);
     char buffer[80];
     strftime(buffer, sizeof(buffer), "%m/%d/%Y %I:%M:%S%p", localtime(&now));
@@ -30,6 +31,7 @@ Process::Process(int pid, string name, uint32_t delay, uint16_t memoryRequired, 
     this->delay = delay;
     this->memoryRequired = memoryRequired;
 	this->memFrame = memFrame;
+    this->maxMem = maxMem;
     
 }
 
@@ -43,6 +45,13 @@ int Process::getPID() const {
 
 int Process::getCurLine() const {
 	return this->commandCounter; 
+}
+
+void Process::writeToMemory(uint16_t frameIndex, uint16_t address, uint16_t value) {
+    uint16_t indexInFrame = address - (frameIndex * memFrame);
+	processMemory[frameIndex][indexInFrame] = true; // Mark the memory as used
+	processMemoryRead[frameIndex][indexInFrame] = value; // Store the value in the read memory
+    visualizeProcessMemory();
 }
 
 void Process::allocateVariable(const string& varName, uint16_t value) {
@@ -238,7 +247,7 @@ vector<shared_ptr<Command>> Process::generateRandomCommandList(int depth, int re
     }
 
     while (instructionBudget >= repeats) {
-        Command::CommandType type = static_cast<Command::CommandType>(rand() % 6); // 0 to 5
+        Command::CommandType type = static_cast<Command::CommandType>(rand() % 7); // 0 to 5
         shared_ptr<Command> cmd;
        
         switch (type) {
@@ -249,7 +258,7 @@ vector<shared_ptr<Command>> Process::generateRandomCommandList(int depth, int re
                 uint16_t value = rand() % 100;
                 cmd = make_shared<DeclareCommand>(shared_from_this(), varName, value);
                 instructionBudget -= repeats;
-                visualizeProcessMemory();
+				//visualizeProcessMemory();
                 break;
             }
 
@@ -304,6 +313,17 @@ vector<shared_ptr<Command>> Process::generateRandomCommandList(int depth, int re
                 }
                 break;
             }
+
+                             
+            case Command::WRITE: {
+                uint16_t address = rand() % 128;
+                uint16_t value = rand() % 256;          // Random value in 0–255
+
+                cmd = make_shared<WriteCommand>(shared_from_this(), address, memFrame, value);
+                instructionBudget -= repeats;
+                break;
+            }
+            
         }
        
         if (cmd) {
@@ -416,12 +436,18 @@ void Process::initializeCommands(const vector<string>& instructions) {
             vector<shared_ptr<Command>> nestedCommands;
             cmd = make_shared<ForLoopCommand>(shared_from_this(), nestedCommands, loopCount, delay);
         }
-        else if (cmdType == "READ") {
-            // TODO: implement READ command later
-            // For now, skip or add placeholder command
-            // cmd = make_shared<ReadCommand>(/* your params */);
-        }
         else if (cmdType == "WRITE") {
+           //WriteCommand(shared_ptr<Process> process, uint16_t address, uint16_t memFrame, uint16_t value);
+            uint16_t address, memFrame, value;
+            iss >> address >> memFrame >> value;
+            if (iss.fail()) {
+                cout << "Invalid WRITE instruction: " << instr << endl;
+                continue;
+            }
+
+            cmd = make_shared<WriteCommand>(shared_from_this(), address, memFrame, value);
+        }
+        else if (cmdType == "READ") {
             // TODO: implement WRITE command later
             // cmd = make_shared<WriteCommand>(/* your params */);
         }

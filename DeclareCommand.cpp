@@ -38,8 +38,8 @@ void DeclareCommand::execute() {
 		else {
 			// Declare the variable in the process's symbol table
 			process->allocateVariable(varName, value);
-			cout << "Variable '" << varName << "' declared with value " << value << " in process " << process->getPID() << endl;
-			process->visualizeProcessMemory();
+			//cout << "Variable '" << varName << "' declared with value " << value << " in process " << process->getPID() << endl;
+			//process->visualizeProcessMemory();
 			return;
 		}
 	}

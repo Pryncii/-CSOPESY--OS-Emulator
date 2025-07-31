@@ -19,7 +19,7 @@ class Process : public enable_shared_from_this<Process>
 			FINISHED
 		};
 
-		Process(int pid, string name, uint32_t delay, uint16_t memoryRequired, uint16_t memFrame);
+		Process(int pid, string name, uint32_t delay, uint16_t memoryRequired, uint16_t memFrame, uint16_t maxMem);
 		void addCommand(shared_ptr<Command> command);
 		void generateCommands(const uint32_t minIns, const uint32_t maxIns, int depth);
 		vector<shared_ptr<Command>> generateRandomCommandList(int depth, int repeats, int& instructionBudget);
@@ -51,6 +51,7 @@ class Process : public enable_shared_from_this<Process>
 		void initializeCommands(const vector<string>& instructions);
 		void setAllocatedFrames(const vector<size_t>& frames);
 		void allocateVariable(const string& name, uint16_t value);
+		void writeToMemory(uint16_t frameIndex, uint16_t address, uint16_t value);
 		const vector<size_t>& getAllocatedFrames() const { return allocatedFrames; }
 		unordered_map<size_t, vector<bool>> getProcessMemory() const { return processMemory; }
 		
@@ -73,6 +74,7 @@ class Process : public enable_shared_from_this<Process>
 		int pid; // Memory allocator for this process
 		uint16_t memFrame; // Memory per frame
 		string name;
+		uint16_t maxMem;
 		vector<shared_ptr<Command>> commandList;
 		vector<string> logLines;
 		struct VariableInfo {

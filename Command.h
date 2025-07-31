@@ -15,7 +15,9 @@ public:
 		ADD,
 		SUBTRACT,
 		SLEEP,
-		FOR
+		FOR,
+		WRITE,
+		READ
 	};
 	Command(shared_ptr<Process> process, CommandType commandType); // Declaration of the constructor
 	CommandType getCommandType();
