@@ -69,6 +69,12 @@ void Process::readMemory(uint16_t frameIndex, uint16_t address, const string& va
 
 }
 
+void Process::terminateProcess() {
+	this->isTerminated = true; // Set commandCounter to the total number of commands
+}
+
+
+
 void Process::allocateVariable(const string& varName, uint16_t value) {
     for (size_t frameIdx : allocatedFrames) {
         auto& frame = processMemory[frameIdx];
@@ -331,7 +337,7 @@ vector<shared_ptr<Command>> Process::generateRandomCommandList(int depth, int re
 
                              
             case Command::WRITE: {
-                uint16_t address = 64;// +(rand() % (128 - 64));
+                uint16_t address = 64 + (rand() % (maxMem - 64));;
                 uint16_t value = rand() % 256;          // Random value in 0–255
 
                 cmd = make_shared<WriteCommand>(shared_from_this(), address, memFrame, value);
@@ -341,7 +347,7 @@ vector<shared_ptr<Command>> Process::generateRandomCommandList(int depth, int re
 
 
             case Command::READ: {
-                uint16_t address = 64;//+(rand() % (128 - 64)); // Random address between 64–127
+                uint16_t address = 64 + (rand() % (maxMem - 64)); // Random address between 64–127
                 string varName = "x" + to_string(rand() % 999); // e.g., x23, x75
 
                 cmd = make_shared<ReadCommand>(shared_from_this(), address, varName, memFrame);

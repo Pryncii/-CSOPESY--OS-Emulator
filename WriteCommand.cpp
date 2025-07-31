@@ -33,7 +33,9 @@ void WriteCommand::execute() {
 	}
 
 	if(!isFrameAllocated) {
-		cout << "Error" << endl;
+		cout << "Write Error" << endl;
+		process->terminateProcess();
+		return;
 	}
 
 	//write the value to the address

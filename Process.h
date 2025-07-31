@@ -27,6 +27,7 @@ class Process : public enable_shared_from_this<Process>
 		void moveToNextLine();
 		void setCpuCoreID(int coreID);
 		void writeLogsToFile(const string& filename) const;
+
 		// In Process.h (add this member)
 		
 
@@ -63,6 +64,7 @@ class Process : public enable_shared_from_this<Process>
 		// for sleep command
 		void setSleepTicks(int ticks) { sleepTicks = ticks; }
 		int getSleepTicks() const { return sleepTicks; }
+		void terminateProcess();
 
 		void decrementSleepTick() { if (sleepTicks > 0) --sleepTicks; }
 		bool isSleeping() const { return sleeping; }
@@ -70,6 +72,7 @@ class Process : public enable_shared_from_this<Process>
 		void visualizeProcessMemory() const;
 
 		int countNonForInstructions(const vector<shared_ptr<Command>>& cmds) const;
+		bool getIsTerminated() const { return isTerminated; }
 
 	
 	private:
@@ -77,6 +80,7 @@ class Process : public enable_shared_from_this<Process>
 		uint16_t memFrame; // Memory per frame
 		string name;
 		uint16_t maxMem;
+		bool isTerminated = false;
 		vector<shared_ptr<Command>> commandList;
 		vector<string> logLines;
 		struct VariableInfo {

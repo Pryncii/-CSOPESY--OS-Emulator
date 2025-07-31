@@ -34,7 +34,9 @@ void ReadCommand::execute() {
 	}
 
 	if (!isFrameAllocated) {
-		cout << "Error" << endl;
+		cout << "Read Error" << endl;
+		//terminate the process if the frame is not allocated
+		process->terminateProcess();
 		return;
 	}
 

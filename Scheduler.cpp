@@ -202,7 +202,7 @@ void Scheduler::coreWorker(int coreID) {
         if (schedulingMode == Mode::FCFS) {
             // run until finished
             bool didSleep = false;
-            while (!current->isFinished()) {
+            while (!current->isFinished() && !current->getIsTerminated()) {
 
                 // add to running queue
                 current->executeCommand();
@@ -254,8 +254,20 @@ void Scheduler::coreWorker(int coreID) {
             bool justFinished = false;
 
             // until finished or timeQuantum is reached
-            while (!current->isFinished() && timestep < timeQuantum) {
+            while (!current->isFinished() && timestep < timeQuantum && !current->getIsTerminated()) {
+
+               
                 current->executeCommand();
+
+                if (current->getIsTerminated()) {
+                    for (size_t i = 0; i < runningQueue.size(); ++i) {
+                        if (runningQueue[i]->getPID() == current->getPID()) {
+                            runningQueue.erase(runningQueue.begin() + i);
+                            current->setCpuCoreID(-1);
+                            break;
+                        }
+                    }
+                }
                 current->moveToNextLine();
 
                 if (current->isSleeping()) {
