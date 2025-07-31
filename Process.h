@@ -54,6 +54,7 @@ class Process : public enable_shared_from_this<Process>
 		void writeToMemory(uint16_t frameIndex, uint16_t address, uint16_t value);
 		const vector<size_t>& getAllocatedFrames() const { return allocatedFrames; }
 		unordered_map<size_t, vector<bool>> getProcessMemory() const { return processMemory; }
+		unordered_map<size_t, vector<int>> getProcessMemoryRead() const { return processMemoryRead; }
 		
 
 		vector<shared_ptr<Command>> Process::getCommandList() const;

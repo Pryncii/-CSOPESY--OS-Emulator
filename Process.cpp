@@ -316,7 +316,7 @@ vector<shared_ptr<Command>> Process::generateRandomCommandList(int depth, int re
 
                              
             case Command::WRITE: {
-                uint16_t address = rand() % 128;
+                uint16_t address = 64 + (rand() % (128 - 64));;
                 uint16_t value = rand() % 256;          // Random value in 0–255
 
                 cmd = make_shared<WriteCommand>(shared_from_this(), address, memFrame, value);

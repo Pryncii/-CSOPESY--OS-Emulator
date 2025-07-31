@@ -11,7 +11,7 @@
 using namespace std;
 
 
-WriteCommand::WriteCommand(shared_ptr<Process> process, uint16_t address, uint16_t memFrame, uint16_t value) : Command(process, CommandType::DECLARE) {
+WriteCommand::WriteCommand(shared_ptr<Process> process, uint16_t address, uint16_t memFrame, uint16_t value) : Command(process, CommandType::WRITE) {
 	this->process = process;
 	this->address = address;
 	this->value = value;
