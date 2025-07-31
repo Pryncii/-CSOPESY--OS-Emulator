@@ -52,7 +52,7 @@ class Process : public enable_shared_from_this<Process>
 		void setAllocatedFrames(const vector<size_t>& frames);
 		void allocateVariable(const string& name, uint16_t value);
 		void writeToMemory(uint16_t frameIndex, uint16_t address, uint16_t value);
-		void ReadToMemory(uint16_t frameIndex, uint16_t address, uint16_t value);
+		void readMemory(uint16_t frameIndex, uint16_t address, const string& varName);
 		const vector<size_t>& getAllocatedFrames() const { return allocatedFrames; }
 		unordered_map<size_t, vector<bool>> getProcessMemory() const { return processMemory; }
 		unordered_map<size_t, vector<int>> getProcessMemoryRead() const { return processMemoryRead; }

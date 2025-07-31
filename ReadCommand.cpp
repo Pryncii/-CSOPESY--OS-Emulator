@@ -35,12 +35,10 @@ void ReadCommand::execute() {
 
 	if (!isFrameAllocated) {
 		cout << "Error" << endl;
+		return;
 	}
 
-
-	//write the value to the address
-
-
+	process->readMemory(frameOfAddress, address, varName);
 
 }
 

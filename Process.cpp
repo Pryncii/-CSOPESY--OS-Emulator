@@ -16,6 +16,7 @@
 #include <fstream>
 #include <mutex>
 #include <algorithm>
+#include "ReadCommand.h"
 
 using namespace std;
 
@@ -52,6 +53,20 @@ void Process::writeToMemory(uint16_t frameIndex, uint16_t address, uint16_t valu
 	processMemory[frameIndex][indexInFrame] = true; // Mark the memory as used
 	processMemoryRead[frameIndex][indexInFrame] = value; // Store the value in the read memory
     visualizeProcessMemory();
+}
+
+void Process::readMemory(uint16_t frameIndex, uint16_t address, const string& varName) {
+    uint16_t indexInFrame = address - (frameIndex * memFrame);
+    int readVariable = processMemoryRead[frameIndex][indexInFrame];
+    if (readVariable == -1) {
+        cout << "Memory at address " << address << " in frame " << frameIndex 
+             << " is not allocated or has no value." << endl;
+    } else {
+		allocateVariable(varName, readVariable); // Allocate the variable with the read value
+        cout << "Read variable '" << varName << "' with value " << readVariable 
+			<< " from address " << address << " in frame " << frameIndex << "." << endl;
+	}
+
 }
 
 void Process::allocateVariable(const string& varName, uint16_t value) {
@@ -247,7 +262,7 @@ vector<shared_ptr<Command>> Process::generateRandomCommandList(int depth, int re
     }
 
     while (instructionBudget >= repeats) {
-        Command::CommandType type = static_cast<Command::CommandType>(rand() % 7); // 0 to 5
+        Command::CommandType type = static_cast<Command::CommandType>(rand() % 8); // 0 to 5
         shared_ptr<Command> cmd;
        
         switch (type) {
@@ -316,13 +331,25 @@ vector<shared_ptr<Command>> Process::generateRandomCommandList(int depth, int re
 
                              
             case Command::WRITE: {
-                uint16_t address = 64 + (rand() % (128 - 64));;
+                uint16_t address = 64;// +(rand() % (128 - 64));
                 uint16_t value = rand() % 256;          // Random value in 0–255
 
                 cmd = make_shared<WriteCommand>(shared_from_this(), address, memFrame, value);
                 instructionBudget -= repeats;
                 break;
             }
+
+
+            case Command::READ: {
+                uint16_t address = 64;//+(rand() % (128 - 64)); // Random address between 64–127
+                string varName = "x" + to_string(rand() % 999); // e.g., x23, x75
+
+                cmd = make_shared<ReadCommand>(shared_from_this(), address, varName, memFrame);
+                instructionBudget -= repeats;
+                break;
+            }
+
+
             
         }
        
@@ -450,6 +477,16 @@ void Process::initializeCommands(const vector<string>& instructions) {
         else if (cmdType == "READ") {
             // TODO: implement WRITE command later
             // cmd = make_shared<WriteCommand>(/* your params */);
+            uint16_t address, memFrame;
+            string varName;
+            iss >> address >> varName >> memFrame;
+
+            if (iss.fail()) {
+                cout << "Invalid READ instruction: " << instr << endl;
+                continue;
+            }
+
+            cmd = make_shared<ReadCommand>(shared_from_this(), address, varName, memFrame);
         }
         else {
             cout << "Unknown instruction: " << instr << endl;
