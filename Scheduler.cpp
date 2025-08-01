@@ -276,11 +276,11 @@ void Scheduler::coreWorker(int coreID) {
                     break;  // Stop executing this process
                 }
 
-                
-
-                timestep++;
                 // THIS WRITES THE MEMORY TEXT FILES, NOT SURE IF THIS IS THE BEST PLACE FOR THIS TBH
                 writeMemorySnapshot(timestep);
+
+                timestep++;
+                
 
 
 
@@ -321,8 +321,8 @@ void Scheduler::coreWorker(int coreID) {
             // COMMENTED OUT BC IDK IF NEED
             // THIS MAKES IT SO THAT THERE WILL ALWAYS BE A TEXT FILE AT THE END THAT HAS EMPTY MEMORY
             if (justFinished) {
-                if (timestep == 0) {
-                    writeMemorySnapshot(timestep+1);
+                if (timestep == 4) {
+                    writeMemorySnapshot(0);
                 }
                 else {
                     writeMemorySnapshot(timestep);

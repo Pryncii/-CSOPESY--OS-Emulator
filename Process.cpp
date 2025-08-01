@@ -218,7 +218,7 @@ vector<shared_ptr<Command>> Process::generateRandomCommandList(int depth, int re
                     cmd = make_shared<PrintCommand>(shared_from_this(), " Hello World from: ");
                 }
                 else {
-                    uint16_t value = rand() % 100;
+                    uint16_t value = rand() % 10;
                     cmd = make_shared<SleepCommand>(shared_from_this(), value);
                 }
                 instructionBudget -= repeats;
