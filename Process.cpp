@@ -90,7 +90,8 @@ void Process::allocateVariable(const string& varName, uint16_t value) {
 
                 // Save variable info in symbolTable only
                 symbolTable[varName] = value;
-
+                memoryNameTableFrame[varName] = frameIdx;  // Store the frame of the variable
+				memoryNameTable[varName] = i ; // Store the address in the frame
                 return; // Allocation successful
             }
         }
@@ -99,6 +100,14 @@ void Process::allocateVariable(const string& varName, uint16_t value) {
     cout << "Failed to allocate variable '" << varName << "' with value " << value 
 		<< ". Not enough memory available." << endl;
 }
+
+void Process::editVariable(const string& varName, uint16_t value) {
+
+    auto& frameRead = processMemoryRead[memoryNameTableFrame[varName]];
+	frameRead[memoryNameTable[varName]] = value; // Update the value in the read memory
+    symbolTable[varName] = value;
+  }
+
 
 void Process::setAllocatedFrames(const vector<size_t>& frames) { 
     this->allocatedFrames = frames;

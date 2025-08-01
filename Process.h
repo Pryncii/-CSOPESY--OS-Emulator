@@ -52,6 +52,7 @@ class Process : public enable_shared_from_this<Process>
 		void initializeCommands(const vector<string>& instructions);
 		void setAllocatedFrames(const vector<size_t>& frames);
 		void allocateVariable(const string& name, uint16_t value);
+		void editVariable(const string& name, uint16_t value);
 		void writeToMemory(uint16_t frameIndex, uint16_t address, uint16_t value);
 		void readMemory(uint16_t frameIndex, uint16_t address, const string& varName);
 		const vector<size_t>& getAllocatedFrames() const { return allocatedFrames; }
@@ -88,6 +89,8 @@ class Process : public enable_shared_from_this<Process>
 			size_t address;
 		};
 		unordered_map<string, uint16_t> symbolTable;
+		unordered_map<string, uint16_t> memoryNameTableFrame; //name of the variable and its frame
+		unordered_map<string, uint16_t> memoryNameTable; //name of the variable and its address in the frame
 		//void* allocatedMemory;
 		vector<size_t> allocatedFrames; // this contains the frame index
 		unordered_map<size_t, vector<bool>> processMemory; // for read and write; not yet used GO PRINCE WOO
