@@ -18,7 +18,7 @@ public:
         RR
     };
 
-    Scheduler(Mode mode, uint32_t timeQuantum = 1, int coreCount = 1, uint32_t delay = 1, shared_ptr<IMemoryAllocator> memoryAllocator = nullptr);
+    Scheduler(Mode mode, uint32_t timeQuantum = 1, int coreCount = 1, uint32_t delay = 1, shared_ptr<IMemoryAllocator> memoryAllocator = nullptr, size_t minins = 0, size_t maxins = 0);
     void addProcess(shared_ptr<Process> process);
     void run();
     vector<shared_ptr<Process>> getRunningQueue();
@@ -38,6 +38,8 @@ private:
     queue<shared_ptr<Process>> readyQueue;
     mutex queueMutex;
     condition_variable queueCV;
+    size_t minins;
+	size_t maxins;
 
     vector<shared_ptr<Process>> runningQueue;
     vector<shared_ptr<Process>> finishedQueue;

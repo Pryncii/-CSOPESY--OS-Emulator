@@ -43,17 +43,17 @@ void AddCommand::execute() {
 	uint16_t result = 0;
 	if (var2IsNumber && var3IsNumber) {
 		result = var2Num + var3Num;
-		process->editVariable(var1, result);
+		//process->editVariable(var1, result);
 	} else if(var2IsNumber && !var3IsNumber) { // if var 2 is number and var 3 is string
 		result = var2Num + process->getSymbolValue(var3Str);
-		process->editVariable(var1, result);
+		//process->editVariable(var1, result);
 	} else if (!var2IsNumber && var3IsNumber) { // if var 2 is string and var 3 is number
 		result = process->getSymbolValue(var2Str) + var3Num;
-		process->editVariable(var1, result);
+		//process->editVariable(var1, result);
 	}
 	else { // if both are strings
 		result = process->getSymbolValue(var2Str) + process->getSymbolValue(var3Str);
-		process->editVariable(var1, result);
+		//process->editVariable(var1, result);
 	}
 
 }

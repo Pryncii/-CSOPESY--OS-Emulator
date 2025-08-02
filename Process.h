@@ -74,6 +74,8 @@ class Process : public enable_shared_from_this<Process>
 
 		int countNonForInstructions(const vector<shared_ptr<Command>>& cmds) const;
 		bool getIsTerminated() const { return isTerminated; }
+		void setHasCommands(bool value) { hasCommands = value; }
+		bool getHasCommands() const { return hasCommands; }
 
 	
 	private:
@@ -95,6 +97,7 @@ class Process : public enable_shared_from_this<Process>
 		vector<size_t> allocatedFrames; // this contains the frame index
 		unordered_map<size_t, vector<bool>> processMemory; // for read and write; not yet used GO PRINCE WOO
 		unordered_map<size_t, vector<int>> processMemoryRead; // for read operations
+		bool hasCommands = false;
 
 		uint16_t memoryRequired;
 		int commandCounter = 0;

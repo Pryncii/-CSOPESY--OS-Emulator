@@ -10,11 +10,14 @@
 #include <ctime>
 #include <algorithm>
 
+
 mutex coutMutex;
 
-Scheduler::Scheduler(Mode mode, uint32_t quantum, int coreCount, uint32_t delay, shared_ptr<IMemoryAllocator> memoryAllocator)
+Scheduler::Scheduler(Mode mode, uint32_t quantum, int coreCount, uint32_t delay, shared_ptr<IMemoryAllocator> memoryAllocator, size_t minins, size_t maxins)
     : schedulingMode(mode), timeQuantum(quantum), cpuCoreCount(coreCount), delay(delay), memoryAllocator(memoryAllocator) {
     //for (auto& busy : coreBusy) busy = false;
+	this->minins = minins;
+	this->maxins = maxins;
 }
 
 void Scheduler::addProcess(shared_ptr<Process> process) {
@@ -181,6 +184,10 @@ void Scheduler::coreWorker(int coreID) {
                 //std::cout << "Allocated memory for process " << current->getName() << " (ID: " << current->getPID() << ")\n";
                 //memoryAllocator->visualizeMemory();
             }
+            if(current->getHasCommands() == false) {
+                current->generateCommands(minins, maxins, 0);
+				current->setHasCommands(true);
+		    }
 
             // If already has memory, just proceed
             readyQueue.pop();
