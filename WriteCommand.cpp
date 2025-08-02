@@ -42,9 +42,11 @@ void WriteCommand::execute() {
 
 	process->writeToMemory(frameOfAddress, address, value);
 	
+	/*
 	cout << "Memory Write [Frame: " << frameOfAddress
 		<< "] [Address: 0x" << hex << address
 		<< "] = " << dec << value << endl;
+		*/
 
 
 

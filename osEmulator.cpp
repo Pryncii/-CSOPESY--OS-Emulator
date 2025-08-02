@@ -302,11 +302,73 @@ void cpuCycleThread(uint32_t delayMs) {
     }
 }
 
-void saveLs(Scheduler& scheduler, Config config) {
-    std::vector<std::shared_ptr<Process>> runningQueueCopy = scheduler.getRunningQueue();
-    std::vector<std::shared_ptr<Process>> finishedQueueCopy = scheduler.getFinishedQueue();
+void processSmi(Scheduler& scheduler, Config config) {
 
-    std::string output =
+    auto cpuUtilization = (scheduler.getRunningCores() * 100) / config.numCPU;
+    uint16_t totalMemory = config.maxMem;
+	size_t totalMemoryUsed = 0;
+	
+
+    vector<shared_ptr<Process>> runningProcesses = scheduler.getRunningQueue();
+
+    for (const shared_ptr<Process>& process : runningProcesses) {
+        unordered_map<size_t, vector<bool>> curProcMem = process->getProcessMemory();
+
+        for (const auto& pair : curProcMem) {
+            size_t frameIndex = pair.first;
+            const vector<bool>& frameData = pair.second;
+
+            for (bool bit : frameData) {
+                if (bit) {
+                    ++totalMemoryUsed;
+                }
+            }
+        }
+    }
+
+	auto memoryUtilization = (totalMemoryUsed * 100) / totalMemory;
+
+    // For each running process, print its name and memory usage
+    cout << "=================================================\n";
+    cout << "| PROCESS-SMI V01.00 Driver Version: 01.00 |\n";
+    cout << "-------------------------------------------------\n";
+    cout << "CPU Utilization: " << cpuUtilization << endl;
+	cout << "Memory Usage: " << totalMemoryUsed << " bytes" << "/" << totalMemory << " bytes\n";
+	cout << "Memory Utilization: " << memoryUtilization << "%\n" << endl;
+    cout << "=================================================\n";
+    cout << "Running processes and memory usage:\n";
+    cout << "-------------------------------------------------\n";
+   
+    for (const shared_ptr<Process>& process : runningProcesses) {
+        unordered_map<size_t, vector<bool>> curProcMem = process->getProcessMemory();
+
+        size_t memoryUsed = 0;
+
+        for (const auto& pair : curProcMem) {
+            size_t frameIndex = pair.first;
+            const vector<bool>& frameData = pair.second;
+
+            for (bool bit : frameData) {
+                if (bit) {
+                    ++memoryUsed;
+                }
+            }
+        }
+
+        cout << process->getName() << " (PID: " << process->getPID() << "):"
+            << " | Memory Used: " << memoryUsed << " bytes\n";
+
+        process->visualizeProcessMemory();
+    }
+
+	// Visualize the process memory allocation
+}
+
+void saveLs(Scheduler& scheduler, Config config) {
+    vector<std::shared_ptr<Process>> runningQueueCopy = scheduler.getRunningQueue();
+    vector<std::shared_ptr<Process>> finishedQueueCopy = scheduler.getFinishedQueue();
+
+    string output =
         "CPU Utilization: " + std::to_string((scheduler.getRunningCores() * 100) / config.numCPU) + "%\n" +
         "Cores used: " + std::to_string(scheduler.getRunningCores()) + "\n" +
         "Cores available: " + std::to_string(config.numCPU - scheduler.getRunningCores()) + "\n" +
@@ -596,38 +658,14 @@ int main(){
                 cout << "No screens available.\n";
 				consoleStrings.append("No screens available.\n");
             } else {
-                /*cout << "Available screens:\n";
-                for (const auto& pair : screens) {
-                    cout << "- " << pair.first << "\n";
-                }*/
-
-                /*cout << "CPU Utilization: " << ((scheduler->getRunningCores() * 100) / (config.numCPU)) << "%\n";
-				cout << "Cores used: " << scheduler->getRunningCores() << "\n";
-				cout << "Cores available: " << config.numCPU - scheduler->getRunningCores() << "\n";
-
-                cout << "+============================================================+\n";
-                cout << "Running processes:\n";
-                
-                vector<shared_ptr<Process>> runningQueueCopy = scheduler->getRunningQueue();
-                for (const auto& process : runningQueueCopy) {
-                    cout << process->getName() << "    (" << process->getTime() << ")   "
-                        << " Core: " << process->getCpuCoreID()
-                        << "    " << process->getCurLine() << "/" << process->getTotalLines() << "\n";
-                }
-
-                cout << "\nFinished processes:\n";
-                vector<shared_ptr<Process>> finishedQueueCopy = scheduler->getFinishedQueue();
-                for (const auto& process : finishedQueueCopy) {
-                    cout << process->getName() << "    (" << process->getTime() << ")   "
-                        << " Finished"
-                        << "    " << process->getCurLine() << "/" << process->getTotalLines() << "\n";
-                }
-
-                cout << "+============================================================+\n";*/
 
                 saveLs(ref(*scheduler), config);
             }
-        } else {
+        }
+        else if (command == "process-smi") {
+			processSmi(ref(*scheduler), config); // call process smi
+        }
+        else {
             cout << "\x1B[31m\x1B[1mUnknown command:\x1B[22m " << command << "\x1B[0m\n";
 			consoleStrings.append("\x1B[31m\x1B[1mUnknown command:\x1B[22m " + command + "\x1B[0m\n");
         }

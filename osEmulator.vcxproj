@@ -135,6 +135,7 @@
     <ClCompile Include="Scheduler.cpp" />
     <ClCompile Include="SleepCommand.cpp" />
     <ClCompile Include="SubtractCommand.cpp" />
+    <ClCompile Include="Vmstat.cpp" />
     <ClCompile Include="WriteCommand.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -156,6 +157,7 @@
     <ClInclude Include="Scheduler.h" />
     <ClInclude Include="SleepCommand.h" />
     <ClInclude Include="SubtractCommand.h" />
+    <ClInclude Include="Vmstat.h" />
     <ClInclude Include="WriteCommand.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

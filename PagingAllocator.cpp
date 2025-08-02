@@ -19,7 +19,7 @@ void* PagingAllocator::Allocate(shared_ptr<Process> process) {
     size_t numFramesNeeded = (process->getMemReq()) / frameSize;
 
     if (numFramesNeeded > freeFrameList.size()) {
-        cout << "Memory allocation failed. Not enough free frames.\n";
+        //cout << "Memory allocation failed. Not enough free frames.\n";
         return nullptr;
     }
 
@@ -52,6 +52,10 @@ void PagingAllocator::visualizeMemory() const {
     std::cout << "---------------------------\n";
 }
 
+size_t PagingAllocator::getMemoryUsed() const {
+    return frameMap.size() * frameSize; // Each frame is of size frameSize
+}
+
 vector<size_t> PagingAllocator::allocateFrames(uint16_t numFrames, uint16_t processID) {
     vector<size_t> allocatedFrames;
 
@@ -65,11 +69,13 @@ vector<size_t> PagingAllocator::allocateFrames(uint16_t numFrames, uint16_t proc
         allocatedFrames.push_back(frame);
     }
 
+    /*
     cout << endl;
     for (uint16_t bit : freeFrameList) {
         cout << bit << ", ";
     }
     cout << endl;
+    */
     return allocatedFrames;
 }
 
