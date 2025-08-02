@@ -156,7 +156,7 @@ void scheduler_start(Config config, Scheduler& scheduler){
             uint16_t memoryRequired = generateMem(config);
 
             shared_ptr<Process> process = make_shared<Process>(globalPID, "Process_" + to_string(globalPID), config.delay, memoryRequired, config.memFrame, config.maxMem);
-            process->generateCommands(config.minIns, config.maxIns, 0);
+            //process->generateCommands(config.minIns, config.maxIns, 0);
             scheduler.addProcess(process); // add the process to the scheduler
 
             Console temp(process);
@@ -444,7 +444,7 @@ int main(){
 
                 //shared_ptr<FlatMemoryAllocator> allocator = make_shared<FlatMemoryAllocator>(config.maxMem);
                 shared_ptr<PagingAllocator> allocator = make_shared<PagingAllocator>(config.maxMem, config.memFrame);
-                scheduler = std::make_shared<Scheduler>(mode, config.quantum, config.numCPU, config.delay, allocator);
+                scheduler = std::make_shared<Scheduler>(mode, config.quantum, config.numCPU, config.delay, allocator, config.minIns, config.maxIns);
                 scheduler->run();
 
                 string initialize = "\n"
@@ -518,7 +518,7 @@ int main(){
                     uint16_t processMemory = isValidMemory(command, config.maxMem); // check if the memory size for the process is valid
                     if (processMemory == 0) continue;
                     shared_ptr<Process> process = make_shared<Process>(globalPID, screenName, config.delay, processMemory, config.memFrame, config.maxMem);
-					process->generateCommands(config.minIns, config.maxIns, 0);
+					//process->generateCommands(config.minIns, config.maxIns, 0);
 					scheduler->addProcess(process); // add the process to the scheduler
                     
                     Console temp(process);

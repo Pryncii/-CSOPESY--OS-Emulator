@@ -346,21 +346,56 @@ vector<shared_ptr<Command>> Process::generateRandomCommandList(int depth, int re
 
                              
             case Command::WRITE: {
-                uint16_t address = 64 + (rand() % (maxMem - 64));;
-                uint16_t value = rand() % 256;          // Random value in 0–255
+                // only addresses it can access are the addresses that has the allocated frames
+                vector<size_t> possibleAddresses;
+                uint16_t address;
+                uint16_t value;
+               
+                if (!allocatedFrames.empty()) {
+                    for (size_t frameIdx : allocatedFrames) {
+                        //for each frame index, add all addresses in that frame to the possible addresses
+                        //for example at frame 0 and memFrame 64, addresses 0-63 are possible, frame 1 and memFrame 64, addresses 64-127 are possible
+                        for (size_t i = 0; i < memFrame; ++i) {
+                            possibleAddresses.push_back(frameIdx * memFrame + i);
+                        }
+                    }
 
-                cmd = make_shared<WriteCommand>(shared_from_this(), address, memFrame, value);
-                instructionBudget -= repeats;
+
+                    if (!possibleAddresses.empty()) {
+                        address = possibleAddresses[rand() % possibleAddresses.size()];
+                        value = rand() % 999;
+                        cmd = make_shared<WriteCommand>(shared_from_this(), address, memFrame, value);
+                        instructionBudget -= repeats;
+                    }// Random value in 0–255
+
+                }
+				
                 break;
             }
 
 
             case Command::READ: {
-                uint16_t address = 64 + (rand() % (maxMem - 64)); // Random address between 64–127
-                string varName = "x" + to_string(rand() % 999); // e.g., x23, x75
+                vector<size_t> possibleAddresses;
+                uint16_t address;
+                string varName;
 
-                cmd = make_shared<ReadCommand>(shared_from_this(), address, varName, memFrame);
-                instructionBudget -= repeats;
+              
+                    for (size_t frameIdx : allocatedFrames) {
+                        // for each frame index, add all addresses in that frame to the possible addresses
+                        for (size_t i = 0; i < memFrame; ++i) {
+                            possibleAddresses.push_back(frameIdx * memFrame + i);
+                        }
+                    }
+
+                    if (!possibleAddresses.empty()) {
+                        address =possibleAddresses[rand() % possibleAddresses.size()];
+                        varName = "x" + to_string(rand() % 999); // e.g., x23, x75
+
+                        cmd = make_shared<ReadCommand>(shared_from_this(), address, varName, memFrame);
+                        instructionBudget -= repeats;
+                    }
+                
+
                 break;
             }
 
