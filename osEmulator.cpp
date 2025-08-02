@@ -15,6 +15,7 @@
 #include <algorithm> 
 #include <random>
 #include "FlatMemoryAllocator.h"
+#include "PagingAllocator.h"
 
 using namespace std;
 
@@ -141,20 +142,21 @@ uint16_t generateMem(Config config) {
 
     return memoryRequired;
 }
+
 void scheduler_start(Config config, Scheduler& scheduler){
     //cout << "\x1B[32m\x1B[1mscheduler-start\x1B[22m\x1B[0m command recognized. Generating Processes.\n";
     processGeneration = true;
     while (processGeneration) {
         // Generate a new process second
-		//generate a new process every batchFreq cycles
+		// generate a new process every batchFreq cycles
         this_thread::sleep_for(chrono::milliseconds(1));
         if (cpuCycles % config.batchFreq == 0) {
 
             
             uint16_t memoryRequired = generateMem(config);
 
-            shared_ptr<Process> process = make_shared<Process>(globalPID, "Process_" + to_string(globalPID), config.delay, memoryRequired);
-            process->generateCommands(config.minIns, config.maxIns, 0);
+            shared_ptr<Process> process = make_shared<Process>(globalPID, "Process_" + to_string(globalPID), config.delay, memoryRequired, config.memFrame, config.maxMem);
+            //process->generateCommands(config.minIns, config.maxIns, 0);
             scheduler.addProcess(process); // add the process to the scheduler
 
             Console temp(process);
@@ -170,29 +172,26 @@ void scheduler_start(Config config, Scheduler& scheduler){
 }
 
 void help(){
-    cout << "+============================================================+\n";
-    cout << "|                     Available Commands                     |\n";
-    cout << "+============================================================+\n";
-    cout << "| SYSTEM COMMANDS                                            |\n";
-    cout << "|   - initialize         : Set up processor configuration    |\n";
-    cout << "|   - exit               : Exit the application              |\n";
-    cout << "|   - clear              : Clear the console                 |\n";
-    cout << "+------------------------------------------------------------+\n";
-    cout << "| SCREEN COMMANDS                                            |\n";
-    cout << "|   - screen -s <name>   : Create a new screen               |\n";
-    cout << "|   - screen -r <name>   : Reattach to an existing screen    |\n";
-    cout << "|   - screen -ls         : List all screens                  |\n";
-    cout << "+------------------------------------------------------------+\n";
-    cout << "| SCHEDULER COMMANDS                                         |\n";
-    cout << "|   - scheduler-start    : Start the scheduler               |\n";
-    cout << "|   - scheduler-stop     : Stop the scheduler                |\n";
-    cout << "|   - report-util        : Display CPU utilization report    |\n";
-    cout << "+============================================================+\n";
+    cout << "+====================================================================+\n";
+    cout << "|                         Available Commands                         |\n";
+    cout << "+====================================================================+\n";
+    cout << "| SYSTEM COMMANDS                                                    |\n";
+    cout << "|   - initialize                 : Set up processor configuration    |\n";
+    cout << "|   - exit                       : Exit the application              |\n";
+    cout << "|   - clear                      : Clear the console                 |\n";
+    cout << "+--------------------------------------------------------------------+\n";
+    cout << "| SCREEN COMMANDS                                                    |\n";
+    cout << "|   - screen -s <name> <memsize>                  : Create a screen  |\n";
+    cout << "|   - screen -c <name> <memsize> \"<instructions>\" : Create with code |\n";
+    cout << "|   - screen -r <name>                            : Reattach screen  |\n";
+    cout << "|   - screen -ls                                  : List all screens |\n";
+    cout << "+--------------------------------------------------------------------+\n";
+    cout << "| SCHEDULER COMMANDS                                                 |\n";
+    cout << "|   - scheduler-start            : Start the scheduler               |\n";
+    cout << "|   - scheduler-stop             : Stop the scheduler                |\n";
+    cout << "|   - report-util                : CPU utilization report            |\n";
+    cout << "+====================================================================+\n";
 }
-
-//void scheduler_stop(){
-//    cout << "\x1B[32m\x1B[1mscheduler-stop\x1B[22m\x1B[0m command recognized. Doing something.\n";
-//}
 
 void report_util(Config config, Scheduler& scheduler){
     cout << "\x1B[32m\x1B[1mreport-util\x1B[22m\x1B[0m command recognized. Generating logs.\n";
@@ -303,11 +302,73 @@ void cpuCycleThread(uint32_t delayMs) {
     }
 }
 
-void saveLs(Scheduler& scheduler, Config config) {
-    std::vector<std::shared_ptr<Process>> runningQueueCopy = scheduler.getRunningQueue();
-    std::vector<std::shared_ptr<Process>> finishedQueueCopy = scheduler.getFinishedQueue();
+void processSmi(Scheduler& scheduler, Config config) {
 
-    std::string output =
+    auto cpuUtilization = (scheduler.getRunningCores() * 100) / config.numCPU;
+    uint16_t totalMemory = config.maxMem;
+	size_t totalMemoryUsed = 0;
+	
+
+    vector<shared_ptr<Process>> runningProcesses = scheduler.getRunningQueue();
+
+    for (const shared_ptr<Process>& process : runningProcesses) {
+        unordered_map<size_t, vector<bool>> curProcMem = process->getProcessMemory();
+
+        for (const auto& pair : curProcMem) {
+            size_t frameIndex = pair.first;
+            const vector<bool>& frameData = pair.second;
+
+            for (bool bit : frameData) {
+                if (bit) {
+                    ++totalMemoryUsed;
+                }
+            }
+        }
+    }
+
+	auto memoryUtilization = (totalMemoryUsed * 100) / totalMemory;
+
+    // For each running process, print its name and memory usage
+    cout << "=================================================\n";
+    cout << "| PROCESS-SMI V01.00 Driver Version: 01.00 |\n";
+    cout << "-------------------------------------------------\n";
+    cout << "CPU Utilization: " << cpuUtilization << endl;
+	cout << "Memory Usage: " << totalMemoryUsed << " bytes" << "/" << totalMemory << " bytes\n";
+	cout << "Memory Utilization: " << memoryUtilization << "%\n" << endl;
+    cout << "=================================================\n";
+    cout << "Running processes and memory usage:\n";
+    cout << "-------------------------------------------------\n";
+   
+    for (const shared_ptr<Process>& process : runningProcesses) {
+        unordered_map<size_t, vector<bool>> curProcMem = process->getProcessMemory();
+
+        size_t memoryUsed = 0;
+
+        for (const auto& pair : curProcMem) {
+            size_t frameIndex = pair.first;
+            const vector<bool>& frameData = pair.second;
+
+            for (bool bit : frameData) {
+                if (bit) {
+                    ++memoryUsed;
+                }
+            }
+        }
+
+        cout << process->getName() << " (PID: " << process->getPID() << "):"
+            << " | Memory Used: " << memoryUsed << " bytes\n";
+
+        process->visualizeProcessMemory();
+    }
+
+	// Visualize the process memory allocation
+}
+
+void saveLs(Scheduler& scheduler, Config config) {
+    vector<std::shared_ptr<Process>> runningQueueCopy = scheduler.getRunningQueue();
+    vector<std::shared_ptr<Process>> finishedQueueCopy = scheduler.getFinishedQueue();
+
+    string output =
         "CPU Utilization: " + std::to_string((scheduler.getRunningCores() * 100) / config.numCPU) + "%\n" +
         "Cores used: " + std::to_string(scheduler.getRunningCores()) + "\n" +
         "Cores available: " + std::to_string(config.numCPU - scheduler.getRunningCores()) + "\n" +
@@ -336,8 +397,79 @@ void saveLs(Scheduler& scheduler, Config config) {
     output += "+============================================================+\n";
     cout << output;
     consoleStrings.append(output);
-
 }
+
+uint16_t isValidMemory(const string& command, uint16_t maxMem) {
+    istringstream iss(command);
+    string screen, flag, screenName, memStr;
+
+    iss >> screen >> flag >> screenName >> memStr;
+
+    if (!isNonNegativeInteger(memStr)) {
+        cout << "Error: Memory value must be a non-negative integer.\n";
+        return 0;
+    }
+
+    int memVal = stoi(memStr);
+
+    if (memVal < 64 || memVal > maxMem) {
+        cout << "invalid memory allocation";
+        return 0;
+    }
+
+    // Check if memVal is a power of two
+    if (!(memVal > 0 && (memVal & (memVal - 1)) == 0)) {
+        cout << "Error: Memory must be a power of two.\n";
+        return 0;
+    }
+
+    return static_cast<uint16_t>(memVal);
+}
+
+string getScreenName(const string& command) {
+    istringstream iss(command);
+    string token, subcommand, screenName;
+
+    iss >> token >> subcommand >> screenName;
+
+    screenName.erase(0, screenName.find_first_not_of(" \t\n\r"));
+    screenName.erase(screenName.find_last_not_of(" \t\n\r") + 1);
+
+    return screenName;
+}
+
+vector<string> parseInstructionsFromCommand(const string& command) {
+    size_t startQuote = command.find('\"');
+    size_t endQuote = command.rfind('\"');
+
+    if (startQuote == string::npos || endQuote == string::npos || endQuote <= startQuote + 1) {
+        cout << "invalid command\n";
+        return {};
+    }
+
+    string instructionBlock = command.substr(startQuote + 1, endQuote - startQuote - 1);
+    vector<string> instructions;
+    istringstream iss(instructionBlock);
+    string instruction;
+
+    while (getline(iss, instruction, ';')) {
+        // Trim leading and trailing whitespace
+        instruction.erase(0, instruction.find_first_not_of(" \t\n\r"));
+        instruction.erase(instruction.find_last_not_of(" \t\n\r") + 1);
+
+        if (!instruction.empty()) {
+            instructions.push_back(instruction);
+        }
+    }
+
+    if (instructions.empty() || instructions.size() > 50) {
+        cout << "invalid command\n"; // i think this should be throwed??? im not sure kindly double check tysm
+        return {};
+    }
+
+    return instructions;
+}
+
 int main(){
     srand(static_cast<unsigned int>(time(0)));
     string command;
@@ -372,8 +504,9 @@ int main(){
                     return 1;
                 }
 
-                shared_ptr<FlatMemoryAllocator> allocator = make_shared<FlatMemoryAllocator>(config.maxMem);
-                scheduler = std::make_shared<Scheduler>(mode, config.quantum, config.numCPU, config.delay, allocator);
+                //shared_ptr<FlatMemoryAllocator> allocator = make_shared<FlatMemoryAllocator>(config.maxMem);
+                shared_ptr<PagingAllocator> allocator = make_shared<PagingAllocator>(config.maxMem, config.memFrame);
+                scheduler = std::make_shared<Scheduler>(mode, config.quantum, config.numCPU, config.delay, allocator, config.minIns, config.maxIns);
                 scheduler->run();
 
                 string initialize = "\n"
@@ -432,13 +565,9 @@ int main(){
             report_util(config, *scheduler);
         } else if (command == "exit") {
             exit(0); 
-        } else if (command.rfind("screen -s", 0) == 0){
-            string rawScreenName;
-            rawScreenName = command.substr(9); // get text after -s
+        } else if (command.rfind("screen -s", 0) == 0) {
 
-            // Trim whitespace
-            rawScreenName.erase(0, rawScreenName.find_first_not_of(" \t\n\r")); // left trim (" CSOPESY" becomes "CSOPESY")
-            rawScreenName.erase(rawScreenName.find_last_not_of(" \t\n\r") + 1); // right trim ("CSOPESY " becomes "CSOPESY")
+            string rawScreenName = getScreenName(command); // get the process name after -s
 
             if (rawScreenName.empty()) { // makes sure theres a proper screen name
                 cout << "\x1B[31m\x1B[1mError:\x1B[0m Screen name cannot be empty.\n";
@@ -447,9 +576,11 @@ int main(){
             else {
                 screenName = rawScreenName;
                 if (inScreenMap(screenName) == false) { // ensures screen name doesn't exist yet
-                    uint16_t memoryRequired = generateMem(config);
-                    shared_ptr<Process> process = make_shared<Process>(globalPID, screenName, config.delay, memoryRequired);
-					process->generateCommands(config.minIns, config.maxIns, 0);
+                    //uint16_t memoryRequired = generateMem(config);
+                    uint16_t processMemory = isValidMemory(command, config.maxMem); // check if the memory size for the process is valid
+                    if (processMemory == 0) continue;
+                    shared_ptr<Process> process = make_shared<Process>(globalPID, screenName, config.delay, processMemory, config.memFrame, config.maxMem);
+					//process->generateCommands(config.minIns, config.maxIns, 0);
 					scheduler->addProcess(process); // add the process to the scheduler
                     
                     Console temp(process);
@@ -463,14 +594,45 @@ int main(){
 					consoleStrings.append("\x1B[31m\x1B[1mError:\x1B[0m Screen name already exist/has finished executing!\n");
                 }
             }
+        } else if (command.rfind("screen -c", 0) == 0) {
+            string rawScreenName = getScreenName(command); // get the process name after -s
+
+            if (rawScreenName.empty()) { // makes sure theres a proper screen name
+                cout << "\x1B[31m\x1B[1mError:\x1B[0m Screen name cannot be empty.\n";
+                consoleStrings.append("\x1B[31m\x1B[1mError:\x1B[0m Screen name cannot be empty.\n");
+            }
+            else {
+                screenName = rawScreenName;
+                if (inScreenMap(screenName) == false) { // ensures screen name doesn't exist yet
+                    uint16_t processMemory = isValidMemory(command, config.maxMem); // check if the memory size for the process is valid
+                    if (processMemory == 0) continue;
+
+                    // process intructions
+                    vector<string> instructions = parseInstructionsFromCommand(command);
+
+                    // UNCOMMENT FOR VISUALIZATION
+                    /*for (const string& instr : instructions) {
+                        cout << instr << endl;
+                    }*/
+
+                    //shared_ptr<Process> process = make_shared<Process>(globalPID, screenName, config.delay, processMemory);
+                    //process->initializeCommands(instructions);
+                    //scheduler->addProcess(process); // add the process to the scheduler
+
+                    //Console temp(process);
+                    //shared_ptr<Console> consolePtr = make_shared<Console>(temp);
+                    //screens.insert({ screenName, consolePtr });
+                    ////screenInterface(screenName); // open the screen interface
+                    //globalPID++;
+                }
+                else {
+                    cout << "\x1B[31m\x1B[1mError:\x1B[0m Screen name already exist/has finished executing!\n";
+                    consoleStrings.append("\x1B[31m\x1B[1mError:\x1B[0m Screen name already exist/has finished executing!\n");
+                }
+            }
         } else if (command.rfind("screen -r", 0) == 0){
-            string rawScreenName;
-            rawScreenName = command.substr(9);
-
-            // Trim whitespace
-            rawScreenName.erase(0, rawScreenName.find_first_not_of(" \t\n\r"));
-            rawScreenName.erase(rawScreenName.find_last_not_of(" \t\n\r") + 1);
-
+            string rawScreenName = getScreenName(command);
+            
             if (rawScreenName.empty()) { // makes sure theres a proper screen name
                 cout << "\x1B[31m\x1B[1mError:\x1B[0m Screen name cannot be empty.\n";
 				consoleStrings.append("\x1B[31m\x1B[1mError:\x1B[0m Screen name cannot be empty.\n");
@@ -496,39 +658,14 @@ int main(){
                 cout << "No screens available.\n";
 				consoleStrings.append("No screens available.\n");
             } else {
-                /*cout << "Available screens:\n";
-                for (const auto& pair : screens) {
-                    cout << "- " << pair.first << "\n";
-                }*/
-
-                /*cout << "CPU Utilization: " << ((scheduler->getRunningCores() * 100) / (config.numCPU)) << "%\n";
-				cout << "Cores used: " << scheduler->getRunningCores() << "\n";
-				cout << "Cores available: " << config.numCPU - scheduler->getRunningCores() << "\n";
-
-                cout << "+============================================================+\n";
-                cout << "Running processes:\n";
-                
-                vector<shared_ptr<Process>> runningQueueCopy = scheduler->getRunningQueue();
-                for (const auto& process : runningQueueCopy) {
-                    cout << process->getName() << "    (" << process->getTime() << ")   "
-                        << " Core: " << process->getCpuCoreID()
-                        << "    " << process->getCurLine() << "/" << process->getTotalLines() << "\n";
-                }
-
-                cout << "\nFinished processes:\n";
-                vector<shared_ptr<Process>> finishedQueueCopy = scheduler->getFinishedQueue();
-                for (const auto& process : finishedQueueCopy) {
-                    cout << process->getName() << "    (" << process->getTime() << ")   "
-                        << " Finished"
-                        << "    " << process->getCurLine() << "/" << process->getTotalLines() << "\n";
-                }
-
-                cout << "+============================================================+\n";*/
 
                 saveLs(ref(*scheduler), config);
-                
             }
-        } else {
+        }
+        else if (command == "process-smi") {
+			processSmi(ref(*scheduler), config); // call process smi
+        }
+        else {
             cout << "\x1B[31m\x1B[1mUnknown command:\x1B[22m " << command << "\x1B[0m\n";
 			consoleStrings.append("\x1B[31m\x1B[1mUnknown command:\x1B[22m " + command + "\x1B[0m\n");
         }

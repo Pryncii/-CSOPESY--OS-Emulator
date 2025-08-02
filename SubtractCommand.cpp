@@ -42,18 +42,18 @@ void SubtractCommand::execute() {
     uint16_t result = 0;
     if (var2IsNumber && var3IsNumber) {
         result = var2Num - var3Num;
-        process->addSymbol(var1, result);
+        //process->editVariable(var1, result);
     }
     else if (var2IsNumber && !var3IsNumber) {
         result = var2Num - process->getSymbolValue(var3Str);
-        process->addSymbol(var1, result);
+        //process->editVariable(var1, result);
     }
     else if (!var2IsNumber && var3IsNumber) {
         result = process->getSymbolValue(var2Str) - var3Num;
-        process->addSymbol(var1, result);
+        //process->editVariable(var1, result);
     }
     else {
         result = process->getSymbolValue(var2Str) - process->getSymbolValue(var3Str);
-        process->addSymbol(var1, result);
+        //process->editVariable(var1, result);
     }
 }

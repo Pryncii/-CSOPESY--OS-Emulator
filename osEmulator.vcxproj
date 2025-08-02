@@ -125,13 +125,18 @@
     <ClCompile Include="DeclareCommand.cpp" />
     <ClCompile Include="FlatMemoryAllocator.cpp" />
     <ClCompile Include="ForLoopCommand.cpp" />
+    <ClCompile Include="IMemoryAllocator.cpp" />
     <ClCompile Include="MemoryAllocator.cpp" />
     <ClCompile Include="osEmulator.cpp" />
+    <ClCompile Include="PagingAllocator.cpp" />
     <ClCompile Include="PrintCommand.cpp" />
     <ClCompile Include="Process.cpp" />
+    <ClCompile Include="ReadCommand.cpp" />
     <ClCompile Include="Scheduler.cpp" />
     <ClCompile Include="SleepCommand.cpp" />
     <ClCompile Include="SubtractCommand.cpp" />
+    <ClCompile Include="Vmstat.cpp" />
+    <ClCompile Include="WriteCommand.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="config.txt" />
@@ -143,12 +148,17 @@
     <ClInclude Include="DeclareCommand.h" />
     <ClInclude Include="FlatMemoryAllocator.h" />
     <ClInclude Include="ForLoopCommand.h" />
+    <ClInclude Include="IMemoryAllocator.h" />
     <ClInclude Include="MemoryAllocator.h" />
+    <ClInclude Include="PagingAllocator.h" />
     <ClInclude Include="PrintCommand.h" />
     <ClInclude Include="Process.h" />
+    <ClInclude Include="ReadCommand.h" />
     <ClInclude Include="Scheduler.h" />
     <ClInclude Include="SleepCommand.h" />
     <ClInclude Include="SubtractCommand.h" />
+    <ClInclude Include="Vmstat.h" />
+    <ClInclude Include="WriteCommand.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

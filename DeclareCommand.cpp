@@ -29,6 +29,7 @@ void DeclareCommand::execute() {
 			
 			varName.append("_" + to_string(rand()*time(0)/10000 * random));
 			random = (rand() + random + time(0)) * 32 %10000;
+			
 			//cout << varName << endl;
 			
 			//cerr << "Error: Variable '" << varName << "' already declared in process " << process->getPID() << endl;
@@ -36,8 +37,9 @@ void DeclareCommand::execute() {
 		}
 		else {
 			// Declare the variable in the process's symbol table
-			
-			process->addSymbol(varName, value);
+			process->allocateVariable(varName, value);
+			//cout << "Variable '" << varName << "' declared with value " << value << " in process " << process->getPID() << endl;
+			//process->visualizeProcessMemory();
 			return;
 		}
 	}
