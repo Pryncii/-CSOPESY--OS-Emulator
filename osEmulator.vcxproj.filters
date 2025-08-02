@@ -66,6 +66,9 @@
     <ClCompile Include="IMemoryAllocator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Vmstat.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Text Include="config.txt" />
@@ -117,6 +120,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="IMemoryAllocator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Vmstat.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

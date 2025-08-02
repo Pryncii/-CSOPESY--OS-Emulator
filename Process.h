@@ -76,10 +76,12 @@ class Process : public enable_shared_from_this<Process>
 		bool getIsTerminated() const { return isTerminated; }
 		void setHasCommands(bool value) { hasCommands = value; }
 		bool getHasCommands() const { return hasCommands; }
+		void visualizeProcessContents() const;
 
 	
 	private:
 		int pid; // Memory allocator for this process
+		int variableCounter = 0; // Counter for variable names
 		uint16_t memFrame; // Memory per frame
 		string name;
 		uint16_t maxMem;

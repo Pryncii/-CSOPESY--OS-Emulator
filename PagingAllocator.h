@@ -13,6 +13,9 @@ public:
 	uint16_t getBlockSizeAt(uint16_t index) const override;
 	size_t getTotalExtFrag() const override;
 	uint16_t getMaxSize() const override;
+	//no override here
+	unordered_map<uint16_t, uint16_t> getFrameMap() const override { return frameMap; }
+	size_t getMemoryUsed() const override;
 
 private:
 	uint16_t maxMem;
