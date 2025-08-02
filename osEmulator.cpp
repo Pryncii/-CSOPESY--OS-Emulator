@@ -310,6 +310,7 @@ void processSmi(Scheduler& scheduler, Config config) {
 	
 
     vector<shared_ptr<Process>> runningProcesses = scheduler.getRunningQueue();
+	queue<shared_ptr<Process>> readyProcesses = scheduler.getReadyQueue();
 
     for (const shared_ptr<Process>& process : runningProcesses) {
         unordered_map<size_t, vector<bool>> curProcMem = process->getProcessMemory();
@@ -325,6 +326,24 @@ void processSmi(Scheduler& scheduler, Config config) {
             }
         }
     }
+
+    queue<shared_ptr<Process>> tempReadyQueue = readyProcesses; // copy
+    while (!tempReadyQueue.empty()) {
+        shared_ptr<Process> process = tempReadyQueue.front();
+        tempReadyQueue.pop();
+
+        unordered_map<size_t, vector<bool>> curProcMem = process->getProcessMemory();
+
+        for (const auto& pair : curProcMem) {
+            const vector<bool>& frameData = pair.second;
+            for (bool bit : frameData) {
+                if (bit) {
+                    ++totalMemoryUsed;
+                }
+            }
+        }
+    }
+
 
 	auto memoryUtilization = (totalMemoryUsed * 100) / totalMemory;
 
@@ -361,7 +380,34 @@ void processSmi(Scheduler& scheduler, Config config) {
         process->visualizeProcessMemory();
     }
 
-	// Visualize the process memory allocation
+    cout << "\n=================================================\n";
+    cout << "Ready queue processes and memory usage:\n";
+    cout << "-------------------------------------------------\n";
+
+    tempReadyQueue = readyProcesses; // reset copy for printing
+    while (!tempReadyQueue.empty()) {
+        shared_ptr<Process> process = tempReadyQueue.front();
+        tempReadyQueue.pop();
+
+        unordered_map<size_t, vector<bool>> curProcMem = process->getProcessMemory();
+        size_t memoryUsed = 0;
+
+        for (const auto& pair : curProcMem) {
+            const vector<bool>& frameData = pair.second;
+            for (bool bit : frameData) {
+                if (bit) {
+                    ++memoryUsed;
+                }
+            }
+        }
+
+        cout << process->getName() << " (PID: " << process->getPID() << ")"
+            << " | Memory Used: " << memoryUsed << " bytes\n";
+
+        process->visualizeProcessMemory();
+
+        // Visualize the process memory allocation
+    }
 }
 
 void saveLs(Scheduler& scheduler, Config config) {

@@ -83,6 +83,10 @@ vector<shared_ptr<Process>> Scheduler::getFinishedQueue() {
     return finishedQueue;
 }
 
+queue<shared_ptr<Process>> Scheduler::getReadyQueue() {
+    return readyQueue;
+}
+
 //void Scheduler::writeMemorySnapshot(int quantumCycle) {
 //    lock_guard<mutex> lock(queueMutex);
 //    ostringstream filename;
@@ -205,6 +209,7 @@ void Scheduler::coreWorker(int coreID) {
             //cout << "\n[Core " << coreID << "] Running PID: " << current->getPID() << "\n";
         }
 
+        
 
         if (schedulingMode == Mode::FCFS) {
             // run until finished
@@ -261,21 +266,18 @@ void Scheduler::coreWorker(int coreID) {
             bool justFinished = false;
 
             // until finished or timeQuantum is reached
-            while (!current->isFinished() && timestep < timeQuantum && !current->getIsTerminated()) {
+            while (!current->isFinished() && current->getTimestep() < timeQuantum) {
+
+
+                
+                cout << current->getTimestep();
 
                
                 current->executeCommand();
 
-                if (current->getIsTerminated()) {
-                    for (size_t i = 0; i < runningQueue.size(); ++i) {
-                        if (runningQueue[i]->getPID() == current->getPID()) {
-                            runningQueue.erase(runningQueue.begin() + i);
-                            current->setCpuCoreID(-1);
-                            break;
-                        }
-                    }
-                }
                 current->moveToNextLine();
+
+
 
                 if (current->isSleeping()) {
                     lock_guard<mutex> lock(queueMutex);
@@ -295,12 +297,10 @@ void Scheduler::coreWorker(int coreID) {
 
                 
 
-                //timestep++;
+                timestep++;
                 // THIS WRITES THE MEMORY TEXT FILES, NOT SURE IF THIS IS THE BEST PLACE FOR THIS TBH
                 //writeMemorySnapshot(timestep);
 
-                timestep++;
-                
 
 
 
@@ -339,14 +339,8 @@ void Scheduler::coreWorker(int coreID) {
 
             // COMMENTED OUT BC IDK IF NEED
             // THIS MAKES IT SO THAT THERE WILL ALWAYS BE A TEXT FILE AT THE END THAT HAS EMPTY MEMORY
-            if (justFinished) {
-                if (timestep == 4) {
-                    writeMemorySnapshot(0);
-                }
-                else {
-                    writeMemorySnapshot(timestep);
-                }
-            }
+            
+           
         }
 
         //coreBusy[coreID] = false; // core now free
