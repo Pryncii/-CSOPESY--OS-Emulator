@@ -6,7 +6,7 @@ class PagingAllocator : public IMemoryAllocator
 {
 public:
 	PagingAllocator(uint16_t maxMem, uint16_t memFrame);
-	void* Allocate(shared_ptr<Process> process) override;
+	bool Allocate(shared_ptr<Process> process) override;
 	void Deallocate(shared_ptr<Process> process) override;
 	void visualizeMemory() const override;
 	char* getMemoryBase() override;

@@ -48,12 +48,15 @@ void ForLoopCommand::execute() {
             cerr << "[ForLoopCommand] Skipping null command\n";
             continue;
         }
-
-        //cout << "process rn: " << cmd->toString() << "\n";
-        this_thread::sleep_for(chrono::milliseconds(delay));
-        
-        cmd->execute();
-        process->moveToNextLine();
+        if (process->getTimestep() < process->getQuantum()) {
+            //cout << process->getQuantum() << endl;
+            //cout << "process rn: " << cmd->toString() << "\n";
+            this_thread::sleep_for(chrono::milliseconds(delay));
+            cmd->execute();
+            //cout << "executing";
+            process->moveToNextLine();
+            process->setTimestep(process->getTimestep() + 1);
+        } 
     }
     
 }

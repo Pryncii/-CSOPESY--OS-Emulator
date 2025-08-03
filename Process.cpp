@@ -20,7 +20,7 @@
 
 using namespace std;
 
-Process::Process(int pid, string name, uint32_t delay, uint16_t memoryRequired, uint16_t memFrame, uint16_t maxMem) {
+Process::Process(int pid, string name, uint32_t delay, uint16_t memoryRequired, uint16_t memFrame, uint16_t maxMem, uint32_t quantum) {
     time_t now = time(nullptr);
     char buffer[80];
     strftime(buffer, sizeof(buffer), "%m/%d/%Y %I:%M:%S%p", localtime(&now));
@@ -33,6 +33,7 @@ Process::Process(int pid, string name, uint32_t delay, uint16_t memoryRequired, 
     this->memoryRequired = memoryRequired;
 	this->memFrame = memFrame;
     this->maxMem = maxMem;
+    this->quantum = quantum;
     
 }
 

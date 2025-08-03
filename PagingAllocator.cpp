@@ -14,20 +14,19 @@ PagingAllocator::PagingAllocator(uint16_t maxMem, uint16_t memFrame)
     
 }
 
-void* PagingAllocator::Allocate(shared_ptr<Process> process) {
+bool PagingAllocator::Allocate(shared_ptr<Process> process) {
     size_t processID = process->getPID();
-    size_t numFramesNeeded = (process->getMemReq()) / frameSize;
+    size_t numFramesNeeded = process->getMemReq() / frameSize;
 
     if (numFramesNeeded > freeFrameList.size()) {
-        //cout << "Memory allocation failed. Not enough free frames.\n";
-        return nullptr;
+        return false; // not enough memory
     }
 
     vector<size_t> allocated = allocateFrames(numFramesNeeded, processID);
-    process->setAllocatedFrames(allocated); // Store in the process
-
-    return reinterpret_cast<void*>(1); // dummy non-null value to show success
+    process->setAllocatedFrames(allocated);
+    return true;
 }
+
 
 void PagingAllocator::Deallocate(shared_ptr<Process> process) {
     for (size_t frame : process->getAllocatedFrames()) {

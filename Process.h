@@ -19,7 +19,7 @@ class Process : public enable_shared_from_this<Process>
 			FINISHED
 		};
 
-		Process(int pid, string name, uint32_t delay, uint16_t memoryRequired, uint16_t memFrame, uint16_t maxMem);
+		Process(int pid, string name, uint32_t delay, uint16_t memoryRequired, uint16_t memFrame, uint16_t maxMem, uint32_t quantum);
 		void addCommand(shared_ptr<Command> command);
 		void generateCommands(const uint32_t minIns, const uint32_t maxIns, int depth);
 		vector<shared_ptr<Command>> generateRandomCommandList(int depth, int repeats, int& instructionBudget);
@@ -47,8 +47,8 @@ class Process : public enable_shared_from_this<Process>
 		uint16_t getMemReq() const;
 		uint16_t getNumPages() const;
 		string saveLogs();
-		/*void setAllocatedMemory(void* memory);
-		void* getAllocatedMemory() const;*/
+		void setAllocatedMemory(void* memory);
+		void* getAllocatedMemory() { return allocatedMemory; }
 		void initializeCommands(const vector<string>& instructions);
 		void setAllocatedFrames(const vector<size_t>& frames);
 		void allocateVariable(const string& name, uint16_t value);
@@ -79,14 +79,17 @@ class Process : public enable_shared_from_this<Process>
 		void visualizeProcessContents() const;
 		int getTimestep() const { return timestep; }
 		void setTimestep(int step) { timestep = step; }
+		uint16_t getQuantum() { return quantum; }
 
 	
 	private:
+		void* allocatedMemory;
 		int pid; // Memory allocator for this process
 		int variableCounter = 0; // Counter for variable names
 		uint16_t memFrame; // Memory per frame
 		string name;
 		uint16_t maxMem;
+		uint32_t quantum;
 		bool isTerminated = false;
 		vector<shared_ptr<Command>> commandList;
 		vector<string> logLines;

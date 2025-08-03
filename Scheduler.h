@@ -26,7 +26,7 @@ public:
     queue<shared_ptr<Process>> getReadyQueue();
     int getRunningCores();
     int getFreeCores();
-   // void writeMemorySnapshot(int quantumCycle);
+    void writeMemorySnapshot(int quantumCycle);
 
 private:
     void coreWorker(int coreID); // Worker function per core

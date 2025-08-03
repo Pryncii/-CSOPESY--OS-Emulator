@@ -8,7 +8,7 @@ class IMemoryAllocator
 public:
 	IMemoryAllocator() = default;
 	virtual ~IMemoryAllocator() = default;
-	virtual void* Allocate(shared_ptr<Process> process) = 0;
+	virtual bool Allocate(shared_ptr<Process> process) = 0;
 	virtual void Deallocate(shared_ptr<Process> process) = 0;
 	virtual void visualizeMemory() const = 0;
 	virtual char* getMemoryBase() = 0;
