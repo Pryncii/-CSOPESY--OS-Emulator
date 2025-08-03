@@ -20,27 +20,18 @@ WriteCommand::WriteCommand(shared_ptr<Process> process, uint16_t address, uint16
 
 void WriteCommand::execute() {
 	//receive the address
-	uint16_t frameOfAddress = address/memFrame;
-	vector<size_t> allocatedFrames = process->getAllocatedFrames();
-	bool isFrameAllocated = false;
+	uint16_t pageIndex = address/memFrame;
 
-	//check if the frame is allocated to the process
-	for(size_t i = 0; i < allocatedFrames.size(); i++) {
-		if (allocatedFrames[i] == frameOfAddress) {
-			isFrameAllocated = true;
-			break;
-		}
-	}
-
-	if(!isFrameAllocated) {
+	if (process->getMemReq() < address) {
 		cout << "Write Error" << endl;
+		//terminate the process if the frame is not allocated
 		process->terminateProcess();
 		return;
 	}
 
 	//write the value to the address
 
-	process->writeToMemory(frameOfAddress, address, value);
+	process->writeToMemory(pageIndex, address, value);
 	
 	/*
 	cout << "Memory Write [Frame: " << frameOfAddress

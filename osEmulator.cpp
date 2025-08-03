@@ -314,14 +314,14 @@ void processSmi(Scheduler& scheduler, Config config) {
 	queue<shared_ptr<Process>> readyProcesses = scheduler.getReadyQueue();
 
     for (const shared_ptr<Process>& process : runningProcesses) {
-        unordered_map<size_t, vector<bool>> curProcMem = process->getProcessMemory();
+        vector<vector<bool>> curProcMem = process->getProcessMemory();
 
-        for (const auto& pair : curProcMem) {
-            size_t frameIndex = pair.first;
-            const vector<bool>& frameData = pair.second;
+        for (int i = 0; i < curProcMem.size(); i++) {
+            //size_t frameIndex = pair.first;
+            //const vector<bool>& frameData = pair.second;
 
-            for (bool bit : frameData) {
-                if (bit) {
+            for (int j = 0; j < curProcMem[i].size(); j++) {
+                if (curProcMem[i][j]) {
                     ++totalMemoryUsed;
                 }
             }
@@ -333,12 +333,12 @@ void processSmi(Scheduler& scheduler, Config config) {
         shared_ptr<Process> process = tempReadyQueue.front();
         tempReadyQueue.pop();
 
-        unordered_map<size_t, vector<bool>> curProcMem = process->getProcessMemory();
+        vector<vector<bool>> curProcMem = process->getProcessMemory();
 
-        for (const auto& pair : curProcMem) {
-            const vector<bool>& frameData = pair.second;
-            for (bool bit : frameData) {
-                if (bit) {
+        for (int i = 0; i < curProcMem.size(); i++) {
+            //const vector<bool>& frameData = pair.second;
+            for (int j = 0; j < curProcMem[i].size(); j++) {
+                if (curProcMem[i][j]) {
                     ++totalMemoryUsed;
                 }
             }
@@ -360,16 +360,16 @@ void processSmi(Scheduler& scheduler, Config config) {
     cout << "-------------------------------------------------\n";
    
     for (const shared_ptr<Process>& process : runningProcesses) {
-        unordered_map<size_t, vector<bool>> curProcMem = process->getProcessMemory();
+        vector<vector<bool>> curProcMem = process->getProcessMemory();
 
         size_t memoryUsed = 0;
 
-        for (const auto& pair : curProcMem) {
-            size_t frameIndex = pair.first;
-            const vector<bool>& frameData = pair.second;
+        for (int i = 0; i < curProcMem.size(); i++) {
+            //size_t frameIndex = pair.first;
+            //const vector<bool>& frameData = pair.second;
 
-            for (bool bit : frameData) {
-                if (bit) {
+            for (int j = 0; j < curProcMem[i].size(); j++) {
+                if (curProcMem[i][j]) {
                     ++memoryUsed;
                 }
             }
@@ -390,13 +390,13 @@ void processSmi(Scheduler& scheduler, Config config) {
         shared_ptr<Process> process = tempReadyQueue.front();
         tempReadyQueue.pop();
 
-        unordered_map<size_t, vector<bool>> curProcMem = process->getProcessMemory();
+        vector<vector<bool>> curProcMem = process->getProcessMemory();
         size_t memoryUsed = 0;
 
-        for (const auto& pair : curProcMem) {
-            const vector<bool>& frameData = pair.second;
-            for (bool bit : frameData) {
-                if (bit) {
+        for (int i = 0; i < curProcMem.size(); i++) {
+            //const vector<bool>& frameData = pair.second;
+            for (int j = 0; j < curProcMem[i].size(); j++) {
+                if (curProcMem[i][j]) {
                     ++memoryUsed;
                 }
             }

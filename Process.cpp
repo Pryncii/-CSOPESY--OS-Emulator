@@ -49,19 +49,20 @@ int Process::getCurLine() const {
 	return this->commandCounter; 
 }
 
-void Process::writeToMemory(uint16_t frameIndex, uint16_t address, uint16_t value) {
-    uint16_t indexInFrame = address - (frameIndex * memFrame);
-	processMemory[frameIndex][indexInFrame] = true; // Mark the memory as used
-    processMemory[frameIndex][indexInFrame + 1] = true;
-	processMemoryRead[frameIndex][indexInFrame] = static_cast<uint8_t>(value & 0x00FF);
-    processMemoryRead[frameIndex][indexInFrame + 1] = static_cast<uint8_t>((value >> 8) & 0xFF);// Store the value in the read memory
+void Process::writeToMemory(uint16_t pageIndex, uint16_t address, uint16_t value) {
+    uint16_t indexInPage = address - (pageIndex * memFrame);
+
+	processMemory[pageIndex][indexInPage] = true; // Mark the memory as used
+    processMemory[pageIndex][indexInPage + 1] = true;
+	processMemoryRead[pageIndex][indexInPage] = static_cast<uint8_t>(value & 0x00FF);
+    processMemoryRead[pageIndex][indexInPage + 1] = static_cast<uint8_t>((value >> 8) & 0xFF);// Store the value in the read memory
     //visualizeProcessMemory();
 
 }
 
-void Process::readMemory(uint16_t frameIndex, uint16_t address, const string& varName) {
-    uint16_t indexInFrame = address - (frameIndex * memFrame);
-    int readVariable = processMemoryRead[frameIndex][indexInFrame];
+void Process::readMemory(uint16_t pageIndex, uint16_t address, const string& varName) {
+    uint16_t indexInPage = address - (pageIndex * memFrame);
+    int readVariable = processMemoryRead[pageIndex][indexInPage];
 
     if (readVariable == -1) {
         if (variableCounter < 32) {
@@ -88,22 +89,28 @@ void Process::terminateProcess() {
 
 
 void Process::allocateVariable(const string& varName, uint16_t value) {
-    for (size_t frameIdx : allocatedFrames) {
-        auto& frame = processMemory[frameIdx];
-		auto& frameRead = processMemoryRead[frameIdx];
+    
+    
+    for (int i = 0; i < processMemory.size(); i++) {
         // Search for two consecutive free spots
-        for (size_t i = 0; i + 1 < frame.size(); ++i) {
-            if (!frame[i] && !frame[i + 1]) {
+        
+        for (size_t j = 0; j + 1 < processMemory[i].size(); ++j) {
+cout << processMemory[i][j];
+            if (!processMemory[i][j] && !processMemory[i][j + 1]) {
                 // Allocate the two spots
-                frame[i] = true;
-                frame[i + 1] = true;
-                frameRead[i] = static_cast<uint8_t>(value & 0x00FF);        // Low byte
-                frameRead[i + 1] = static_cast<uint8_t>((value >> 8) & 0xFF); // High byte
+                processMemory[i][j] = true;
+                processMemory[i][j + 1] = true;
+                processMemoryRead[i][j] = static_cast<uint8_t>(value & 0x00FF);        // Low byte
+                processMemoryRead[i][j + 1] = static_cast<uint8_t>((value >> 8) & 0xFF); // High byte
+
+                
+                cout << "look at me look at me look at me look at me ";
+
 
                 // Save variable info in symbolTable only
                 symbolTable[varName] = value;
-                memoryNameTableFrame[varName] = frameIdx;  // Store the frame of the variable
-				memoryNameTable[varName] = i ; // Store the address in the frame
+//!!!!!!!!!!!!                memoryNameTableFrame[varName] = frameIdx;  // Store the frame of the variable
+				memoryNameTable[varName] = j ; // Store the address in the frame
                 return; // Allocation successful
             }
         }
@@ -123,21 +130,26 @@ void Process::editVariable(const string& varName, uint16_t value) {
   }
 
 
-void Process::setAllocatedFrames(const vector<size_t>& frames) { 
-    this->allocatedFrames = frames;
+void Process::setAllocatedFrames(bool deallocate) { 
     
-    //cout << "For Process " << this->name << ":\n";
-    for (const auto& frame : frames) {
-        processMemory[frame] = vector<bool>(memFrame, false);
-        //cout << "Frame " << frame << ": ";
-		processMemoryRead[frame] = vector<int>(memFrame, -1);
-        /*
-        for (bool bit : processMemory[frame]) {
-            cout << bit;
-        }
-        */
-        //cout << endl;
+    if (deallocate) {
+		processMemory.clear();
     }
+    else {
+        //cout << "For Process " << this->name << ":\n";
+        for (int i = 0; i < processMemory.size(); i++) {
+            processMemory[i] = vector<bool>(memFrame, false);
+            //cout << "Frame " << frame << ": ";
+		    processMemoryRead[i] = vector<int>(memFrame, -1);
+            /*
+            for (bool bit : processMemory[frame]) {
+                cout << bit;
+            }
+            */
+            //cout << endl;
+        }
+    }
+    
 
    
 }
@@ -159,10 +171,10 @@ uint16_t Process::getMemReq() const {
 
 void Process::visualizeProcessMemory() const {
     //cout << "Process Memory Visualization for Process " << name << " (PID: " << pid << "):" << endl;
-    for (size_t frameIdx : allocatedFrames) {
-        cout << "Frame " << frameIdx << ":  ";
-        for (bool bit : processMemory.at(frameIdx)) {
-            cout << (bit ? 'X' : '.');
+    for (int i = 0; i < processMemory.size(); i++) {
+        cout << "Page " << i << ":  ";
+        for (int j = 0; j < processMemory[i].size(); j++) {
+            cout << (processMemory[i][j] ? 'X' : '.');
         }
         cout << endl;
 
@@ -177,8 +189,8 @@ void Process::visualizeProcessMemory() const {
 
 void Process::visualizeProcessContents() const {
     //cout << "Process Memory Visualization for Process " << name << " (PID: " << pid << "):" << endl;
-    for (size_t frameIdx : allocatedFrames) {
-        cout << "Frame " << frameIdx << ": ";
+    for (int i = 0; i < processMemory.size(); i++) {
+        cout << "Page " << i << ": ";
         /*
         for (bool bit : processMemory.at(frameIdx)) {
             cout << (bit ? 'X' : '.');
@@ -187,11 +199,11 @@ void Process::visualizeProcessContents() const {
         */
 
         
-        for (int bit : processMemoryRead.at(frameIdx)) {
-            if(bit == -1) {
+        for (int j = 0; j < processMemoryRead[i].size(); j++) {
+            if(processMemoryRead[i][j] == -1) {
                 cout << ". "; // If the value is -1, print 0
             } else {
-                cout << bit << " "; // Print the actual value
+                cout << processMemoryRead[i][j] << " "; // Print the actual value
 			}
         }
         cout << endl;
@@ -319,7 +331,7 @@ vector<shared_ptr<Command>> Process::generateRandomCommandList(int depth, int re
     }
 
     while (instructionBudget >= repeats) {
-        Command::CommandType type = static_cast<Command::CommandType>(rand() % 8); // 0 to 5
+        Command::CommandType type = static_cast<Command::CommandType>(rand() % 6); // 0 to 7
         shared_ptr<Command> cmd;
        
         switch (type) {
@@ -385,64 +397,37 @@ vector<shared_ptr<Command>> Process::generateRandomCommandList(int depth, int re
                 }
                 break;
             }
-
-                             
+            
             case Command::WRITE: {
                 // only addresses it can access are the addresses that has the allocated frames
                 vector<size_t> possibleAddresses;
                 uint16_t address;
                 uint16_t value;
-               
-                if (!allocatedFrames.empty()) {
-                    for (size_t frameIdx : allocatedFrames) {
-                        //for each frame index, add all addresses in that frame to the possible addresses
-                        //for example at frame 0 and memFrame 64, addresses 0-63 are possible, frame 1 and memFrame 64, addresses 64-127 are possible
-                        for (size_t i = 0; i < memFrame - 1; ++i) {
-                            possibleAddresses.push_back(frameIdx * memFrame + i);
-                        }
-                    }
-
-
-                    if (!possibleAddresses.empty()) {
-                        address = possibleAddresses[rand() % possibleAddresses.size()];
-                        value = rand() % 100;
-                        cmd = make_shared<WriteCommand>(shared_from_this(), address, memFrame, value);
-                        instructionBudget -= repeats;
-                    }// Random value in 0–255
-
-                }
+                
+                address = rand() % 10;
+                value = rand() % 100;
+                cmd = make_shared<WriteCommand>(shared_from_this(), address, memFrame, value);
+                instructionBudget -= repeats;
+                   
 				
                 break;
             }
-
 
             case Command::READ: {
                 vector<size_t> possibleAddresses;
                 uint16_t address;
                 string varName;
-
               
-                    for (size_t frameIdx : allocatedFrames) {
-                        // for each frame index, add all addresses in that frame to the possible addresses
-                        for (size_t i = 0; i < memFrame; ++i) {
-                            possibleAddresses.push_back(frameIdx * memFrame + i);
-                        }
-                    }
+              
+                address = rand() % memoryRequired;
+                varName = "x" + to_string(rand() % 999); // e.g., x23, x75
 
-                    if (!possibleAddresses.empty()) {
-                        address =possibleAddresses[rand() % possibleAddresses.size()];
-                        varName = "x" + to_string(rand() % 999); // e.g., x23, x75
-
-                        cmd = make_shared<ReadCommand>(shared_from_this(), address, varName, memFrame);
-                        instructionBudget -= repeats;
-                    }
+                cmd = make_shared<ReadCommand>(shared_from_this(), address, varName, memFrame);
+                instructionBudget -= repeats;
                 
-
+                
                 break;
             }
-
-
-            
         }
        
         if (cmd) {

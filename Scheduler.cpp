@@ -284,15 +284,11 @@ void Scheduler::coreWorker(int coreID) {
                     break;  // Stop executing this process
                 }
 
-                
 
                 //writeMemorySnapshot(timestep);
 
                 current->setTimestep(current->getTimestep() + 1);
                 //cout << current->getTimestep();
-                    // THIS WRITES THE MEMORY TEXT FILES, NOT SURE IF THIS IS THE BEST PLACE FOR THIS TBH
-
-
 
                 //cout << current->getCpuCoreID() << "'s Time step: " << timestep << "\n";
                 //if (timestep == timeQuantum) {
@@ -323,13 +319,10 @@ void Scheduler::coreWorker(int coreID) {
                         //std::cout << "Deallocated memory for process " << current->getName() << " (ID: " << current->getPID() << ")\n";
                         //memoryAllocator->visualizeMemory();
                     }
-                    justFinished = true;  // Mark for later
+                    //justFinished = true;  // Mark for later
                 }
             }
 
-            // COMMENTED OUT BC IDK IF NEED
-            // THIS MAKES IT SO THAT THERE WILL ALWAYS BE A TEXT FILE AT THE END THAT HAS EMPTY MEMORY
-            
            
         }
 

@@ -20,27 +20,16 @@ ReadCommand::ReadCommand(shared_ptr<Process> process, uint16_t address, const st
 
 void ReadCommand::execute() {
 	//receive the address
-	uint16_t frameOfAddress = address / memFrame;
-	vector<size_t> allocatedFrames = process->getAllocatedFrames();
-	unordered_map<size_t, vector<int>> allocatedMemory = process->getProcessMemoryRead();
-	bool isThereValue = false;
-	bool isFrameAllocated = false;
+	uint16_t pageIndex = address / memFrame;
 
-	for (size_t i = 0; i < allocatedFrames.size(); i++) {
-		if (allocatedFrames[i] == frameOfAddress) {
-			isFrameAllocated = true;
-			break;
-		}
-	}
-
-	if (!isFrameAllocated) {
+	if (process->getMemReq() < address){
 		cout << "Read Error" << endl;
 		//terminate the process if the frame is not allocated
 		process->terminateProcess();
 		return;
 	}
 
-	process->readMemory(frameOfAddress, address, varName);
+	process->readMemory(pageIndex, address, varName);
 
 }
 

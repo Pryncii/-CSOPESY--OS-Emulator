@@ -50,14 +50,14 @@ class Process : public enable_shared_from_this<Process>
 		void setAllocatedMemory(void* memory);
 		void* getAllocatedMemory() { return allocatedMemory; }
 		void initializeCommands(const vector<string>& instructions);
-		void setAllocatedFrames(const vector<size_t>& frames);
+		void setAllocatedFrames(bool deallocate);
 		void allocateVariable(const string& name, uint16_t value);
 		void editVariable(const string& name, uint16_t value);
 		void writeToMemory(uint16_t frameIndex, uint16_t address, uint16_t value);
 		void readMemory(uint16_t frameIndex, uint16_t address, const string& varName);
 		const vector<size_t>& getAllocatedFrames() const { return allocatedFrames; }
-		unordered_map<size_t, vector<bool>> getProcessMemory() const { return processMemory; }
-		unordered_map<size_t, vector<int>> getProcessMemoryRead() const { return processMemoryRead; }
+		vector<vector<bool>> getProcessMemory() const { return processMemory; }
+		vector<vector<int>> getProcessMemoryRead() const { return processMemoryRead; }
 		
 
 		vector<shared_ptr<Command>> Process::getCommandList() const;
@@ -102,8 +102,8 @@ class Process : public enable_shared_from_this<Process>
 		unordered_map<string, uint16_t> memoryNameTable; //name of the variable and its address in the frame
 		//void* allocatedMemory;
 		vector<size_t> allocatedFrames; // this contains the frame index
-		unordered_map<size_t, vector<bool>> processMemory; // for read and write; not yet used GO PRINCE WOO
-		unordered_map<size_t, vector<int>> processMemoryRead; // for read operations
+		vector<vector<bool>> processMemory; // for read and write; not yet used GO PRINCE WOO
+		vector<vector<int>> processMemoryRead; // for read operations
 		bool hasCommands = false;
 		int timestep = 0;
 
