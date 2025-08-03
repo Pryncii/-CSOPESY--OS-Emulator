@@ -104,6 +104,7 @@ void Process::allocateVariable(const string& varName, uint16_t value) {
                 symbolTable[varName] = value;
                 memoryNameTableFrame[varName] = frameIdx;  // Store the frame of the variable
 				memoryNameTable[varName] = i ; // Store the address in the frame
+                //cout << "Creating new variable..."<<endl;
                 return; // Allocation successful
             }
         }
@@ -115,12 +116,35 @@ void Process::allocateVariable(const string& varName, uint16_t value) {
         */
 }
 
-void Process::editVariable(const string& varName, uint16_t value) {
 
-    auto& frameRead = processMemoryRead[memoryNameTableFrame[varName]];
-	frameRead[memoryNameTable[varName]] = value; // Update the value in the read memory
-    symbolTable[varName] = value;
-  }
+void Process::editVariable(const string& varName, uint16_t newValue) {
+    // Check if the variable exists
+
+    if (memoryNameTableFrame.find(varName) != memoryNameTableFrame.end() &&
+        memoryNameTable.find(varName) != memoryNameTable.end()) {
+        visualizeProcessContents();
+        size_t frameIdx = memoryNameTableFrame[varName];
+        size_t offset = memoryNameTable[varName];
+
+        cout << "Edit existing variable from " << processMemoryRead[frameIdx][offset] << " to " << newValue << endl;
+        // Update value in memory
+        processMemoryRead[frameIdx][offset] = 99999999;//newValue;
+
+        // Optionally update the second spot if it's used as a placeholder
+        processMemoryRead[frameIdx][offset + 1] = newValue;
+
+        // Update the symbol table too
+        symbolTable[varName] = newValue;
+
+        visualizeProcessContents();
+    }
+    else {
+        allocateVariable(varName, newValue);
+        //cout << "Variabe does not exist yet. Creating..."<<endl;
+    }
+
+    
+}
 
 
 void Process::setAllocatedFrames(const vector<size_t>& frames) { 
