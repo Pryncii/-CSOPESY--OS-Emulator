@@ -1,4 +1,4 @@
-#include <string>
+﻿#include <string>
 #include <iostream>
 #include <sstream>
 #include <memory>
@@ -90,12 +90,13 @@ void Process::terminateProcess() {
 
 void Process::allocateVariable(const string& varName, uint16_t value) {
     
-    
+    cout << processMemory.size();
     for (int i = 0; i < processMemory.size(); i++) {
         // Search for two consecutive free spots
+        cout << processMemory.size();
         
         for (size_t j = 0; j + 1 < processMemory[i].size(); ++j) {
-cout << processMemory[i][j];
+
             if (!processMemory[i][j] && !processMemory[i][j + 1]) {
                 // Allocate the two spots
                 processMemory[i][j] = true;
@@ -130,14 +131,18 @@ void Process::editVariable(const string& varName, uint16_t value) {
   }
 
 
-void Process::setAllocatedFrames(bool deallocate) { 
+void Process::setAllocatedFrames(const vector<size_t>& frames, bool deallocate) {
     
+	this->allocatedFrames = frames;
+
     if (deallocate) {
 		processMemory.clear();
     }
     else {
         //cout << "For Process " << this->name << ":\n";
-        for (int i = 0; i < processMemory.size(); i++) {
+		processMemory.resize(memoryRequired/memFrame);
+		processMemoryRead.resize(memoryRequired/memFrame);
+        for (int i = 0; i < memoryRequired/memFrame; ++i) {
             processMemory[i] = vector<bool>(memFrame, false);
             //cout << "Frame " << frame << ": ";
 		    processMemoryRead[i] = vector<int>(memFrame, -1);
@@ -331,7 +336,7 @@ vector<shared_ptr<Command>> Process::generateRandomCommandList(int depth, int re
     }
 
     while (instructionBudget >= repeats) {
-        Command::CommandType type = static_cast<Command::CommandType>(rand() % 6); // 0 to 7
+        Command::CommandType type = static_cast<Command::CommandType>(rand() % 8); // 0 to 7
         shared_ptr<Command> cmd;
        
         switch (type) {
@@ -403,11 +408,23 @@ vector<shared_ptr<Command>> Process::generateRandomCommandList(int depth, int re
                 vector<size_t> possibleAddresses;
                 uint16_t address;
                 uint16_t value;
+
+                for (int i = 0; i < memoryRequired / memFrame; ++i) {
+                    //for each page index, add all addresses in that frame to the possible addresses
+                    
+                    for (size_t j = 0; j < memFrame - 1; ++j) {
+                        possibleAddresses.push_back(i * memFrame + j);
+                    }
+                }
+
+
+                if (!possibleAddresses.empty()) {
+                    address = possibleAddresses[rand() % possibleAddresses.size()];
+                    value = rand() % 100;
+                    cmd = make_shared<WriteCommand>(shared_from_this(), address, memFrame, value);
+                    instructionBudget -= repeats;
+                }// Random value in 0255
                 
-                address = rand() % 10;
-                value = rand() % 100;
-                cmd = make_shared<WriteCommand>(shared_from_this(), address, memFrame, value);
-                instructionBudget -= repeats;
                    
 				
                 break;

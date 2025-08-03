@@ -23,7 +23,7 @@ bool PagingAllocator::Allocate(shared_ptr<Process> process) {
     }
 
     vector<size_t> allocated = allocateFrames(numFramesNeeded, processID);
-    process->setAllocatedFrames(false);
+    process->setAllocatedFrames(allocated, false);
     return true;
 }
 
@@ -34,7 +34,7 @@ void PagingAllocator::Deallocate(shared_ptr<Process> process) {
         freeFrameList.push_back(frame);
     }
 
-    process->setAllocatedFrames(true); // Clear
+    process->setAllocatedFrames({}, true); // Clear
 }
 
 void PagingAllocator::visualizeMemory() const {

@@ -50,7 +50,7 @@ class Process : public enable_shared_from_this<Process>
 		void setAllocatedMemory(void* memory);
 		void* getAllocatedMemory() { return allocatedMemory; }
 		void initializeCommands(const vector<string>& instructions);
-		void setAllocatedFrames(bool deallocate);
+		void setAllocatedFrames(const vector<size_t>& frames, bool deallocate);
 		void allocateVariable(const string& name, uint16_t value);
 		void editVariable(const string& name, uint16_t value);
 		void writeToMemory(uint16_t frameIndex, uint16_t address, uint16_t value);

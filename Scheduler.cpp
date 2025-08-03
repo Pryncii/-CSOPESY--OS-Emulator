@@ -319,7 +319,7 @@ void Scheduler::coreWorker(int coreID) {
                         //std::cout << "Deallocated memory for process " << current->getName() << " (ID: " << current->getPID() << ")\n";
                         //memoryAllocator->visualizeMemory();
                     }
-                    //justFinished = true;  // Mark for later
+                    justFinished = true;  // Mark for later
                 }
             }
 
