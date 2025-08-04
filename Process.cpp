@@ -500,8 +500,6 @@ vector<shared_ptr<Command>> Process::generateRandomCommandList(int depth, int re
                     instructionBudget -= repeats;
                 }// Random value in 0255
                 
-                   
-				
                 break;
             }
 
@@ -516,7 +514,6 @@ vector<shared_ptr<Command>> Process::generateRandomCommandList(int depth, int re
 
                 cmd = make_shared<ReadCommand>(shared_from_this(), address, varName, memFrame);
                 instructionBudget -= repeats;
-                
                 
                 break;
             }
@@ -570,100 +567,152 @@ int Process::countNonForInstructions(const vector<shared_ptr<Command>>& cmds) co
 
 void Process::initializeCommands(const vector<string>& instructions) {
     for (const string& instr : instructions) {
-        istringstream iss(instr);
+        string trimmedInstr = instr;
+        // Remove leading/trailing whitespace
+        trimmedInstr.erase(0, trimmedInstr.find_first_not_of(" \t"));
+        trimmedInstr.erase(trimmedInstr.find_last_not_of(" \t") + 1);
+
+        if (trimmedInstr.empty()) continue;
+
+        shared_ptr<Command> cmd = nullptr;
+        istringstream iss(trimmedInstr);
         string cmdType;
         iss >> cmdType;
 
-        // Optional: uppercase for case-insensitive match
-        transform(cmdType.begin(), cmdType.end(), cmdType.begin(), ::toupper);
-
-        shared_ptr<Command> cmd = nullptr;
-
         if (cmdType == "DECLARE") {
+            // Format: DECLARE varName value
             string varName;
             uint16_t value;
             iss >> varName >> value;
             if (varName.empty() || iss.fail()) {
-                cout << "Invalid DECLARE instruction: " << instr << endl;
+                cout << "Invalid DECLARE instruction: " << trimmedInstr << endl;
                 continue;
             }
             cmd = make_shared<DeclareCommand>(shared_from_this(), varName, value);
+            cout << "Valid DECLARE instruction" << endl;
         }
         else if (cmdType == "ADD") {
+            // Format: ADD destVar srcVar1 srcVar2
             string destVar, srcVar1, srcVar2;
             iss >> destVar >> srcVar1 >> srcVar2;
             if (destVar.empty() || srcVar1.empty() || srcVar2.empty()) {
-                cout << "Invalid ADD instruction: " << instr << endl;
+                cout << "Invalid ADD instruction: " << trimmedInstr << endl;
                 continue;
             }
-            cmd = make_shared<AddCommand>(shared_from_this(), destVar, srcVar1, srcVar2);
+
+            // Parse srcVar1 and srcVar2 (could be variables or values)
+            uint16_t val1, val2;
+
+            // Try to parse srcVar1 as number, if fails, treat as variable
+            try {
+                val1 = static_cast<uint16_t>(stoi(srcVar1));
+            }
+            catch (const exception& e) {
+                // It's a variable, get its value from symbol table
+                if (symbolTable.find(srcVar1) != symbolTable.end()) {
+                    val1 = symbolTable[srcVar1];
+                }
+                else {
+                    // Auto-declare with value 0
+                    addSymbol(srcVar1, 0);
+                    val1 = 0;
+                }
+            }
+
+            // Try to parse srcVar2 as number, if fails, treat as variable
+            try {
+                val2 = static_cast<uint16_t>(stoi(srcVar2));
+            }
+            catch (const exception& e) {
+                // It's a variable, get its value from symbol table
+                if (symbolTable.find(srcVar2) != symbolTable.end()) {
+                    val2 = symbolTable[srcVar2];
+                }
+                else {
+                    // Auto-declare with value 0
+                    addSymbol(srcVar2, 0);
+                    val2 = 0;
+                }
+            }
+
+            cmd = make_shared<AddCommand>(shared_from_this(), destVar, val1, val2);
+            cout << "Valid ADD instruction" << endl;
         }
         else if (cmdType == "SUBTRACT") {
+            // Format: SUBTRACT destVar srcVar1 srcVar2
             string destVar, srcVar1, srcVar2;
             iss >> destVar >> srcVar1 >> srcVar2;
             if (destVar.empty() || srcVar1.empty() || srcVar2.empty()) {
-                cout << "Invalid SUBTRACT instruction: " << instr << endl;
+                cout << "Invalid SUBTRACT instruction: " << trimmedInstr << endl;
                 continue;
             }
-            cmd = make_shared<SubtractCommand>(shared_from_this(), destVar, srcVar1, srcVar2);
-        }
-        else if (cmdType == "PRINT") {
-            string message;
-            getline(iss, message);
-            message.erase(0, message.find_first_not_of(" \t"));
-            cmd = make_shared<PrintCommand>(shared_from_this(), message);
+
+            // Parse srcVar1 and srcVar2 (could be variables or values)
+            uint16_t val1, val2;
+
+            // Try to parse srcVar1 as number, if fails, treat as variable
+            try {
+                val1 = static_cast<uint16_t>(stoi(srcVar1));
+            }
+            catch (const exception& e) {
+                // It's a variable, get its value from symbol table
+                if (symbolTable.find(srcVar1) != symbolTable.end()) {
+                    val1 = symbolTable[srcVar1];
+                }
+                else {
+                    // Auto-declare with value 0
+                    addSymbol(srcVar1, 0);
+                    val1 = 0;
+                }
+            }
+
+            // Try to parse srcVar2 as number, if fails, treat as variable
+            try {
+                val2 = static_cast<uint16_t>(stoi(srcVar2));
+            }
+            catch (const exception& e) {
+                // It's a variable, get its value from symbol table
+                if (symbolTable.find(srcVar2) != symbolTable.end()) {
+                    val2 = symbolTable[srcVar2];
+                }
+                else {
+                    // Auto-declare with value 0
+                    addSymbol(srcVar2, 0);
+                    val2 = 0;
+                }
+            }
+
+            cmd = make_shared<SubtractCommand>(shared_from_this(), destVar, val1, val2);
+            cout << "Valid SUBTRACT instruction" << endl;
         }
         else if (cmdType == "SLEEP") {
+            // Format: SLEEP duration
             uint16_t duration;
             iss >> duration;
             if (iss.fail()) {
-                cout << "Invalid SLEEP instruction: " << instr << endl;
+                cout << "Invalid SLEEP instruction: " << trimmedInstr << endl;
                 continue;
             }
             cmd = make_shared<SleepCommand>(shared_from_this(), duration);
-        }
-        else if (cmdType == "FOR") {
-            int loopCount;
-            iss >> loopCount;
-            if (iss.fail() || loopCount < 1) {
-                cout << "Invalid FOR instruction: " << instr << endl;
-                continue;
-            }
-            vector<shared_ptr<Command>> nestedCommands;
-            cmd = make_shared<ForLoopCommand>(shared_from_this(), nestedCommands, loopCount, delay);
+            cout << "Valid SLEEP instruction" << endl;
         }
         else if (cmdType == "WRITE") {
-           //WriteCommand(shared_ptr<Process> process, uint16_t address, uint16_t memFrame, uint16_t value);
-            uint16_t address, memFrame, value;
-            iss >> address >> memFrame >> value;
-            if (iss.fail()) {
-                cout << "Invalid WRITE instruction: " << instr << endl;
-                continue;
-            }
-
-            cmd = make_shared<WriteCommand>(shared_from_this(), address, memFrame, value);
+            
         }
         else if (cmdType == "READ") {
-            // TODO: implement WRITE command later
-            // cmd = make_shared<WriteCommand>(/* your params */);
-            uint16_t address, memFrame;
-            string varName;
-            iss >> address >> varName >> memFrame;
-
-            if (iss.fail()) {
-                cout << "Invalid READ instruction: " << instr << endl;
-                continue;
-            }
-
-            cmd = make_shared<ReadCommand>(shared_from_this(), address, varName, memFrame);
+            
+        }
+        else if (trimmedInstr.substr(0, 5) == "PRINT") {
+            
+        }
+        else if (cmdType == "FOR") {
+            
         }
         else {
-            cout << "Unknown instruction: " << instr << endl;
+            cout << "Unknown instruction: " << trimmedInstr << endl;
             continue;
         }
 
-        if (cmd) {
-            commandList.push_back(cmd);
-        }
+        if (cmd) addCommand(cmd);
     }
 }
