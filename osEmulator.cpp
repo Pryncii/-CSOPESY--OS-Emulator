@@ -352,9 +352,9 @@ void processSmi(Scheduler& scheduler, Config config) {
 
     // For each running process, print its name and memory usage
     cout << "=================================================\n";
-    cout << "| PROCESS-SMI V01.00 Driver Version: 01.00 |\n";
+    cout << "|   PROCESS-SMI V01.00  Driver Version: 01.00   |\n";
     cout << "-------------------------------------------------\n";
-    cout << "CPU Utilization: " << cpuUtilization << endl;
+    cout << "CPU Utilization: " << cpuUtilization << "%" << endl;
 	cout << "Memory Usage: " << totalMemoryUsed << " bytes" << "/" << totalMemory << " bytes\n";
 	cout << "Memory Utilization: " << memoryUtilization << "%\n" << endl;
     cout << "=================================================\n";
@@ -380,7 +380,7 @@ void processSmi(Scheduler& scheduler, Config config) {
         cout << process->getName() << " (PID: " << process->getPID() << "):"
             << " | Memory Used: " << memoryUsed << " bytes\n";
 
-        process->visualizeProcessContents();
+        process->visualizeProcessMemory();
     }
 
     cout << "\n=================================================\n";
@@ -407,7 +407,7 @@ void processSmi(Scheduler& scheduler, Config config) {
         cout << process->getName() << " (PID: " << process->getPID() << ")"
             << " | Memory Used: " << memoryUsed << " bytes\n";
 
-        process->visualizeProcessContents();
+        process->visualizeProcessMemory();
 
         // Visualize the process memory allocation
     }

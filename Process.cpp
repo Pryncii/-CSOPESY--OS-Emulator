@@ -73,13 +73,14 @@ void Process::writeToMemory(uint16_t pageIndex, uint16_t address, uint16_t value
             int highByte = static_cast<int>((value >> 8) & 0x00FF);
 
             if (pagingallocator->frameMap.count(frameIndex)) {
-                vector<int>& contents = pagingallocator->frameMap[frameIndex].memoryContents;
+                FrameEntry& frame = pagingallocator->frameMap[frameIndex];
 
-                // Make sure both low and high byte indices are within bounds
-                if ((indexInPage + 1) < contents.size()) {
-                    contents[indexInPage] = lowByte;   // Low byte first
-                    contents[indexInPage + 1] = highByte;  // High byte next
-                }
+                // Write values and label with "WRITE"
+                frame.memoryContents[indexInPage] = lowByte;
+                frame.memoryContents[indexInPage + 1] = highByte;
+
+                frame.memoryContentsVarName[indexInPage] = "WRITE";
+                frame.memoryContentsVarName[indexInPage + 1] = "WRITE";
             }
         }
     }
@@ -132,7 +133,6 @@ void Process::allocateVariable(const string& varName, uint16_t value) {
                 // Save variable info in symbolTable only
                 symbolTable[varName] = value;
                 memoryNameTableFrame[varName] = i;
-//!!!!!!!!!!!!                memoryNameTableFrame[varName] = frameIdx;  // Store the frame of the variable
 				memoryNameTable[varName] = j ; // Store the address in the frame
                 
                 if (pagingallocator) {
@@ -140,14 +140,17 @@ void Process::allocateVariable(const string& varName, uint16_t value) {
                     if (i < frames.size()) {
                         size_t frameIdx = frames[i];
 
-                        if (pagingallocator->frameMap.count(frameIdx)) {
-                            vector<int>& contents = pagingallocator->frameMap[frameIdx].memoryContents;
 
-                            if ((j + 1) < contents.size()) {
-                                contents[j] = static_cast<int>(value & 0x00FF);        // Low byte
-                                contents[j + 1] = static_cast<int>((value >> 8) & 0x00FF); // High byte
-                            }
+                        if (pagingallocator->frameMap.count(frameIdx)) {
+                            FrameEntry& frame = pagingallocator->frameMap[frameIdx];
+
+                            frame.memoryContents[j] = static_cast<int>(value & 0x00FF);
+                            frame.memoryContents[j + 1] = static_cast<int>((value >> 8) & 0x00FF);
+
+                            frame.memoryContentsVarName[j] = varName;
+                            frame.memoryContentsVarName[j + 1] = varName;
                         }
+
                     }
                 }
                 return; // Allocation successful
@@ -170,7 +173,7 @@ void Process::editVariable(const string& varName, uint16_t newValue) {
 
     if (memoryNameTableFrame.find(varName) != memoryNameTableFrame.end() &&
         memoryNameTable.find(varName) != memoryNameTable.end()) {
-        visualizeProcessContents();
+        //visualizeProcessContents();
         size_t frameIdx = memoryNameTableFrame[varName];
         size_t offset = memoryNameTable[varName];
 
@@ -185,21 +188,25 @@ void Process::editVariable(const string& varName, uint16_t newValue) {
             const vector<size_t>& frames = this->getAllocatedFrames();
             if (frameIdx < frames.size()) {
                 size_t actualFrameIdx = frames[frameIdx];
-                if (pagingallocator->frameMap.count(actualFrameIdx)) {
-                    vector<int>& contents = pagingallocator->frameMap[actualFrameIdx].memoryContents;
 
-                    if (offset + 1 < contents.size()) {
-                        contents[offset] = static_cast<int>(newValue & 0x00FF);        // Low byte
-                        contents[offset + 1] = static_cast<int>((newValue >> 8) & 0x00FF); // High byte
-                    }
+
+                if (pagingallocator->frameMap.count(actualFrameIdx)) {
+
+                    FrameEntry& frame = pagingallocator->frameMap[actualFrameIdx];
+                    frame.memoryContents[offset] = static_cast<int>(newValue & 0x00FF);
+                    frame.memoryContents[offset + 1] = static_cast<int>((newValue >> 8) & 0x00FF);
+
+                    frame.memoryContentsVarName[offset] = varName;
+                    frame.memoryContentsVarName[offset + 1] = varName;
                 }
+
             }
         }
 
         // Update the symbol table too
         symbolTable[varName] = newValue;
 
-        visualizeProcessContents();
+        //visualizeProcessContents();
     }
     else {
         allocateVariable(varName, newValue);

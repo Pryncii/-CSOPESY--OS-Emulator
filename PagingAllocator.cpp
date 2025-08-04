@@ -46,18 +46,31 @@ void PagingAllocator::visualizeMemory() const {
         auto it = frameMap.find(frameIndex);
         if (it != frameMap.end()) {
             const FrameEntry& entry = it->second;
-            std::cout << "Frame " << frameIndex << " (Process " << entry.processID
+            std::cout << "Frame " << frameIndex
+                << " (Process " << entry.processID
                 << ", Page " << entry.pageNumber << "): ";
-            for (int value : entry.memoryContents) {
-                if (value == -1)
+
+            for (size_t i = 0; i < entry.memoryContents.size(); ++i) {
+                int value = entry.memoryContents[i];
+
+                if (value == -1) {
                     std::cout << ". ";
-                else
-                    std::cout << value << " ";
+                }
+                else {
+                    // If there's a corresponding variable name, print it
+                    if (i < entry.memoryContentsVarName.size() && !entry.memoryContentsVarName[i].empty()) {
+                        //std::cout << entry.memoryContentsVarName[i] << "(" << value << ") ";
+                        std::cout << value << " ";
+                    }
+                    else {
+                        std::cout << value << " ";
+                    }
+                }
             }
-			std::cout << "\n"; // ex. Frame 1 (Process 2, Page 0): 12 . 2 3 . .
+            std::cout << "\n";
         }
         else {
-            std::cout << "Frame " << frameIndex << " -> Free\n"; // ex. Frame 1 -> Free
+            std::cout << "Frame " << frameIndex << " -> Free\n";
         }
     }
     std::cout << "---------------------------\n";
@@ -82,6 +95,7 @@ vector<size_t> PagingAllocator::allocateFrames(uint16_t numFrames, uint16_t proc
         entry.processID = processID;
         entry.pageNumber = i;
         entry.memoryContents = vector<int>(frameSize, -1); // default to 0
+        entry.memoryContentsVarName = vector<string>(frameSize, ""); // default empty names
 
         frameMap[frame] = entry;
         allocatedFrames.push_back(frame);

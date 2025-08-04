@@ -103,8 +103,8 @@ class Process : public enable_shared_from_this<Process>
 		unordered_map<string, uint16_t> memoryNameTable; //name of the variable and its address in the frame
 		//void* allocatedMemory;
 		vector<size_t> allocatedFrames; // this contains the frame index
-		vector<vector<bool>> processMemory; // for read and write; not yet used GO PRINCE WOO
-		vector<vector<int>> processMemoryRead; // for read operations
+		vector<vector<bool>> processMemory; // for read and write; if true, memory spot is used
+		vector<vector<int>> processMemoryRead; // for read operations; contains the value
 		bool hasCommands = false;
 		int timestep = 0;
 
@@ -120,3 +120,23 @@ class Process : public enable_shared_from_this<Process>
 		
 		shared_ptr<PagingAllocator> pagingallocator;
 };
+
+/*
+IDEA:
+- when process gets inside CPU, throw everything to backing store first
+- then when process's command needs something from an address: EX: process1 says ADD varA varB varC
+- use ALLOCATEDFRAMES (contains phys mem frames); use that to search mem frames
+
+
+READ varA 0x99
+
+
+struct FrameEntry {
+	bool valid;                 // Valid bit
+	uint16_t processID;         // Owning process
+	uint16_t pageNumber;        // Which page of the process
+	vector<int> memoryContents; // Contents in this page (e.g. integers)
+};
+
+
+*/ 
