@@ -2,7 +2,10 @@
 #include <string>
 #include <cstddef> // for size_t
 #include "Process.h"
+#include "FrameEntry.h"
+
 using namespace std;
+
 class IMemoryAllocator
 {
 public:
@@ -15,7 +18,7 @@ public:
 	virtual uint16_t getBlockSizeAt(uint16_t index) const = 0;
 	virtual size_t getTotalExtFrag() const = 0;
 	virtual uint16_t getMaxSize() const = 0;
-	virtual unordered_map<uint16_t, uint16_t> getFrameMap() const = 0;
+	virtual unordered_map<uint16_t, FrameEntry> getFrameMap() const = 0;
 	virtual size_t getMemoryUsed() const = 0;
 };
 

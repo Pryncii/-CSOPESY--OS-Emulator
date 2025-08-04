@@ -54,6 +54,7 @@ void Process::writeToMemory(uint16_t pageIndex, uint16_t address, uint16_t value
 
 	processMemory[pageIndex][indexInPage] = true; // Mark the memory as used
     processMemory[pageIndex][indexInPage + 1] = true;
+
 	processMemoryRead[pageIndex][indexInPage] = static_cast<uint8_t>(value & 0x00FF);
     processMemoryRead[pageIndex][indexInPage + 1] = static_cast<uint8_t>((value >> 8) & 0xFF);// Store the value in the read memory
     //visualizeProcessMemory();
@@ -86,8 +87,7 @@ void Process::terminateProcess() {
 	this->isTerminated = true; // Set commandCounter to the total number of commands
 }
 
-
-
+// Searches for two free bytes in the memory to store a variable, marks memory, and updates symbol tables.
 void Process::allocateVariable(const string& varName, uint16_t value) {
     
     cout << processMemory.size();
@@ -105,7 +105,7 @@ void Process::allocateVariable(const string& varName, uint16_t value) {
                 processMemoryRead[i][j + 1] = static_cast<uint8_t>((value >> 8) & 0xFF); // High byte
 
                 
-                cout << "look at me look at me look at me look at me ";
+                //cout << "look at me look at me look at me look at me ";
 
 
                 // Save variable info in symbolTable only
@@ -123,6 +123,7 @@ void Process::allocateVariable(const string& varName, uint16_t value) {
         */
 }
 
+// Changes the stored value of an existing variable.
 void Process::editVariable(const string& varName, uint16_t value) {
 
     auto& frameRead = processMemoryRead[memoryNameTableFrame[varName]];
@@ -130,7 +131,7 @@ void Process::editVariable(const string& varName, uint16_t value) {
     symbolTable[varName] = value;
   }
 
-
+// initializes the allocated frames for the process, and optionally deallocates memory.
 void Process::setAllocatedFrames(const vector<size_t>& frames, bool deallocate) {
     
 	this->allocatedFrames = frames;
@@ -154,13 +155,7 @@ void Process::setAllocatedFrames(const vector<size_t>& frames, bool deallocate) 
             //cout << endl;
         }
     }
-    
-
-   
 }
-
-
-
 
 //void Process::setAllocatedMemory(void* memory) {
 //    this->allocatedMemory = memory;
@@ -174,6 +169,7 @@ uint16_t Process::getMemReq() const {
     return this->memoryRequired;
 }
 
+// Prints an X for used memory, . for free, page-by-page.
 void Process::visualizeProcessMemory() const {
     //cout << "Process Memory Visualization for Process " << name << " (PID: " << pid << "):" << endl;
     for (int i = 0; i < processMemory.size(); i++) {
@@ -192,6 +188,7 @@ void Process::visualizeProcessMemory() const {
     }
 }
 
+// Prints actual value of memory, page-by-page.
 void Process::visualizeProcessContents() const {
     //cout << "Process Memory Visualization for Process " << name << " (PID: " << pid << "):" << endl;
     for (int i = 0; i < processMemory.size(); i++) {
@@ -206,7 +203,7 @@ void Process::visualizeProcessContents() const {
         
         for (int j = 0; j < processMemoryRead[i].size(); j++) {
             if(processMemoryRead[i][j] == -1) {
-                cout << ". "; // If the value is -1, print 0
+                cout << ". ";
             } else {
                 cout << processMemoryRead[i][j] << " "; // Print the actual value
 			}
@@ -591,5 +588,4 @@ void Process::initializeCommands(const vector<string>& instructions) {
             commandList.push_back(cmd);
         }
     }
-
 }

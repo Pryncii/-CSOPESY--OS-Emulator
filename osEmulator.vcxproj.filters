@@ -125,5 +125,8 @@
     <ClInclude Include="Vmstat.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="FrameEntry.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

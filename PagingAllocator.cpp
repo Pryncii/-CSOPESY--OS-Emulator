@@ -14,6 +14,7 @@ PagingAllocator::PagingAllocator(uint16_t maxMem, uint16_t memFrame)
     
 }
 
+// Allocates memory (in frames) for a given process.
 bool PagingAllocator::Allocate(shared_ptr<Process> process) {
     size_t processID = process->getPID();
     size_t numFramesNeeded = process->getMemReq() / frameSize;
@@ -27,9 +28,10 @@ bool PagingAllocator::Allocate(shared_ptr<Process> process) {
     return true;
 }
 
-
+// Frees the memory allocated to a given process.
 void PagingAllocator::Deallocate(shared_ptr<Process> process) {
     for (size_t frame : process->getAllocatedFrames()) {
+        frameMap[frame].valid = false;
         frameMap.erase(frame);
         freeFrameList.push_back(frame);
     }
@@ -37,15 +39,25 @@ void PagingAllocator::Deallocate(shared_ptr<Process> process) {
     process->setAllocatedFrames({}, true); // Clear
 }
 
+// Prints the current memory status (frame-by-frame).
 void PagingAllocator::visualizeMemory() const {
     cout << "Memory Visualization:\n";
     for (size_t frameIndex = 0; frameIndex < numFrames; ++frameIndex) {
         auto it = frameMap.find(frameIndex);
         if (it != frameMap.end()) {
-            std::cout << "Frame " << frameIndex << " -> Process " << it->second << "\n";
+            const FrameEntry& entry = it->second;
+            std::cout << "Frame " << frameIndex << " (Process " << entry.processID
+                << ", Page " << entry.pageNumber << "): ";
+            for (int value : entry.memoryContents) {
+                if (value == -1)
+                    std::cout << ". ";
+                else
+                    std::cout << value << " ";
+            }
+			std::cout << "\n"; // ex. Frame 1 (Process 2, Page 0): 12 . 2 3 . .
         }
         else {
-            std::cout << "Frame " << frameIndex << " -> Free\n";
+            std::cout << "Frame " << frameIndex << " -> Free\n"; // ex. Frame 1 -> Free
         }
     }
     std::cout << "---------------------------\n";
@@ -55,6 +67,7 @@ size_t PagingAllocator::getMemoryUsed() const {
     return frameMap.size() * frameSize; // Each frame is of size frameSize
 }
 
+// Helper function to allocate specific number of frames to a process.
 vector<size_t> PagingAllocator::allocateFrames(uint16_t numFrames, uint16_t processID) {
     vector<size_t> allocatedFrames;
 
@@ -64,7 +77,13 @@ vector<size_t> PagingAllocator::allocateFrames(uint16_t numFrames, uint16_t proc
         size_t frame = freeFrameList.front();
         freeFrameList.erase(freeFrameList.begin());
 
-        frameMap[frame] = processID;
+        FrameEntry entry;
+        entry.valid = true; // valid bit if in main memory map
+        entry.processID = processID;
+        entry.pageNumber = i;
+        entry.memoryContents = vector<int>(frameSize, -1); // default to 0
+
+        frameMap[frame] = entry;
         allocatedFrames.push_back(frame);
     }
 
