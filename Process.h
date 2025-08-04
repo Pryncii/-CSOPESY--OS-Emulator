@@ -8,6 +8,7 @@
 using namespace std;
 
 class Command;
+class PagingAllocator;
 
 class Process : public enable_shared_from_this<Process>
 {
@@ -19,7 +20,7 @@ class Process : public enable_shared_from_this<Process>
 			FINISHED
 		};
 
-		Process(int pid, string name, uint32_t delay, uint16_t memoryRequired, uint16_t memFrame, uint16_t maxMem, uint32_t quantum);
+		Process(int pid, string name, uint32_t delay, uint16_t memoryRequired, uint16_t memFrame, uint16_t maxMem, uint32_t quantum, shared_ptr<PagingAllocator> allocator);
 		void addCommand(shared_ptr<Command> command);
 		void generateCommands(const uint32_t minIns, const uint32_t maxIns, int depth);
 		vector<shared_ptr<Command>> generateRandomCommandList(int depth, int repeats, int& instructionBudget);
@@ -117,5 +118,5 @@ class Process : public enable_shared_from_this<Process>
 		int totalNumCommands = -1;
 		uint32_t delay;
 		
-
+		shared_ptr<PagingAllocator> pagingallocator;
 };

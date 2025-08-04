@@ -17,10 +17,12 @@
 #include <mutex>
 #include <algorithm>
 #include "ReadCommand.h"
+#include "PagingAllocator.h"
+
 
 using namespace std;
 
-Process::Process(int pid, string name, uint32_t delay, uint16_t memoryRequired, uint16_t memFrame, uint16_t maxMem, uint32_t quantum) {
+Process::Process(int pid, string name, uint32_t delay, uint16_t memoryRequired, uint16_t memFrame, uint16_t maxMem, uint32_t quantum, shared_ptr<PagingAllocator> pagingallocator) {
     time_t now = time(nullptr);
     char buffer[80];
     strftime(buffer, sizeof(buffer), "%m/%d/%Y %I:%M:%S%p", localtime(&now));
@@ -34,6 +36,8 @@ Process::Process(int pid, string name, uint32_t delay, uint16_t memoryRequired, 
 	this->memFrame = memFrame;
     this->maxMem = maxMem;
     this->quantum = quantum;
+    //cout << (pagingallocator ? "Valid allocator passed\n" : "Allocator is null!\n");
+    this->pagingallocator = pagingallocator;
     
 }
 
@@ -58,6 +62,27 @@ void Process::writeToMemory(uint16_t pageIndex, uint16_t address, uint16_t value
 	processMemoryRead[pageIndex][indexInPage] = static_cast<uint8_t>(value & 0x00FF);
     processMemoryRead[pageIndex][indexInPage + 1] = static_cast<uint8_t>((value >> 8) & 0xFF);// Store the value in the read memory
     //visualizeProcessMemory();
+
+    if (pagingallocator) {
+        //cout << "a";
+        const vector<size_t>& frames = this->getAllocatedFrames();
+        if (pageIndex < frames.size()) {
+            size_t frameIndex = frames[pageIndex];
+
+            int lowByte = static_cast<int>(value & 0x00FF);
+            int highByte = static_cast<int>((value >> 8) & 0x00FF);
+
+            if (pagingallocator->frameMap.count(frameIndex)) {
+                vector<int>& contents = pagingallocator->frameMap[frameIndex].memoryContents;
+
+                // Make sure both low and high byte indices are within bounds
+                if ((indexInPage + 1) < contents.size()) {
+                    contents[indexInPage] = lowByte;   // Low byte first
+                    contents[indexInPage + 1] = highByte;  // High byte next
+                }
+            }
+        }
+    }
 
 }
 
@@ -90,10 +115,10 @@ void Process::terminateProcess() {
 // Searches for two free bytes in the memory to store a variable, marks memory, and updates symbol tables.
 void Process::allocateVariable(const string& varName, uint16_t value) {
     
-    cout << processMemory.size();
+    //cout << processMemory.size();
     for (int i = 0; i < processMemory.size(); i++) {
         // Search for two consecutive free spots
-        cout << processMemory.size();
+        //cout << processMemory.size();
         
         for (size_t j = 0; j + 1 < processMemory[i].size(); ++j) {
 
@@ -104,14 +129,27 @@ void Process::allocateVariable(const string& varName, uint16_t value) {
                 processMemoryRead[i][j] = static_cast<uint8_t>(value & 0x00FF);        // Low byte
                 processMemoryRead[i][j + 1] = static_cast<uint8_t>((value >> 8) & 0xFF); // High byte
 
-                
-                //cout << "look at me look at me look at me look at me ";
-
-
                 // Save variable info in symbolTable only
                 symbolTable[varName] = value;
+                memoryNameTableFrame[varName] = i;
 //!!!!!!!!!!!!                memoryNameTableFrame[varName] = frameIdx;  // Store the frame of the variable
 				memoryNameTable[varName] = j ; // Store the address in the frame
+                
+                if (pagingallocator) {
+                    const vector<size_t>& frames = this->getAllocatedFrames();
+                    if (i < frames.size()) {
+                        size_t frameIdx = frames[i];
+
+                        if (pagingallocator->frameMap.count(frameIdx)) {
+                            vector<int>& contents = pagingallocator->frameMap[frameIdx].memoryContents;
+
+                            if ((j + 1) < contents.size()) {
+                                contents[j] = static_cast<int>(value & 0x00FF);        // Low byte
+                                contents[j + 1] = static_cast<int>((value >> 8) & 0x00FF); // High byte
+                            }
+                        }
+                    }
+                }
                 return; // Allocation successful
             }
         }
@@ -124,12 +162,52 @@ void Process::allocateVariable(const string& varName, uint16_t value) {
 }
 
 // Changes the stored value of an existing variable.
-void Process::editVariable(const string& varName, uint16_t value) {
+// NOTE: MAINMEMORY DOESNT GET UPDATED WHEN EDIT VARIABLE YET
+// NOT SURE HOW ITS SUPPOSED TO BE DONE COS NO LOWBYTE HIGHBYTE
+void Process::editVariable(const string& varName, uint16_t newValue) {
+    // Check if the variable exists
 
-    auto& frameRead = processMemoryRead[memoryNameTableFrame[varName]];
-	frameRead[memoryNameTable[varName]] = value; // Update the value in the read memory
-    symbolTable[varName] = value;
-  }
+
+    if (memoryNameTableFrame.find(varName) != memoryNameTableFrame.end() &&
+        memoryNameTable.find(varName) != memoryNameTable.end()) {
+        visualizeProcessContents();
+        size_t frameIdx = memoryNameTableFrame[varName];
+        size_t offset = memoryNameTable[varName];
+
+        cout << "Edit existing variable from " << processMemoryRead[frameIdx][offset] << " to " << newValue << endl;
+        // Update value in memory
+        processMemoryRead[frameIdx][offset] = static_cast<uint8_t>(newValue & 0x00FF);        // Low byte
+
+        // Optionally update the second spot if it's used as a placeholder
+        processMemoryRead[frameIdx][offset + 1] = static_cast<uint8_t>((newValue >> 8) & 0xFF); // High byte
+
+        if (pagingallocator) {
+            const vector<size_t>& frames = this->getAllocatedFrames();
+            if (frameIdx < frames.size()) {
+                size_t actualFrameIdx = frames[frameIdx];
+                if (pagingallocator->frameMap.count(actualFrameIdx)) {
+                    vector<int>& contents = pagingallocator->frameMap[actualFrameIdx].memoryContents;
+
+                    if (offset + 1 < contents.size()) {
+                        contents[offset] = static_cast<int>(newValue & 0x00FF);        // Low byte
+                        contents[offset + 1] = static_cast<int>((newValue >> 8) & 0x00FF); // High byte
+                    }
+                }
+            }
+        }
+
+        // Update the symbol table too
+        symbolTable[varName] = newValue;
+
+        visualizeProcessContents();
+    }
+    else {
+        allocateVariable(varName, newValue);
+        //cout << "Variable does not exist yet. Creating..."<<endl;
+    }
+
+
+}
 
 // initializes the allocated frames for the process, and optionally deallocates memory.
 void Process::setAllocatedFrames(const vector<size_t>& frames, bool deallocate) {

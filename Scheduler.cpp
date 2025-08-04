@@ -182,7 +182,7 @@ void Scheduler::coreWorker(int coreID) {
                 }
                 //cout << "Process " << current->getName() << " (ID: " << current->getPID() << ") allocated memory at address: " << allocatedMemory << "\n";
                 //std::cout << "Allocated memory for process " << current->getName() << " (ID: " << current->getPID() << ")\n";
-                memoryAllocator->visualizeMemory();
+                //memoryAllocator->visualizeMemory();
             }
 
             if(current->getHasCommands() == false) {

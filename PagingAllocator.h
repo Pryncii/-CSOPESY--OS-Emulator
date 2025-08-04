@@ -19,12 +19,13 @@ public:
 	//no override here
 	unordered_map<uint16_t, FrameEntry> getFrameMap() const override { return frameMap; }
 	size_t getMemoryUsed() const override;
+	unordered_map<uint16_t, FrameEntry> frameMap; // key = phys frame index, value {process-id, page number}
 
 private:
 	uint16_t maxMem;
 	uint16_t numFrames;
 	uint16_t frameSize;
-	unordered_map<uint16_t, FrameEntry> frameMap; // key = phys frame index, value {process-id, page number}
+	
 	vector<uint16_t> freeFrameList; 
 
 	vector<size_t> PagingAllocator::allocateFrames(uint16_t numFrames, uint16_t processID);

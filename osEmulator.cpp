@@ -40,6 +40,8 @@ struct Config {
 	uint16_t maxMemProc; // 1-2^16
 };
 
+shared_ptr<PagingAllocator> pagingallocator;
+
 bool isNonNegativeInteger(const string& s) {
     if (s.empty()) return false;
 
@@ -155,7 +157,7 @@ void scheduler_start(Config config, Scheduler& scheduler){
             
             uint16_t memoryRequired = generateMem(config);
 
-            shared_ptr<Process> process = make_shared<Process>(globalPID, "Process_" + to_string(globalPID), config.delay, memoryRequired, config.memFrame, config.maxMem, config.quantum);
+            shared_ptr<Process> process = make_shared<Process>(globalPID, "Process_" + to_string(globalPID), config.delay, memoryRequired, config.memFrame, config.maxMem, config.quantum, pagingallocator);
             //cout << config.quantum << endl;
             //process->generateCommands(config.minIns, config.maxIns, 0);
             scheduler.addProcess(process); // add the process to the scheduler
@@ -378,7 +380,7 @@ void processSmi(Scheduler& scheduler, Config config) {
         cout << process->getName() << " (PID: " << process->getPID() << "):"
             << " | Memory Used: " << memoryUsed << " bytes\n";
 
-        process->visualizeProcessMemory();
+        process->visualizeProcessContents();
     }
 
     cout << "\n=================================================\n";
@@ -405,7 +407,7 @@ void processSmi(Scheduler& scheduler, Config config) {
         cout << process->getName() << " (PID: " << process->getPID() << ")"
             << " | Memory Used: " << memoryUsed << " bytes\n";
 
-        process->visualizeProcessMemory();
+        process->visualizeProcessContents();
 
         // Visualize the process memory allocation
     }
@@ -552,8 +554,8 @@ int main(){
                 }
 
                 //shared_ptr<FlatMemoryAllocator> allocator = make_shared<FlatMemoryAllocator>(config.maxMem);
-                shared_ptr<PagingAllocator> allocator = make_shared<PagingAllocator>(config.maxMem, config.memFrame);
-                scheduler = std::make_shared<Scheduler>(mode, config.quantum, config.numCPU, config.delay, allocator, config.minIns, config.maxIns);
+                pagingallocator = make_shared<PagingAllocator>(config.maxMem, config.memFrame);
+                scheduler = std::make_shared<Scheduler>(mode, config.quantum, config.numCPU, config.delay, pagingallocator, config.minIns, config.maxIns);
                 scheduler->run();
 
                 string initialize = "\n"
@@ -626,7 +628,7 @@ int main(){
                     //uint16_t memoryRequired = generateMem(config);
                     uint16_t processMemory = isValidMemory(command, config.maxMem); // check if the memory size for the process is valid
                     if (processMemory == 0) continue;
-                    shared_ptr<Process> process = make_shared<Process>(globalPID, screenName, config.delay, processMemory, config.memFrame, config.maxMem, config.quantum);
+                    shared_ptr<Process> process = make_shared<Process>(globalPID, screenName, config.delay, processMemory, config.memFrame, config.maxMem, config.quantum, pagingallocator);
 					//process->generateCommands(config.minIns, config.maxIns, 0);
 					scheduler->addProcess(process); // add the process to the scheduler
                     
@@ -711,6 +713,7 @@ int main(){
         }
         else if (command == "process-smi") {
 			processSmi(ref(*scheduler), config); // call process smi
+            pagingallocator->visualizeMemory();
         }
         else {
             cout << "\x1B[31m\x1B[1mUnknown command:\x1B[22m " << command << "\x1B[0m\n";
