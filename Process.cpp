@@ -589,7 +589,6 @@ void Process::initializeCommands(const vector<string>& instructions) {
                 continue;
             }
             cmd = make_shared<DeclareCommand>(shared_from_this(), varName, value);
-            cout << "Valid DECLARE instruction" << endl;
         }
         else if (cmdType == "ADD") {
             // Format: ADD destVar srcVar1 srcVar2
@@ -636,7 +635,6 @@ void Process::initializeCommands(const vector<string>& instructions) {
             }
 
             cmd = make_shared<AddCommand>(shared_from_this(), destVar, val1, val2);
-            cout << "Valid ADD instruction" << endl;
         }
         else if (cmdType == "SUBTRACT") {
             // Format: SUBTRACT destVar srcVar1 srcVar2
@@ -683,7 +681,6 @@ void Process::initializeCommands(const vector<string>& instructions) {
             }
 
             cmd = make_shared<SubtractCommand>(shared_from_this(), destVar, val1, val2);
-            cout << "Valid SUBTRACT instruction" << endl;
         }
         else if (cmdType == "SLEEP") {
             // Format: SLEEP duration
@@ -694,7 +691,6 @@ void Process::initializeCommands(const vector<string>& instructions) {
                 continue;
             }
             cmd = make_shared<SleepCommand>(shared_from_this(), duration);
-            cout << "Valid SLEEP instruction" << endl;
         }
         else if (cmdType == "WRITE") {
             
@@ -703,7 +699,75 @@ void Process::initializeCommands(const vector<string>& instructions) {
             
         }
         else if (trimmedInstr.substr(0, 5) == "PRINT") {
-            
+            // Extract content between parentheses
+            size_t openParen = trimmedInstr.find('(');
+            size_t closeParen = trimmedInstr.find_last_of(')');
+
+            if (openParen != string::npos && closeParen != string::npos && closeParen > openParen) {
+                string content = trimmedInstr.substr(openParen + 1, closeParen - openParen - 1);
+
+                // Remove leading/trailing whitespace from content
+                content.erase(0, content.find_first_not_of(" \t"));
+                content.erase(content.find_last_not_of(" \t") + 1);
+
+                string finalOutput = "";
+
+                // Check if it contains string concatenation (+ operator)
+                if (content.find('+') != string::npos) {
+                    // Handle concatenation: "Hello World" + variable
+                    istringstream ss(content);
+                    string token;
+                    
+                    while (getline(ss, token, '+')) {
+                        // Remove whitespace around token
+                        token.erase(0, token.find_first_not_of(" \t"));
+                        token.erase(token.find_last_not_of(" \t") + 1);
+
+                        if (token.empty()) continue;
+
+                        if (token.front() == '"' && token.back() == '"') {
+                            // It's a string literal - remove quotes and add to output
+                            finalOutput += token.substr(1, token.length() - 2);
+                        }
+                        else {
+                            // It's a variable - check if it exists in symbol table
+                            if (symbolTable.find(token) != symbolTable.end()) {
+                                // Variable exists, get its value
+                                finalOutput += to_string(symbolTable[token]);
+                            }
+                            else {
+                                // Variable doesn't exist, declare it with value 0
+                                auto declareCmd = make_shared<DeclareCommand>(shared_from_this(), token, 0);
+                                addCommand(declareCmd);
+                                finalOutput += "0";
+                            }
+                        }
+                    }
+                }
+                else {
+                    // No concatenation - single item
+                    if (content.front() == '"' && content.back() == '"') {
+                        // It's a string literal
+                        finalOutput = content.substr(1, content.length() - 2);
+                    }
+                    else {
+                        // It's a variable
+                        if (symbolTable.find(content) != symbolTable.end()) {
+                            // Variable exists
+                            finalOutput = to_string(symbolTable[content]);
+                        }
+                        else {
+                            // Variable doesn't exist, declare it with value 0
+                            auto declareCmd = make_shared<DeclareCommand>(shared_from_this(), content, 0);
+                            addCommand(declareCmd);
+                            finalOutput = "0";
+                        }
+                    }
+                }
+
+                // Create the PrintCommand with the processed output
+                cmd = make_shared<PrintCommand>(shared_from_this(), finalOutput);
+            }
         }
         else if (cmdType == "FOR") {
             

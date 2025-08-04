@@ -44,7 +44,6 @@ void DeclareCommand::execute() {
 		}
 	}
 	
-	
 	//cout << "Executing DeclareCommand for process " << process->getPID() << ": declaring variable '" << varName << "' with value " << value << endl;
 }
 
