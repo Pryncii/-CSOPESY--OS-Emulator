@@ -139,10 +139,12 @@ Config loadConfig() {
 uint16_t generateMem(Config config) {
     random_device rd;
     mt19937 gen(rd());
-    uniform_int_distribution<uint16_t> memDist(config.minMemProc, config.maxMemProc);
-    uint16_t memoryRequired = memDist(gen);
 
-    return memoryRequired;
+    uint16_t minExp = static_cast<uint16_t>(ceil(log2(config.minMemProc)));
+    uint16_t maxExp = static_cast<uint16_t>(floor(log2(config.maxMemProc)));
+
+    uniform_int_distribution<uint16_t> expDist(minExp, maxExp);
+    return static_cast<uint16_t>(1 << expDist(gen));
 }
 
 void scheduler_start(Config config, Scheduler& scheduler){
