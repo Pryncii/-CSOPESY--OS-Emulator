@@ -213,6 +213,7 @@ void Scheduler::coreWorker(int coreID) {
             while (!current->isFinished() && !current->getIsTerminated()) {
 
                 // add to running queue
+                activeTicks++;
                 current->executeCommand();
                 current->moveToNextLine();
 
@@ -264,7 +265,7 @@ void Scheduler::coreWorker(int coreID) {
             // until finished or timeQuantum is reached
             while (!current->isFinished() && current -> getTimestep() < timeQuantum) {
 
-               
+                activeTicks++;
                 current->executeCommand();
                 current->moveToNextLine();
 

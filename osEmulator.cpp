@@ -174,17 +174,17 @@ void scheduler_start(Config config, Scheduler& scheduler){
 	}
 }
 
-void help(){
+void help() {
     cout << "+====================================================================+\n";
     cout << "|                         Available Commands                         |\n";
     cout << "+====================================================================+\n";
     cout << "| SYSTEM COMMANDS                                                    |\n";
-    cout << "|   - initialize                 : Set up processor configuration    |\n";
+    cout << "|   - initialize                 : Initialize processor settings     |\n";
     cout << "|   - exit                       : Exit the application              |\n";
-    cout << "|   - clear                      : Clear the console                 |\n";
+    cout << "|   - clear                      : Clear the console screen          |\n";
     cout << "+--------------------------------------------------------------------+\n";
     cout << "| SCREEN COMMANDS                                                    |\n";
-    cout << "|   - screen -s <name> <memsize>                  : Create a screen  |\n";
+    cout << "|   - screen -s <name> <memsize>                  : Create screen    |\n";
     cout << "|   - screen -c <name> <memsize> \"<instructions>\" : Create with code |\n";
     cout << "|   - screen -r <name>                            : Reattach screen  |\n";
     cout << "|   - screen -ls                                  : List all screens |\n";
@@ -192,7 +192,11 @@ void help(){
     cout << "| SCHEDULER COMMANDS                                                 |\n";
     cout << "|   - scheduler-start            : Start the scheduler               |\n";
     cout << "|   - scheduler-stop             : Stop the scheduler                |\n";
-    cout << "|   - report-util                : CPU utilization report            |\n";
+    cout << "|   - report-util                : Show CPU utilization              |\n";
+    cout << "+--------------------------------------------------------------------+\n";
+    cout << "| MONITORING COMMANDS                                                |\n";
+    cout << "|   - process-smi                : Summarized memory/process usage   |\n";
+    cout << "|   - vmstat                     : Detailed memory/process usage     |\n";
     cout << "+====================================================================+\n";
 }
 
@@ -305,77 +309,64 @@ void cpuCycleThread(uint32_t delayMs) {
     }
 }
 
-void processSmi(Scheduler& scheduler, Config config) {
+// Helper: Get memory used by a single process
+size_t getMemoryUsedByProcess(const shared_ptr<Process>& process) {
+    size_t memoryUsed = 0;
+    vector<vector<bool>> curProcMem = process->getProcessMemory();
 
+    for (const auto& frame : curProcMem) {
+        for (bool bit : frame) {
+            if (bit) ++memoryUsed;
+        }
+    }
+
+    return memoryUsed;
+}
+
+// Helper: Get total memory used by all processes in running and ready queues
+size_t getTotalMemoryUsed(Scheduler& scheduler) {
+    size_t totalMemoryUsed = 0;
+
+    // Running processes
+    vector<shared_ptr<Process>> runningProcesses = scheduler.getRunningQueue();
+    for (const auto& process : runningProcesses) {
+        totalMemoryUsed += getMemoryUsedByProcess(process);
+    }
+
+    // Ready processes
+    queue<shared_ptr<Process>> readyProcesses = scheduler.getReadyQueue();
+    while (!readyProcesses.empty()) {
+        shared_ptr<Process> process = readyProcesses.front();
+        readyProcesses.pop();
+
+        totalMemoryUsed += getMemoryUsedByProcess(process);
+    }
+
+    return totalMemoryUsed;
+}
+
+// Main function using the helper
+void processSmi(Scheduler& scheduler, Config config) {
     auto cpuUtilization = (scheduler.getRunningCores() * 100) / config.numCPU;
     uint16_t totalMemory = config.maxMem;
-	size_t totalMemoryUsed = 0;
-	
+    size_t totalMemoryUsed = getTotalMemoryUsed(scheduler);
+    auto memoryUtilization = (totalMemoryUsed * 100) / totalMemory;
 
-    vector<shared_ptr<Process>> runningProcesses = scheduler.getRunningQueue();
-	queue<shared_ptr<Process>> readyProcesses = scheduler.getReadyQueue();
-
-    for (const shared_ptr<Process>& process : runningProcesses) {
-        vector<vector<bool>> curProcMem = process->getProcessMemory();
-
-        for (int i = 0; i < curProcMem.size(); i++) {
-            //size_t frameIndex = pair.first;
-            //const vector<bool>& frameData = pair.second;
-
-            for (int j = 0; j < curProcMem[i].size(); j++) {
-                if (curProcMem[i][j]) {
-                    ++totalMemoryUsed;
-                }
-            }
-        }
-    }
-
-    queue<shared_ptr<Process>> tempReadyQueue = readyProcesses; // copy
-    while (!tempReadyQueue.empty()) {
-        shared_ptr<Process> process = tempReadyQueue.front();
-        tempReadyQueue.pop();
-
-        vector<vector<bool>> curProcMem = process->getProcessMemory();
-
-        for (int i = 0; i < curProcMem.size(); i++) {
-            //const vector<bool>& frameData = pair.second;
-            for (int j = 0; j < curProcMem[i].size(); j++) {
-                if (curProcMem[i][j]) {
-                    ++totalMemoryUsed;
-                }
-            }
-        }
-    }
-
-
-	auto memoryUtilization = (totalMemoryUsed * 100) / totalMemory;
-
-    // For each running process, print its name and memory usage
+    // Display summary
     cout << "=================================================\n";
-    cout << "| PROCESS-SMI V01.00 Driver Version: 01.00 |\n";
+    cout << "| PROCESS-SMI V01.00 Driver Version: 01.00       |\n";
     cout << "-------------------------------------------------\n";
-    cout << "CPU Utilization: " << cpuUtilization << endl;
-	cout << "Memory Usage: " << totalMemoryUsed << " bytes" << "/" << totalMemory << " bytes\n";
-	cout << "Memory Utilization: " << memoryUtilization << "%\n" << endl;
+    cout << "CPU Utilization: " << cpuUtilization << "%\n";
+    cout << "Memory Usage: " << totalMemoryUsed << " bytes / " << totalMemory << " bytes\n";
+    cout << "Memory Utilization: " << memoryUtilization << "%\n\n";
+
+    // Display running processes
     cout << "=================================================\n";
     cout << "Running processes and memory usage:\n";
     cout << "-------------------------------------------------\n";
-   
-    for (const shared_ptr<Process>& process : runningProcesses) {
-        vector<vector<bool>> curProcMem = process->getProcessMemory();
 
-        size_t memoryUsed = 0;
-
-        for (int i = 0; i < curProcMem.size(); i++) {
-            //size_t frameIndex = pair.first;
-            //const vector<bool>& frameData = pair.second;
-
-            for (int j = 0; j < curProcMem[i].size(); j++) {
-                if (curProcMem[i][j]) {
-                    ++memoryUsed;
-                }
-            }
-        }
+    for (const auto& process : scheduler.getRunningQueue()) {
+        size_t memoryUsed = getMemoryUsedByProcess(process);
 
         cout << process->getName() << " (PID: " << process->getPID() << "):"
             << " | Memory Used: " << memoryUsed << " bytes\n";
@@ -383,33 +374,22 @@ void processSmi(Scheduler& scheduler, Config config) {
         process->visualizeProcessContents();
     }
 
+    // Display ready queue processes
     cout << "\n=================================================\n";
     cout << "Ready queue processes and memory usage:\n";
     cout << "-------------------------------------------------\n";
 
-    tempReadyQueue = readyProcesses; // reset copy for printing
-    while (!tempReadyQueue.empty()) {
-        shared_ptr<Process> process = tempReadyQueue.front();
-        tempReadyQueue.pop();
+    queue<shared_ptr<Process>> readyQueue = scheduler.getReadyQueue();
+    while (!readyQueue.empty()) {
+        shared_ptr<Process> process = readyQueue.front();
+        readyQueue.pop();
 
-        vector<vector<bool>> curProcMem = process->getProcessMemory();
-        size_t memoryUsed = 0;
+        size_t memoryUsed = getMemoryUsedByProcess(process);
 
-        for (int i = 0; i < curProcMem.size(); i++) {
-            //const vector<bool>& frameData = pair.second;
-            for (int j = 0; j < curProcMem[i].size(); j++) {
-                if (curProcMem[i][j]) {
-                    ++memoryUsed;
-                }
-            }
-        }
-
-        cout << process->getName() << " (PID: " << process->getPID() << ")"
+        cout << process->getName() << " (PID: " << process->getPID() << "):"
             << " | Memory Used: " << memoryUsed << " bytes\n";
 
         process->visualizeProcessContents();
-
-        // Visualize the process memory allocation
     }
 }
 
@@ -714,6 +694,27 @@ int main(){
         else if (command == "process-smi") {
 			processSmi(ref(*scheduler), config); // call process smi
             pagingallocator->visualizeMemory();
+        }
+        else if (command == "vmstat") {
+            size_t totalMemory = config.maxMem;
+            size_t usedMemory = getTotalMemoryUsed(*scheduler);
+            size_t freeMemory = totalMemory - usedMemory;
+            size_t activeTicks = scheduler->getActiveTicks();
+			size_t idleTicks = cpuCycles - activeTicks;
+
+            // Print system memory and CPU stats
+            cout << "+========================================+\n";
+            cout << "|           System Resource Stats        |\n";
+            cout << "+----------------------------------------+\n";
+            cout << "| Total Memory      : " << totalMemory << " bytes\n";
+            cout << "| Used Memory       : " << usedMemory << " bytes\n";
+            cout << "| Free Memory       : " << freeMemory << " bytes\n";
+            cout << "| Idle CPU Ticks    : " << idleTicks << "\n";
+            cout << "| Active CPU Ticks  : " << activeTicks << "\n";
+            cout << "| Total CPU Ticks   : " << cpuCycles << "\n";
+            cout << "| Pages Paged In    : " << "[pending]" << "\n";
+            cout << "| Pages Paged Out   : " << "[pending]" << "\n";
+            cout << "+========================================+\n";
         }
         else {
             cout << "\x1B[31m\x1B[1mUnknown command:\x1B[22m " << command << "\x1B[0m\n";

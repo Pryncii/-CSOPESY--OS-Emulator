@@ -26,6 +26,7 @@ public:
     queue<shared_ptr<Process>> getReadyQueue();
     int getRunningCores();
     int getFreeCores();
+	int getActiveTicks() const { return activeTicks; }
     void writeMemorySnapshot(int quantumCycle);
 
 private:
@@ -41,6 +42,7 @@ private:
     condition_variable queueCV;
     size_t minins;
 	size_t maxins;
+    int activeTicks = 0;
 
     vector<shared_ptr<Process>> runningQueue;
     vector<shared_ptr<Process>> finishedQueue;
