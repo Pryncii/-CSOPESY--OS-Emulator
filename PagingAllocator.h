@@ -10,8 +10,10 @@ class PagingAllocator : public IMemoryAllocator
 public:
 	PagingAllocator(uint16_t maxMem, uint16_t memFrame);
 	bool Allocate(shared_ptr<Process> process) override;
+	bool AllocatePage(shared_ptr<Process> process, uint16_t pageIndex) override;
 	void Deallocate(shared_ptr<Process> process) override;
 	void visualizeMemory() const override;
+	bool allocateSingleFrameForPage(shared_ptr<Process> process, uint16_t pageIndex) override;
 	char* getMemoryBase() override;
 	uint16_t getBlockSizeAt(uint16_t index) const override;
 	size_t getTotalExtFrag() const override;

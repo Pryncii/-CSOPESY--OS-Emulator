@@ -16,15 +16,40 @@ PagingAllocator::PagingAllocator(uint16_t maxMem, uint16_t memFrame)
 
 // Allocates memory (in frames) for a given process.
 bool PagingAllocator::Allocate(shared_ptr<Process> process) {
+
+    //what we allocate here is the needed frame of the process
     size_t processID = process->getPID();
+
     size_t numFramesNeeded = process->getMemReq() / frameSize;
 
-    if (numFramesNeeded > freeFrameList.size()) {
+    if (freeFrameList.empty()) {
         return false; // not enough memory
+		//page replacement algorithm would be needed here
     }
 
-    vector<size_t> allocated = allocateFrames(numFramesNeeded, processID);
-    process->setAllocatedFrames(allocated, false);
+    //vector<size_t> allocated = allocateFrames(numFramesNeeded, processID);
+    process->setPages(false);
+    return true;
+}
+
+bool PagingAllocator::AllocatePage(shared_ptr<Process> process, uint16_t pageIndex) {
+    size_t processID = process->getPID();
+    size_t numFramesNeeded = 1; // Allocating one frame for the page
+    if (freeFrameList.empty()) {
+        return false; // not enough memory
+        //page replacement algorithm would be needed here
+    }
+	// add the frame to the process's allocated frames
+    size_t allocated = allocateSingleFrameForPage(process, pageIndex);
+    process->addToAllocatedFrames(allocated);
+	process->addToPageIndices(pageIndex);
+	 // Add the frame to the process's allocated memory
+    /*
+        // Associate the allocated frame with the specific page
+        FrameEntry& entry = frameMap[allocated[0]];
+        entry.pageNumber = pageIndex;
+        process->addPageToFrame(pageIndex, allocated[0]); // Add mapping of page to frame
+    */
     return true;
 }
 
@@ -36,12 +61,13 @@ void PagingAllocator::Deallocate(shared_ptr<Process> process) {
         freeFrameList.push_back(frame);
     }
 
-    process->setAllocatedFrames({}, true); // Clear
+    process->setPages(true); // Clear
 }
 
 // Prints the current memory status (frame-by-frame).
 void PagingAllocator::visualizeMemory() const {
     cout << "Memory Visualization:\n";
+	// for each frame, print its contents
     for (size_t frameIndex = 0; frameIndex < numFrames; ++frameIndex) {
         auto it = frameMap.find(frameIndex);
         if (it != frameMap.end()) {
@@ -50,6 +76,7 @@ void PagingAllocator::visualizeMemory() const {
                 << " (Process " << entry.processID
                 << ", Page " << entry.pageNumber << "): ";
 
+            /*
             for (size_t i = 0; i < entry.memoryContents.size(); ++i) {
                 int value = entry.memoryContents[i];
 
@@ -67,7 +94,9 @@ void PagingAllocator::visualizeMemory() const {
                     }
                 }
             }
+            */
             std::cout << "\n";
+            
         }
         else {
             std::cout << "Frame " << frameIndex << " -> Free\n";
@@ -109,6 +138,35 @@ vector<size_t> PagingAllocator::allocateFrames(uint16_t numFrames, uint16_t proc
     cout << endl;
     */
     return allocatedFrames;
+}
+
+bool PagingAllocator::allocateSingleFrameForPage(shared_ptr<Process> process, uint16_t pageIndex) {
+    if (freeFrameList.empty()) {
+        return false; // No free frame available
+    }
+
+    size_t frame = freeFrameList.front();
+    freeFrameList.erase(freeFrameList.begin());
+
+    FrameEntry entry;
+    entry.valid = true;
+    entry.processID = process->getPID();
+    entry.pageNumber = pageIndex;
+
+    // Copy the process's page data into the frame's memoryContents
+    // (Assuming processMemoryRead[pageIndex] holds the data for this page)
+    const auto& processPages = process->getProcessMemoryRead();
+    if (pageIndex < processPages.size()) {
+        entry.memoryContents = processPages[pageIndex];
+    }
+    else {
+        entry.memoryContents = vector<int>(frameSize, -1);
+    }
+    entry.memoryContentsVarName = vector<string>(frameSize, "");
+
+    frameMap[frame] = entry;
+
+    return true;
 }
 
 //void PagingAllocator::deallocateFrames(uint16_t numFrames, uint16_t frameIndex) {

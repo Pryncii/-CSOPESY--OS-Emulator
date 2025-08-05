@@ -380,7 +380,8 @@ void processSmi(Scheduler& scheduler, Config config) {
         cout << process->getName() << " (PID: " << process->getPID() << "):"
             << " | Memory Used: " << memoryUsed << " bytes\n";
 
-        process->visualizeProcessMemory();
+        //process->visualizeProcessMemory();
+        process->visualizeProcessContents();
     }
 
     cout << "\n=================================================\n";

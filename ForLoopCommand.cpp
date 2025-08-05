@@ -51,9 +51,10 @@ void ForLoopCommand::execute() {
         if (process->getTimestep() < process->getQuantum()) {
             //cout << process->getQuantum() << endl;
             //cout << "process rn: " << cmd->toString() << "\n";
+            
             this_thread::sleep_for(chrono::milliseconds(delay));
             cmd->execute();
-            //cout << "executing";
+            cout << "executing";
             process->moveToNextLine();
             process->setTimestep(process->getTimestep() + 1);
         } 

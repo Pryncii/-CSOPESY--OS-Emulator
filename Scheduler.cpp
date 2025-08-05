@@ -172,24 +172,29 @@ void Scheduler::coreWorker(int coreID) {
             queueCV.wait(lock, [this] { return !readyQueue.empty(); }); // Wait until queue is not empty
             current = readyQueue.front();
             //cout << "Process " << current->getName() << " now in running queue\n";
+            
+            
+            /*
             if (current->getAllocatedFrames().empty()) {
                 allocatedFrames = memoryAllocator->Allocate(current);
+                //immediately send to the backingStore
                 if (!allocatedFrames) {
                     //std::cout << "Insufficient memory for process " << current->getName() << " (ID: " << current->getPID() << ")\n";
-                    readyQueue.pop();
-                    readyQueue.push(current);
+                    //readyQueue.pop();
+                    //readyQueue.push(current);
                     continue; // Skip to next iteration, don't run this process
                 }
                 //cout << "Process " << current->getName() << " (ID: " << current->getPID() << ") allocated memory at address: " << allocatedMemory << "\n";
                 //std::cout << "Allocated memory for process " << current->getName() << " (ID: " << current->getPID() << ")\n";
                 //memoryAllocator->visualizeMemory();
             }
+            */
 
-            if(current->getHasCommands() == false) {
+            if (current->getHasCommands() == false) {
+                memoryAllocator->Allocate(current);
                 current->generateCommands(minins, maxins, 0);
-				current->setHasCommands(true);
-		    }
-
+                current->setHasCommands(true);
+            }
             // If already has memory, just proceed
             readyQueue.pop();
             runningQueue.push_back(current);
@@ -266,6 +271,7 @@ void Scheduler::coreWorker(int coreID) {
 
                
                 current->executeCommand();
+                
                 current->moveToNextLine();
 
                 if (current->isSleeping()) {

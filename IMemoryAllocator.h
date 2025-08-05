@@ -12,6 +12,8 @@ public:
 	IMemoryAllocator() = default;
 	virtual ~IMemoryAllocator() = default;
 	virtual bool Allocate(shared_ptr<Process> process) = 0;
+	virtual bool AllocatePage(shared_ptr<Process> process, uint16_t pageIndex) = 0;
+	virtual bool allocateSingleFrameForPage(shared_ptr<Process> process, uint16_t pageIndex) = 0;
 	virtual void Deallocate(shared_ptr<Process> process) = 0;
 	virtual void visualizeMemory() const = 0;
 	virtual char* getMemoryBase() = 0;

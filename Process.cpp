@@ -88,6 +88,7 @@ void Process::writeToMemory(uint16_t pageIndex, uint16_t address, uint16_t value
 }
 
 void Process::readMemory(uint16_t pageIndex, uint16_t address, const string& varName) {
+
     uint16_t indexInPage = address - (pageIndex * memFrame);
     int readVariable = processMemoryRead[pageIndex][indexInPage];
 
@@ -113,11 +114,18 @@ void Process::terminateProcess() {
 	this->isTerminated = true; // Set commandCounter to the total number of commands
 }
 
+void Process::addToPageIndices(size_t pageIndex) {
+    if (find(pageIndices.begin(), pageIndices.end(), pageIndex) == pageIndices.end()) {
+        pageIndices.push_back(pageIndex);
+    }
+}
 // Searches for two free bytes in the memory to store a variable, marks memory, and updates symbol tables.
 void Process::allocateVariable(const string& varName, uint16_t value) {
     
     //cout << processMemory.size();
     for (int i = 0; i < processMemory.size(); i++) {
+		// check if i is inside the pageIndices
+        
         // Search for two consecutive free spots
         //cout << processMemory.size();
         
@@ -125,10 +133,19 @@ void Process::allocateVariable(const string& varName, uint16_t value) {
 
             if (!processMemory[i][j] && !processMemory[i][j + 1]) {
                 // Allocate the two spots
+               
+
+                if (find(pageIndices.begin(), pageIndices.end(), i) == pageIndices.end()) {
+                    pagingallocator->AllocatePage(shared_from_this(), i);// Add the page index to the allocator
+                    //cout << allocatedFrames.size() << " frames allocated for process " << this->getName() << endl;
+                    deletePageIndexFromFile("backingstore.txt", this->getName(), i); // Delete the page entry from the backing store file
+                }
                 processMemory[i][j] = true;
                 processMemory[i][j + 1] = true;
                 processMemoryRead[i][j] = static_cast<uint8_t>(value & 0x00FF);        // Low byte
                 processMemoryRead[i][j + 1] = static_cast<uint8_t>((value >> 8) & 0xFF); // High byte
+
+
 
                 // Save variable info in symbolTable only
                 symbolTable[varName] = value;
@@ -170,44 +187,53 @@ void Process::allocateVariable(const string& varName, uint16_t value) {
 void Process::editVariable(const string& varName, uint16_t newValue) {
     // Check if the variable exists
 
+	//memoryNameTable[varName] this is the address of the variable in the memory
 
-    if (memoryNameTableFrame.find(varName) != memoryNameTableFrame.end() &&
-        memoryNameTable.find(varName) != memoryNameTable.end()) {
-        //visualizeProcessContents();
-        size_t frameIdx = memoryNameTableFrame[varName];
-        size_t offset = memoryNameTable[varName];
-
-        cout << "Edit existing variable from " << processMemoryRead[frameIdx][offset] << " to " << newValue << endl;
-        // Update value in memory
-        processMemoryRead[frameIdx][offset] = static_cast<uint8_t>(newValue & 0x00FF);        // Low byte
-
-        // Optionally update the second spot if it's used as a placeholder
-        processMemoryRead[frameIdx][offset + 1] = static_cast<uint8_t>((newValue >> 8) & 0xFF); // High byte
-
-        if (pagingallocator) {
-            const vector<size_t>& frames = this->getAllocatedFrames();
-            if (frameIdx < frames.size()) {
-                size_t actualFrameIdx = frames[frameIdx];
-
-
-                if (pagingallocator->frameMap.count(actualFrameIdx)) {
-
-                    FrameEntry& frame = pagingallocator->frameMap[actualFrameIdx];
-                    frame.memoryContents[offset] = static_cast<int>(newValue & 0x00FF);
-                    frame.memoryContents[offset + 1] = static_cast<int>((newValue >> 8) & 0x00FF);
-
-                    frame.memoryContentsVarName[offset] = varName;
-                    frame.memoryContentsVarName[offset + 1] = varName;
-                }
-
-            }
+    //check if
+        uint16_t pageIndex = memoryNameTable[varName] / memFrame;
+        if (find(pageIndices.begin(), pageIndices.end(), pageIndex) == pageIndices.end()) {
+            pagingallocator->AllocatePage(shared_from_this(), pageIndex);// Add the page index to the allocator
+            cout << allocatedFrames.size() << " frames allocated for process " << this->getName() << endl;
+            deletePageIndexFromFile("backingstore.txt", this->getName(), pageIndex); // Delete the page entry from the backing store file
         }
 
-        // Update the symbol table too
-        symbolTable[varName] = newValue;
+        if (memoryNameTableFrame.find(varName) != memoryNameTableFrame.end() &&
+            memoryNameTable.find(varName) != memoryNameTable.end()) {
+            //visualizeProcessContents();
+            size_t frameIdx = memoryNameTableFrame[varName];
+            size_t offset = memoryNameTable[varName];
 
-        //visualizeProcessContents();
-    }
+            cout << "Edit existing variable from " << processMemoryRead[frameIdx][offset] << " to " << newValue << endl;
+            // Update value in memory
+            processMemoryRead[frameIdx][offset] = static_cast<uint8_t>(newValue & 0x00FF);        // Low byte
+
+            // Optionally update the second spot if it's used as a placeholder
+            processMemoryRead[frameIdx][offset + 1] = static_cast<uint8_t>((newValue >> 8) & 0xFF); // High byte
+
+            if (pagingallocator) {
+                const vector<size_t>& frames = this->getAllocatedFrames();
+                if (frameIdx < frames.size()) {
+                    size_t actualFrameIdx = frames[frameIdx];
+
+
+                    if (pagingallocator->frameMap.count(actualFrameIdx)) {
+
+                        FrameEntry& frame = pagingallocator->frameMap[actualFrameIdx];
+                        frame.memoryContents[offset] = static_cast<int>(newValue & 0x00FF);
+                        frame.memoryContents[offset + 1] = static_cast<int>((newValue >> 8) & 0x00FF);
+
+                        frame.memoryContentsVarName[offset] = varName;
+                        frame.memoryContentsVarName[offset + 1] = varName;
+                    }
+
+                }
+            }
+
+            // Update the symbol table too
+            symbolTable[varName] = newValue;
+
+            //visualizeProcessContents();
+        }
     else {
         allocateVariable(varName, newValue);
         //cout << "Variable does not exist yet. Creating..."<<endl;
@@ -216,10 +242,77 @@ void Process::editVariable(const string& varName, uint16_t newValue) {
 
 }
 
-// initializes the allocated frames for the process, and optionally deallocates memory.
-void Process::setAllocatedFrames(const vector<size_t>& frames, bool deallocate) {
+void Process::savePageIndicesToFile(const std::string& filename) const {
+    std::ofstream outFile(filename, ios::app);
+    if (!outFile) {
+        std::cerr << "Failed to open file: " << filename << std::endl;
+        return;
+    }
+
+    for (int page : pageIndices) {
+        outFile << getName() << "|" << page << std::endl;
+    }
+
+    outFile.close();
+}
+
+void Process::deletePageIndexFromFile(const std::string& filename, const std::string& processName, uint16_t pageIndex) const {
+    std::ifstream inFile(filename);
+    if (!inFile) {
+        std::cerr << "Failed to open file for reading: " << filename << std::endl;
+        return;
+    }
+
+    std::vector<std::string> lines;
+    std::string line;
+    std::string targetEntry = processName + "|" + std::to_string(pageIndex);
+
+    while (std::getline(inFile, line)) {
+        if (line != targetEntry) {
+            lines.push_back(line); // Keep only non-matching lines
+        }
+    }
+    inFile.close();
+
+    std::ofstream outFile(filename, std::ios::trunc);
+    if (!outFile) {
+        std::cerr << "Failed to open file for writing: " << filename << std::endl;
+        return;
+    }
+
+    for (const std::string& l : lines) {
+        outFile << l << std::endl;
+    }
+}
+
+
+
+void Process::addToAllocatedFrames(size_t frameIndex) {
     
-	this->allocatedFrames = frames;
+    allocatedFrames.push_back(frameIndex);
+    
+}
+
+// initializes the allocated frames for the process, and optionally deallocates memory.
+void Process::setPages(bool deallocate) {
+    
+
+    /*
+    - When the process is loaded in, all our page indices will be
+      in the backing store
+    - We will only page in and allocate to the main memory if an
+      address is accessed that is not in the main memory
+    - So for the backing store, we will need the process ID, page number,
+      and the contents of that page, probably the addresses of variable names(so if we add/subtract a variable,
+      we'll first check the address associated with the symbol table 
+      call the backing store)
+    */
+
+    
+
+    //save to backing store text file
+
+	//this->allocatedFrames = frames;
 
     if (deallocate) {
 		processMemory.clear();
@@ -240,6 +333,14 @@ void Process::setAllocatedFrames(const vector<size_t>& frames, bool deallocate) 
             //cout << endl;
         }
     }
+
+    for (int i = 0; i < memoryRequired / memFrame; i++) {
+        this->pageIndices.push_back(i);
+    }
+
+    savePageIndicesToFile("backingstore.txt");
+
+    this->pageIndices = {};
 }
 
 //void Process::setAllocatedMemory(void* memory) {
@@ -328,7 +429,8 @@ unordered_map<string, uint16_t> Process::getSymbolTable() const {
 
 uint16_t Process::getSymbolValue(const string& symbol) {
 	if (symbolTable.find(symbol) == symbolTable.end()) {
-		addSymbol(symbol, 0); // If symbol not found, add it with value 0
+		auto cmd = make_shared<DeclareCommand>(shared_from_this(), symbol, 0); // If symbol not found, add it with value 0
+        addSymbol(symbol, 0);
 	}
     
 	return symbolTable.at(symbol);
@@ -341,7 +443,10 @@ int Process :: getCpuCoreID() const {
 void Process::executeCommand() {
 	if (commandCounter < commandList.size()) {
 		commandList[commandCounter]->execute();
-	}
+    }
+    else {
+        cout << "oh no";
+    }
 }
 
 void Process::moveToNextLine() {
@@ -430,6 +535,8 @@ vector<shared_ptr<Command>> Process::generateRandomCommandList(int depth, int re
                 cmd = make_shared<DeclareCommand>(shared_from_this(), varName, value);
                 instructionBudget -= repeats;
 				//visualizeProcessMemory();
+
+				//cout << "Declare: " << varName << " = " << value << endl;
                 break;
             }
 
@@ -437,6 +544,7 @@ vector<shared_ptr<Command>> Process::generateRandomCommandList(int depth, int re
             case Command::SUBTRACT: {
                 while (symbolTable.size() < 2) {
                     string fillerName = "autoVar_" + to_string(symbolTable.size());
+                    cmd = make_shared<DeclareCommand>(shared_from_this(), fillerName, 0);
                     addSymbol(fillerName, 0);
                 }
 
@@ -446,8 +554,10 @@ vector<shared_ptr<Command>> Process::generateRandomCommandList(int depth, int re
                 advance(it2, rand() % symbolTable.size());
 
                 string varName = "x" + to_string(rand() % 1000);
-                uint16_t val1 = it1->second;
-                uint16_t val2 = it2->second;
+                string varName2 = "x" + to_string(rand() % 1000);
+                uint16_t val2 = rand() % 100;          // First generate val2
+                uint16_t val1 = val2 + (rand() % 50 + 1); // Ensure val1 > val2
+
 
                 if (type == Command::ADD)
                     cmd = make_shared<AddCommand>(shared_from_this(), varName, val1, val2);
@@ -476,6 +586,7 @@ vector<shared_ptr<Command>> Process::generateRandomCommandList(int depth, int re
             }
 
             case Command::FOR: {
+                /*
                 int looprepeats = 1 + rand() % 4;
                 auto nestedCommands = generateRandomCommandList(depth + 1, looprepeats*repeats, instructionBudget);
                 
@@ -483,9 +594,27 @@ vector<shared_ptr<Command>> Process::generateRandomCommandList(int depth, int re
                     cmd = make_shared<ForLoopCommand>(shared_from_this(), nestedCommands, looprepeats, delay);
                 }
                 break;
+                */
+
+           
+                int looprepeats = 1 + rand() % 4;
+
+                // Recursively generate subcommands (note: increase depth to avoid infinite nesting)
+                auto nestedCommands = generateRandomCommandList(depth + 1, looprepeats * repeats, instructionBudget);
+
+                // Append the repeated commands directly to the parent list
+                for (int i = 0; i < looprepeats; ++i) {
+                    for (auto& subCmd : nestedCommands) {
+                        commandList.push_back(subCmd);  // ← this is your idea
+                    }
+                }
+                break;
+            
+
             }
             
             case Command::WRITE: {
+				cout << "Generating WRITE command for process " << name << endl;
                 // only addresses it can access are the addresses that has the allocated frames
                 vector<size_t> possibleAddresses;
                 uint16_t address;
