@@ -18,6 +18,10 @@ public:
 	uint16_t getBlockSizeAt(uint16_t index) const override;
 	size_t getTotalExtFrag() const override;
 	uint16_t getMaxSize() const override;
+	int getPageIn() const { return pageIn; }
+	int getPageOut() const { return pageOut; }
+	void addPageIn() { pageIn++; }
+	void addPageOut() { pageOut++; }
 	//no override here
 	unordered_map<uint16_t, FrameEntry> getFrameMap() const override { return frameMap; }
 	size_t getMemoryUsed() const override;
@@ -27,6 +31,9 @@ private:
 	uint16_t maxMem;
 	uint16_t numFrames;
 	uint16_t frameSize;
+
+	int pageIn = 0;
+	int pageOut = 0;
 	
 	vector<uint16_t> freeFrameList; 
 

@@ -62,6 +62,7 @@ class Process : public enable_shared_from_this<Process>
 		const vector<size_t>& getAllocatedFrames() const { return allocatedFrames; }
 		vector<vector<bool>> getProcessMemory() const { return processMemory; }
 		vector<vector<int>> getProcessMemoryRead() const { return processMemoryRead; }
+		bool getIsProcessError() const;
 		void removeFromAllocatedFrames(size_t frame);
 		
 
@@ -108,6 +109,7 @@ class Process : public enable_shared_from_this<Process>
 		unordered_map<string, uint16_t> symbolTable;
 		unordered_map<string, uint16_t> memoryNameTableFrame; //name of the variable and its frame
 		unordered_map<string, uint16_t> memoryNameTable; //name of the variable and its address in the frame
+		bool isProcessError = false;
 		//void* allocatedMemory;
 
 		/*

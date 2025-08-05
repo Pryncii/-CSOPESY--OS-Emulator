@@ -33,6 +33,7 @@ void WriteCommand::execute() {
 	//receive the address
 	uint16_t pageIndex = address/memFrame;
 
+	//cout << process->getCpuCoreID() << "WRITE: " << process->getName() << " Address: " << address << " Value: " << value << endl;
 
 	if (process->getMemReq() < address) {
 		cout << "Write Error" << endl;

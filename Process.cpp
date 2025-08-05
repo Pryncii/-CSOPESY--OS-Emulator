@@ -85,6 +85,8 @@ void Process::writeToMemory(uint16_t pageIndex, uint16_t address, uint16_t value
         }
     }
 
+    cout << "THIS IS WRITE" << endl;
+	visualizeProcessContents();
 }
 
 void Process::readMemory(uint16_t pageIndex, uint16_t address, const string& varName) {
@@ -108,10 +110,18 @@ void Process::readMemory(uint16_t pageIndex, uint16_t address, const string& var
 			//<< " from address " << address << " in frame " << frameIndex << "." << endl;
 	}
 
+    cout << "THIS IS READ" << endl;
+    visualizeProcessContents();
 }
 
 void Process::terminateProcess() {
-	this->isTerminated = true; // Set commandCounter to the total number of commands
+    this->isTerminated = true; // Set commandCounter to the total number of commands
+    this->isProcessError = true;
+    cout << "process error, terminated.\n";
+}
+
+bool Process::getIsProcessError() const {
+    return isProcessError;
 }
 
 void Process::addToPageIndices(size_t pageIndex) {
@@ -185,6 +195,8 @@ void Process::allocateVariable(const string& varName, uint16_t value) {
 // NOTE: MAINMEMORY DOESNT GET UPDATED WHEN EDIT VARIABLE YET
 // NOT SURE HOW ITS SUPPOSED TO BE DONE COS NO LOWBYTE HIGHBYTE
 void Process::editVariable(const string& varName, uint16_t newValue) {
+    
+    cout << "IN EDIT VARIABLE" << endl;
     // Check if the variable exists
 
 	//memoryNameTable[varName] this is the address of the variable in the memory
@@ -196,9 +208,10 @@ void Process::editVariable(const string& varName, uint16_t newValue) {
             //cout << allocatedFrames.size() << " frames allocated for process " << this->getName() << endl;
             deletePageIndexFromFile("backingstore.txt", this->getName(), pageIndex); // Delete the page entry from the backing store file
         }
-
+        cout << "SANITY CHECK" << endl;
         if (memoryNameTableFrame.find(varName) != memoryNameTableFrame.end() &&
             memoryNameTable.find(varName) != memoryNameTable.end()) {
+            cout << "in here" << endl;
             //visualizeProcessContents();
             size_t frameIdx = memoryNameTableFrame[varName];
             size_t offset = memoryNameTable[varName];
@@ -215,7 +228,7 @@ void Process::editVariable(const string& varName, uint16_t newValue) {
                 if (frameIdx < frames.size()) {
                     size_t actualFrameIdx = frames[frameIdx];
 
-
+                    cout << "in here" << endl;
                     if (pagingallocator->frameMap.count(actualFrameIdx)) {
 
                         FrameEntry& frame = pagingallocator->frameMap[actualFrameIdx];
@@ -228,11 +241,11 @@ void Process::editVariable(const string& varName, uint16_t newValue) {
 
                 }
             }
-
+            cout << "YEAH" << endl;
             // Update the symbol table too
             symbolTable[varName] = newValue;
 
-            //visualizeProcessContents();
+            visualizeProcessContents();
         }
     else {
         allocateVariable(varName, newValue);
@@ -243,6 +256,7 @@ void Process::editVariable(const string& varName, uint16_t newValue) {
 }
 
 void Process::savePageIndicesToFile(const std::string& filename) const {
+    pagingallocator->addPageIn(); // Increment page in count
     std::ofstream outFile(filename, ios::app);
     if (!outFile) {
         std::cerr << "Failed to open file: " << filename << std::endl;
@@ -257,6 +271,7 @@ void Process::savePageIndicesToFile(const std::string& filename) const {
 }
 
 void Process::deletePageIndexFromFile(const std::string& filename, const std::string& processName, uint16_t pageIndex) const {
+	pagingallocator->addPageOut(); // Increment page out count
     std::ifstream inFile(filename);
     if (!inFile) {
         std::cerr << "Failed to open file for reading: " << filename << std::endl;
@@ -727,92 +742,295 @@ int Process::countNonForInstructions(const vector<shared_ptr<Command>>& cmds) co
 
 void Process::initializeCommands(const vector<string>& instructions) {
     for (const string& instr : instructions) {
-        istringstream iss(instr);
+        string trimmedInstr = instr;
+        // Remove leading/trailing whitespace
+        trimmedInstr.erase(0, trimmedInstr.find_first_not_of(" \t"));
+        trimmedInstr.erase(trimmedInstr.find_last_not_of(" \t") + 1);
+
+        if (trimmedInstr.empty()) continue;
+
+        shared_ptr<Command> cmd = nullptr;
+        istringstream iss(trimmedInstr);
         string cmdType;
         iss >> cmdType;
 
-        // Optional: uppercase for case-insensitive match
-        transform(cmdType.begin(), cmdType.end(), cmdType.begin(), ::toupper);
-
-        shared_ptr<Command> cmd = nullptr;
-
         if (cmdType == "DECLARE") {
+            // Format: DECLARE varName value
             string varName;
             uint16_t value;
             iss >> varName >> value;
             if (varName.empty() || iss.fail()) {
-                cout << "Invalid DECLARE instruction: " << instr << endl;
+                cout << "Invalid DECLARE instruction: " << trimmedInstr << endl;
                 continue;
             }
             cmd = make_shared<DeclareCommand>(shared_from_this(), varName, value);
         }
-        else if (cmdType == "ADD") {
+        else if (cmdType == "ADD" || cmdType == "SUBTRACT") {
+            // Format: ADD destVar srcVar1 srcVar2
             string destVar, srcVar1, srcVar2;
             iss >> destVar >> srcVar1 >> srcVar2;
             if (destVar.empty() || srcVar1.empty() || srcVar2.empty()) {
-                cout << "Invalid ADD instruction: " << instr << endl;
+                cout << "Invalid " << cmdType << " instruction: " << trimmedInstr << endl;
                 continue;
             }
-            cmd = make_shared<AddCommand>(shared_from_this(), destVar, srcVar1, srcVar2);
-        }
-        else if (cmdType == "SUBTRACT") {
-            string destVar, srcVar1, srcVar2;
-            iss >> destVar >> srcVar1 >> srcVar2;
-            if (destVar.empty() || srcVar1.empty() || srcVar2.empty()) {
-                cout << "Invalid SUBTRACT instruction: " << instr << endl;
-                continue;
+
+            bool isSrc1Const = false, isSrc2Const = false;
+            uint16_t val1, val2;
+
+            // Parse srcVar1
+            try {
+                val1 = static_cast<uint16_t>(stoi(srcVar1));
+                isSrc1Const = true;
             }
-            cmd = make_shared<SubtractCommand>(shared_from_this(), destVar, srcVar1, srcVar2);
-        }
-        else if (cmdType == "PRINT") {
-            string message;
-            getline(iss, message);
-            message.erase(0, message.find_first_not_of(" \t"));
-            cmd = make_shared<PrintCommand>(shared_from_this(), message);
+            catch (const exception& e) {
+                //if (!isSrc1Const) cout << "not a value" << endl;
+            }
+
+            // Parse srcVar2
+            try {
+                val2 = static_cast<uint16_t>(stoi(srcVar2));
+                isSrc2Const = true;
+            }
+            catch (const exception& e) {
+                //if (!isSrc2Const) cout << "not a value" << endl;
+            }
+
+            // Create the appropriate command
+            if (cmdType == "ADD") {
+                if (isSrc1Const && isSrc2Const) {
+                    // Both constants
+                    cmd = make_shared<AddCommand>(shared_from_this(), destVar, val1, val2);
+                }
+                else if (isSrc1Const && !isSrc2Const) {
+                    // srcVar1 is constant, srcVar2 is variable
+                    cmd = make_shared<AddCommand>(shared_from_this(), destVar, val1, srcVar2);
+                }
+                else if (!isSrc1Const && isSrc2Const) {
+                    // srcVar1 is variable, srcVar2 is constant
+                    cmd = make_shared<AddCommand>(shared_from_this(), destVar, srcVar1, val2);
+                }
+                else {
+                    // Both are variables
+                    cmd = make_shared<AddCommand>(shared_from_this(), destVar, srcVar1, srcVar2);
+                }
+            }
+            else {
+                if (isSrc1Const && isSrc2Const) {
+                    // Both constants
+                    cmd = make_shared<SubtractCommand>(shared_from_this(), destVar, val1, val2);
+                }
+                else if (isSrc1Const && !isSrc2Const) {
+                    // srcVar1 is constant, srcVar2 is variable
+                    cmd = make_shared<SubtractCommand>(shared_from_this(), destVar, val1, srcVar2);
+                }
+                else if (!isSrc1Const && isSrc2Const) {
+                    // srcVar1 is variable, srcVar2 is constant
+                    cmd = make_shared<SubtractCommand>(shared_from_this(), destVar, srcVar1, val2);
+                }
+                else {
+                    // Both are variables
+                    cmd = make_shared<SubtractCommand>(shared_from_this(), destVar, srcVar1, srcVar2);
+                }
+            }
         }
         else if (cmdType == "SLEEP") {
-            uint16_t duration;
+            // Format: SLEEP duration
+            uint8_t duration;
             iss >> duration;
             if (iss.fail()) {
-                cout << "Invalid SLEEP instruction: " << instr << endl;
+                cout << "Invalid SLEEP instruction: " << trimmedInstr << endl;
                 continue;
             }
             cmd = make_shared<SleepCommand>(shared_from_this(), duration);
         }
-        else if (cmdType == "FOR") {
-            int loopCount;
-            iss >> loopCount;
-            if (iss.fail() || loopCount < 1) {
-                cout << "Invalid FOR instruction: " << instr << endl;
-                continue;
+        else if (trimmedInstr.substr(0, 5) == "PRINT") {
+            // Extract content between parentheses
+            size_t openParen = trimmedInstr.find('(');
+            size_t closeParen = trimmedInstr.find_last_of(')');
+
+            if (openParen != string::npos && closeParen != string::npos && closeParen > openParen) {
+                string content = trimmedInstr.substr(openParen + 1, closeParen - openParen - 1);
+
+                // Remove leading/trailing whitespace from content
+                content.erase(0, content.find_first_not_of(" \t"));
+                content.erase(content.find_last_not_of(" \t") + 1);
+
+                string finalOutput = "";
+
+                // Check if it contains string concatenation (+ operator)
+                if (content.find('+') != string::npos) {
+                    // Handle concatenation: "Hello World" + variable
+                    istringstream ss(content);
+                    string token;
+
+                    while (getline(ss, token, '+')) {
+                        // Remove whitespace around token
+                        token.erase(0, token.find_first_not_of(" \t"));
+                        token.erase(token.find_last_not_of(" \t") + 1);
+
+                        if (token.empty()) continue;
+
+                        if (token.front() == '"' && token.back() == '"') {
+                            // It's a string literal - remove quotes and add to output
+                            finalOutput += token.substr(1, token.length() - 2);
+                        }
+                        else {
+                            // It's a variable - check if it exists in symbol table
+                            if (symbolTable.find(token) != symbolTable.end()) {
+                                // Variable exists, get its value
+                                finalOutput += to_string(symbolTable[token]);
+                            }
+                            else {
+                                // Variable doesn't exist, declare it with value 0
+                                auto declareCmd = make_shared<DeclareCommand>(shared_from_this(), token, 0);
+                                addCommand(declareCmd);
+                                finalOutput += "0";
+                            }
+                        }
+                    }
+                }
+                else {
+                    // No concatenation - single item
+                    if (content.front() == '"' && content.back() == '"') {
+                        // It's a string literal
+                        finalOutput = content.substr(1, content.length() - 2);
+                    }
+                    else {
+                        // It's a variable
+                        if (symbolTable.find(content) != symbolTable.end()) {
+                            // Variable exists
+                            finalOutput = to_string(symbolTable[content]);
+                        }
+                        else {
+                            // Variable doesn't exist, declare it with value 0
+                            auto declareCmd = make_shared<DeclareCommand>(shared_from_this(), content, 0);
+                            addCommand(declareCmd);
+                            finalOutput = "0";
+                        }
+                    }
+                }
+
+                // Create the PrintCommand with the processed output
+                cmd = make_shared<PrintCommand>(shared_from_this(), finalOutput);
             }
-            vector<shared_ptr<Command>> nestedCommands;
-            cmd = make_shared<ForLoopCommand>(shared_from_this(), nestedCommands, loopCount, delay);
+        }
+        else if (cmdType == "FOR") {
+
         }
         else if (cmdType == "WRITE") {
-           //WriteCommand(shared_ptr<Process> process, uint16_t address, uint16_t memFrame, uint16_t value);
-            uint16_t address, memFrame, value;
-            iss >> address >> memFrame >> value;
-            if (iss.fail()) {
-                cout << "Invalid WRITE instruction: " << instr << endl;
+            string destVar, srcVar;
+            iss >> destVar >> srcVar;
+            if (destVar.empty() || srcVar.empty()) {
+                cout << "Invalid WRITE instruction: " << trimmedInstr << endl;
                 continue;
             }
 
-            cmd = make_shared<WriteCommand>(shared_from_this(), address, memFrame, value);
+            // Parse srcVar1 and srcVar2 (could be variables or values)
+            uint16_t val1;
+            try {
+                val1 = static_cast<uint16_t>(stoi(srcVar));
+            }
+            catch (const exception& e) {
+                // It's a variable, get its value from symbol table
+                if (symbolTable.find(srcVar) != symbolTable.end()) {
+                    val1 = symbolTable[srcVar];
+                }
+                else {
+                    // Auto-declare with value 0
+                    addSymbol(srcVar, 0);
+                    val1 = 0;
+                }
+            }
+            vector<size_t> possibleAddresses;
+            //cout << "memoryrequired: " << memoryRequired << endl;
+            //cout << "memFrame: " << memFrame << endl;
+            for (int i = 0; i < memoryRequired / memFrame; ++i) {
+                //for each page index, add all addresses in that frame to the possible addresses
+
+                for (size_t j = 0; j < memFrame - 1; ++j) {
+                    possibleAddresses.push_back(i * memFrame + j);
+                }
+            }
+            //cout << "Possible addresses for WRITE: ";
+            //for (size_t addr : possibleAddresses) {
+            //    cout << addr << " ";
+            //}
+            //cout << endl;
+
+            size_t destAddress;
+            try {
+                destAddress = std::stoul(destVar, nullptr, 0); // auto-detects base (hex, dec)
+                //cout << "DEST ADDRESS: " << destAddress << endl;
+            }
+            catch (const std::exception& e) {
+                cout << "Invalid WRITE destination address format: " << destVar << endl;
+                continue;
+            }
+
+            if (std::find(possibleAddresses.begin(), possibleAddresses.end(), destAddress) == possibleAddresses.end()) {
+                //cout << "Invalid WRITE address: " << destVar << " is not within allocated memory" << endl;
+                terminateProcess();
+                continue;
+            }
+
+            cmd = make_shared<WriteCommand>(shared_from_this(), static_cast<uint16_t>(destAddress), memFrame, val1);
+            cout << "Valid WRITE instruction" << endl;
         }
         else if (cmdType == "READ") {
-            // TODO: implement WRITE command later
-            // cmd = make_shared<WriteCommand>(/* your params */);
-            uint16_t address, memFrame;
-            string varName;
-            iss >> address >> varName >> memFrame;
-
-            if (iss.fail()) {
-                cout << "Invalid READ instruction: " << instr << endl;
+            string destVar, srcVar;
+            iss >> destVar >> srcVar;
+            if (destVar.empty() || srcVar.empty()) {
+                cout << "Invalid READ instruction: " << trimmedInstr << endl;
                 continue;
             }
 
-            cmd = make_shared<ReadCommand>(shared_from_this(), address, varName, memFrame);
+            // check if destination is in symbol table, if not, declare with 0
+            uint16_t val1;
+            try {
+                val1 = static_cast<uint16_t>(stoi(destVar));
+            }
+            catch (const exception& e) {
+                // It's a variable, get its value from symbol table
+                if (symbolTable.find(destVar) != symbolTable.end()) {
+                    val1 = symbolTable[destVar];
+                }
+                else {
+                    // Auto-declare with value 0
+                    addSymbol(destVar, 0);
+                    val1 = 0;
+                }
+            }
+            vector<size_t> possibleAddresses;
+            for (int i = 0; i < memoryRequired / memFrame; ++i) {
+                for (size_t j = 0; j < memFrame - 1; ++j) {
+                    possibleAddresses.push_back(i * memFrame + j);
+                }
+            }
+            //cout << "Possible addresses for READ: ";
+            //for (size_t addr : possibleAddresses) {
+            //    cout << addr << " ";
+            //}
+            //cout << endl;
+
+            size_t srcAddress;
+            try {
+                srcAddress = std::stoul(srcVar, nullptr, 0); // auto-detects base (hex, dec)
+                //cout << "DEST ADDRESS: " << srcAddress << endl;
+            }
+            catch (const std::exception& e) {
+                cout << "Invalid WRITE destination address format: " << destVar << endl;
+                continue;
+            }
+
+            // check if address source is possible
+            if (std::find(possibleAddresses.begin(), possibleAddresses.end(), srcAddress) == possibleAddresses.end()) {
+                //cout << "Invalid WRITE address: " << destVar << " is not within allocated memory" << endl;
+                terminateProcess();
+                continue;
+            }
+
+            cmd = make_shared<ReadCommand>(shared_from_this(), static_cast<uint16_t>(srcAddress), destVar, memFrame);
+            cout << "Valid READ instruction" << endl;
         }
         else {
             cout << "Unknown instruction: " << instr << endl;
@@ -820,7 +1038,7 @@ void Process::initializeCommands(const vector<string>& instructions) {
         }
 
         if (cmd) {
-            commandList.push_back(cmd);
+            addCommand(cmd);
         }
     }
 }

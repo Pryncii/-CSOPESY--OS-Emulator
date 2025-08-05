@@ -34,6 +34,8 @@ void ReadCommand::execute() {
 	//receive the address
 	uint16_t pageIndex = address / memFrame;
 
+	//cout << process->getCpuCoreID() << "READ: " << process->getName() << " Address: " << address << " varName: " << varName << endl;
+
 	if (process->getMemReq() < address){
 		cout << "Read Error" << endl;
 		//terminate the process if the frame is not allocated

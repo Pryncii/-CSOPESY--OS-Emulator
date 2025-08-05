@@ -14,6 +14,7 @@
 #include "SubtractCommand.h"
 #include <algorithm> 
 #include <random>
+#include <iomanip>
 #include "FlatMemoryAllocator.h"
 #include "PagingAllocator.h"
 
@@ -139,10 +140,11 @@ Config loadConfig() {
 uint16_t generateMem(Config config) {
     random_device rd;
     mt19937 gen(rd());
-    uniform_int_distribution<uint16_t> memDist(config.minMemProc, config.maxMemProc);
-    uint16_t memoryRequired = memDist(gen);
+    uint16_t minExp = static_cast<uint16_t>(ceil(log2(config.minMemProc)));
+    uint16_t maxExp = static_cast<uint16_t>(floor(log2(config.maxMemProc)));
 
-    return memoryRequired;
+    uniform_int_distribution<uint16_t> expDist(minExp, maxExp);
+    return static_cast<uint16_t>(1 << expDist(gen));
 }
 
 void scheduler_start(Config config, Scheduler& scheduler){
@@ -174,17 +176,17 @@ void scheduler_start(Config config, Scheduler& scheduler){
 	}
 }
 
-void help(){
+void help() {
     cout << "+====================================================================+\n";
     cout << "|                         Available Commands                         |\n";
     cout << "+====================================================================+\n";
     cout << "| SYSTEM COMMANDS                                                    |\n";
-    cout << "|   - initialize                 : Set up processor configuration    |\n";
+    cout << "|   - initialize                 : Initialize processor settings     |\n";
     cout << "|   - exit                       : Exit the application              |\n";
-    cout << "|   - clear                      : Clear the console                 |\n";
+    cout << "|   - clear                      : Clear the console screen          |\n";
     cout << "+--------------------------------------------------------------------+\n";
     cout << "| SCREEN COMMANDS                                                    |\n";
-    cout << "|   - screen -s <name> <memsize>                  : Create a screen  |\n";
+    cout << "|   - screen -s <name> <memsize>                  : Create screen    |\n";
     cout << "|   - screen -c <name> <memsize> \"<instructions>\" : Create with code |\n";
     cout << "|   - screen -r <name>                            : Reattach screen  |\n";
     cout << "|   - screen -ls                                  : List all screens |\n";
@@ -192,7 +194,11 @@ void help(){
     cout << "| SCHEDULER COMMANDS                                                 |\n";
     cout << "|   - scheduler-start            : Start the scheduler               |\n";
     cout << "|   - scheduler-stop             : Stop the scheduler                |\n";
-    cout << "|   - report-util                : CPU utilization report            |\n";
+    cout << "|   - report-util                : Show CPU utilization              |\n";
+    cout << "+--------------------------------------------------------------------+\n";
+    cout << "| MONITORING COMMANDS                                                |\n";
+    cout << "|   - process-smi                : Summarized memory/process usage   |\n";
+    cout << "|   - vmstat                     : Detailed memory/process usage     |\n";
     cout << "+====================================================================+\n";
 }
 
@@ -305,13 +311,17 @@ void cpuCycleThread(uint32_t delayMs) {
     }
 }
 
+size_t getTotalMemUsed(Config config, shared_ptr<PagingAllocator> pagingAllocator) {
+    return pagingAllocator->getFrameMap().size() * config.memFrame;
+}
+
 void processSmi(Scheduler& scheduler, Config config, shared_ptr<PagingAllocator> pagingAllocator) {
 
     auto cpuUtilization = (scheduler.getRunningCores() * 100) / config.numCPU;
     uint16_t totalMemory = config.maxMem;
 	
 	
-    size_t totalMemoryUsed = pagingAllocator->getFrameMap().size() * config.memFrame;
+    size_t totalMemoryUsed = getTotalMemUsed(config, pagingAllocator);
 
     vector<shared_ptr<Process>> runningProcesses = scheduler.getRunningQueue();
 	queue<shared_ptr<Process>> readyProcesses = scheduler.getReadyQueue();
@@ -680,15 +690,15 @@ int main(){
                         cout << instr << endl;
                     }*/
 
-                    //shared_ptr<Process> process = make_shared<Process>(globalPID, screenName, config.delay, processMemory);
-                    //process->initializeCommands(instructions);
-                    //scheduler->addProcess(process); // add the process to the scheduler
-
-                    //Console temp(process);
-                    //shared_ptr<Console> consolePtr = make_shared<Console>(temp);
-                    //screens.insert({ screenName, consolePtr });
-                    ////screenInterface(screenName); // open the screen interface
-                    //globalPID++;
+                    shared_ptr<Process> process = make_shared<Process>(globalPID, screenName, config.delay, processMemory, config.memFrame, config.maxMem, config.quantum, pagingallocator);
+                    process->initializeCommands(instructions);
+                    scheduler->addProcess(process); // add the process to the scheduler
+                    
+                    Console temp(process);
+                    shared_ptr<Console> consolePtr = make_shared<Console>(temp);
+                    screens.insert({ screenName, consolePtr });
+                    //screenInterface(screenName); // open the screen interface
+                    globalPID++;
                 }
                 else {
                     cout << "\x1B[31m\x1B[1mError:\x1B[0m Screen name already exist/has finished executing!\n";
@@ -730,6 +740,26 @@ int main(){
         else if (command == "process-smi") {
 			processSmi(ref(*scheduler), config, pagingallocator); // call process smi
             pagingallocator->visualizeMemory();
+        }
+        else if (command == "vmstat") {
+            size_t totalMemory = config.maxMem;
+            size_t usedMemory = getTotalMemUsed(config, pagingallocator);
+            size_t freeMemory = totalMemory - usedMemory;
+            size_t activeTicks = scheduler->getActiveTicks();
+            size_t idleTicks = cpuCycles - activeTicks;
+
+            cout << "+===========================================+\n";
+            cout << "|         System Resource Statistics        |\n";
+            cout << "+-------------------------------------------+\n";
+            cout << "| Total Memory       : " << setw(14) << totalMemory << " bytes |\n";
+            cout << "| Used Memory        : " << setw(14) << usedMemory << " bytes |\n";
+            cout << "| Free Memory        : " << setw(14) << freeMemory << " bytes |\n";
+            cout << "| Idle CPU Ticks     : " << setw(14) << idleTicks << "       |\n";
+            cout << "| Active CPU Ticks   : " << setw(14) << activeTicks << "       |\n";
+            cout << "| Total CPU Ticks    : " << setw(14) << cpuCycles << "       |\n";
+            cout << "| Pages Paged In     : " << setw(14) << pagingallocator->getPageIn() << "       |\n";
+            cout << "| Pages Paged Out    : " << setw(14) << pagingallocator->getPageOut() << "       |\n";
+            cout << "+===========================================+\n";
         }
         else {
             cout << "\x1B[31m\x1B[1mUnknown command:\x1B[22m " << command << "\x1B[0m\n";

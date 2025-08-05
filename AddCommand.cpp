@@ -49,30 +49,41 @@ void AddCommand::pageIn(const string& varName) {
 		process->deletePageIndexFromFile("backingstore.txt", process->getName(), pageIndex); // Delete the page entry from the backing store file
 	}
 }
+
 void AddCommand::execute() {
 	// if var 2 and 3 are numbers
-	//need to also check for the address of the variables
-	
 	uint16_t result = 0;
-	//cout << "Executing AddCommand: " << var1 << " = " << var2Num << " + " << var3Num << endl;
 	if (var2IsNumber && var3IsNumber) {
 		result = var2Num + var3Num;
+
+		//cout << process->getCpuCoreID() << "ADD NN: " << var2Num << " + " << var3Num << " = " << result << endl;
+
+
 		process->editVariable(var1, result);
-	} else if(var2IsNumber && !var3IsNumber) { // if var 2 is number and var 3 is string
+	}
+	else if (var2IsNumber && !var3IsNumber) { // if var 2 is number and var 3 is string
 		result = var2Num + process->getSymbolValue(var3Str);
-		pageIn(var3Str); // Ensure the variable is paged in
+
+		//cout << process->getCpuCoreID() << "ADD NV: " << var2Num << " + " << process->getSymbolValue(var3Str) << " = " << result << endl;
+
+
 		process->editVariable(var1, result);
-	} else if (!var2IsNumber && var3IsNumber) { // if var 2 is string and var 3 is number
+	}
+	else if (!var2IsNumber && var3IsNumber) { // if var 2 is string and var 3 is number
 		result = process->getSymbolValue(var2Str) + var3Num;
-		pageIn(var2Str); // Ensure the variable is paged in
+
+		//cout << process->getCpuCoreID() << "ADD VN: " << process->getSymbolValue(var2Str) << " + " << var3Num << " = " << result << endl;
+
+
 		process->editVariable(var1, result);
 	}
 	else { // if both are strings
 		result = process->getSymbolValue(var2Str) + process->getSymbolValue(var3Str);
-		pageIn(var2Str);
-		pageIn(var3Str); // Ensure both variables are paged in
+
+		//cout << process->getCpuCoreID() << "ADD VV: " << process->getSymbolValue(var2Str) << " + " << process->getSymbolValue(var3Str) << " = " << result << endl;
+
+
 		process->editVariable(var1, result);
 	}
 
-	
 }
