@@ -102,7 +102,7 @@ void Process::writeToMemory(uint16_t pageIndex, uint16_t address, uint16_t value
     //    cout << pair.first << endl;
     //}
     //cout << "-------\n";
-	visualizeProcessContents();
+	//visualizeProcessContents();
 }
 
 void Process::readMemory(uint16_t pageIndex, uint16_t address, const string& varName) {
@@ -133,7 +133,7 @@ void Process::readMemory(uint16_t pageIndex, uint16_t address, const string& var
     //    cout << pair.first << endl;
     //}
     //cout << "-------\n";
-    visualizeProcessContents();
+    //visualizeProcessContents();
 }
 
 void Process::terminateProcess(string destVar) {
@@ -177,7 +177,7 @@ void Process::allocateVariable(const string& varName, uint16_t value) {
                 if (find(pageIndices.begin(), pageIndices.end(), i) == pageIndices.end()) {
                     pagingallocator->AllocatePage(shared_from_this(), i);// Add the page index to the allocator
                     //cout << allocatedFrames.size() << " frames allocated for process " << this->getName() << endl;
-                    deletePageIndexFromFile("backingstore.txt", this->getName(), i); // Delete the page entry from the backing store file
+                    deletePageIndexFromFile("csopesy-backing-store.txt", this->getName(), i); // Delete the page entry from the backing store file
                 }
                 processMemory[i][j] = true;
                 processMemory[i][j + 1] = true;
@@ -238,7 +238,7 @@ void Process::editVariable(const string& varName, uint16_t newValue) {
         if (find(pageIndices.begin(), pageIndices.end(), pageIndex) == pageIndices.end()) {
             pagingallocator->AllocatePage(shared_from_this(), pageIndex);// Add the page index to the allocator
             //cout << allocatedFrames.size() << " frames allocated for process " << this->getName() << endl;
-            deletePageIndexFromFile("backingstore.txt", this->getName(), pageIndex); // Delete the page entry from the backing store file
+            deletePageIndexFromFile("csopesy-backing-store.txt", this->getName(), pageIndex); // Delete the page entry from the backing store file
         }
         //cout << "SANITY CHECK" << endl;
 
@@ -287,7 +287,7 @@ void Process::editVariable(const string& varName, uint16_t newValue) {
             // Update the symbol table too
             symbolTable[varName] = newValue;
 
-            visualizeProcessContents();
+            //visualizeProcessContents();
         }
     else {
         allocateVariable(varName, newValue);
@@ -395,7 +395,7 @@ void Process::setPages(bool deallocate) {
         this->pageIndices.push_back(i);
     }
 
-    savePageIndicesToFile("backingstore.txt");
+    savePageIndicesToFile("csopesy-backing-store.txt");
 
     this->pageIndices = {};
 }

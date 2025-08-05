@@ -46,7 +46,7 @@ void AddCommand::pageIn(const string& varName) {
 	if (find(pageIndices.begin(), pageIndices.end(), pageIndex) == pageIndices.end()) {
 		pagingallocator->AllocatePage(process, pageIndex);// Add the page index to the allocator
 		//cout << allocatedFrames.size() << " frames allocated for process " << this->getName() << endl;
-		process->deletePageIndexFromFile("backingstore.txt", process->getName(), pageIndex); // Delete the page entry from the backing store file
+		process->deletePageIndexFromFile("csopesy-backing-store.txt", process->getName(), pageIndex); // Delete the page entry from the backing store file
 	}
 }
 

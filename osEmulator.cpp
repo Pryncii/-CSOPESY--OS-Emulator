@@ -22,7 +22,7 @@ using namespace std;
 
 unordered_map<string, shared_ptr<Console>> screens;
 int cpuCycles = 0;
-int globalPID = 1000;
+int globalPID = 0000;
 bool processGeneration = false;
 int processCount = 0;
 string consoleStrings = "";
@@ -364,7 +364,7 @@ void processSmi(Scheduler& scheduler, Config config, shared_ptr<PagingAllocator>
 	auto memoryUtilization = (totalMemoryUsed * 100) / totalMemory;
 
     // For each running process, print its name and memory usage
-    cout << "=================================================\n";
+    cout << "\n=================================================\n";
     cout << "|   PROCESS-SMI V01.00  Driver Version: 01.00   |\n";
     cout << "-------------------------------------------------\n";
     cout << "CPU Utilization: " << cpuUtilization << "%" << endl;

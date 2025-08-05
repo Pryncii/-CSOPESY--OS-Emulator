@@ -51,7 +51,7 @@ bool PagingAllocator::AllocatePage(shared_ptr<Process> process, uint16_t pageInd
             freeFrameList.push_back(victimFrame);
 			// also remove the allocated frame from the process
 			process->removeFromAllocatedFrames(victimFrame);
-			process->savePageIndicesToFile("backingstore.txt"); // Save the updated page indices to the backing store file
+			process->savePageIndicesToFile("csopesy-backing-store.txt"); // Save the updated page indices to the backing store file
             
             std::cout << "Page Swapping: Evicted frame " << victimFrame << " from memory.\n";
 
@@ -67,7 +67,7 @@ bool PagingAllocator::AllocatePage(shared_ptr<Process> process, uint16_t pageInd
     process->addToAllocatedFrames(allocated);
 
 	process->addToPageIndices(pageIndex);
-	process->deletePageIndexFromFile("backingstore.txt", process->getName(), pageIndex); // Delete the page entry from the backing store file
+	process->deletePageIndexFromFile("csopesy-backing-store.txt", process->getName(), pageIndex); // Delete the page entry from the backing store file
 
 	 // Add the frame to the process's allocated memory
     /*
