@@ -590,101 +590,77 @@ void Process::initializeCommands(const vector<string>& instructions) {
             }
             cmd = make_shared<DeclareCommand>(shared_from_this(), varName, value);
         }
-        else if (cmdType == "ADD") {
+        else if (cmdType == "ADD" || cmdType == "SUBTRACT") {
             // Format: ADD destVar srcVar1 srcVar2
             string destVar, srcVar1, srcVar2;
             iss >> destVar >> srcVar1 >> srcVar2;
             if (destVar.empty() || srcVar1.empty() || srcVar2.empty()) {
-                cout << "Invalid ADD instruction: " << trimmedInstr << endl;
+                cout << "Invalid " << cmdType << " instruction: " << trimmedInstr << endl;
                 continue;
             }
 
-            // Parse srcVar1 and srcVar2 (could be variables or values)
+            bool isSrc1Const = false, isSrc2Const = false;
             uint16_t val1, val2;
 
-            // Try to parse srcVar1 as number, if fails, treat as variable
+            // Parse srcVar1
             try {
                 val1 = static_cast<uint16_t>(stoi(srcVar1));
+                isSrc1Const = true;
             }
             catch (const exception& e) {
-                // It's a variable, get its value from symbol table
-                if (symbolTable.find(srcVar1) != symbolTable.end()) {
-                    val1 = symbolTable[srcVar1];
-                }
-                else {
-                    // Auto-declare with value 0
-                    addSymbol(srcVar1, 0);
-                    val1 = 0;
-                }
+                //if (!isSrc1Const) cout << "not a value" << endl;
             }
 
-            // Try to parse srcVar2 as number, if fails, treat as variable
+            // Parse srcVar2
             try {
                 val2 = static_cast<uint16_t>(stoi(srcVar2));
+                isSrc2Const = true;
             }
             catch (const exception& e) {
-                // It's a variable, get its value from symbol table
-                if (symbolTable.find(srcVar2) != symbolTable.end()) {
-                    val2 = symbolTable[srcVar2];
+                //if (!isSrc2Const) cout << "not a value" << endl;
+            }
+
+            // Create the appropriate command
+            if (cmdType == "ADD") {
+                if (isSrc1Const && isSrc2Const) {
+                    // Both constants
+                    cmd = make_shared<AddCommand>(shared_from_this(), destVar, val1, val2);
+                }
+                else if (isSrc1Const && !isSrc2Const) {
+                    // srcVar1 is constant, srcVar2 is variable
+                    cmd = make_shared<AddCommand>(shared_from_this(), destVar, val1, srcVar2);
+                }
+                else if (!isSrc1Const && isSrc2Const) {
+                    // srcVar1 is variable, srcVar2 is constant
+                    cmd = make_shared<AddCommand>(shared_from_this(), destVar, srcVar1, val2);
                 }
                 else {
-                    // Auto-declare with value 0
-                    addSymbol(srcVar2, 0);
-                    val2 = 0;
+                    // Both are variables
+                    cmd = make_shared<AddCommand>(shared_from_this(), destVar, srcVar1, srcVar2);
                 }
             }
-
-            cmd = make_shared<AddCommand>(shared_from_this(), destVar, val1, val2);
-        }
-        else if (cmdType == "SUBTRACT") {
-            // Format: SUBTRACT destVar srcVar1 srcVar2
-            string destVar, srcVar1, srcVar2;
-            iss >> destVar >> srcVar1 >> srcVar2;
-            if (destVar.empty() || srcVar1.empty() || srcVar2.empty()) {
-                cout << "Invalid SUBTRACT instruction: " << trimmedInstr << endl;
-                continue;
-            }
-
-            // Parse srcVar1 and srcVar2 (could be variables or values)
-            uint16_t val1, val2;
-
-            // Try to parse srcVar1 as number, if fails, treat as variable
-            try {
-                val1 = static_cast<uint16_t>(stoi(srcVar1));
-            }
-            catch (const exception& e) {
-                // It's a variable, get its value from symbol table
-                if (symbolTable.find(srcVar1) != symbolTable.end()) {
-                    val1 = symbolTable[srcVar1];
+            else {
+                if (isSrc1Const && isSrc2Const) {
+                    // Both constants
+                    cmd = make_shared<SubtractCommand>(shared_from_this(), destVar, val1, val2);
+                }
+                else if (isSrc1Const && !isSrc2Const) {
+                    // srcVar1 is constant, srcVar2 is variable
+                    cmd = make_shared<SubtractCommand>(shared_from_this(), destVar, val1, srcVar2);
+                }
+                else if (!isSrc1Const && isSrc2Const) {
+                    // srcVar1 is variable, srcVar2 is constant
+                    cmd = make_shared<SubtractCommand>(shared_from_this(), destVar, srcVar1, val2);
                 }
                 else {
-                    // Auto-declare with value 0
-                    addSymbol(srcVar1, 0);
-                    val1 = 0;
+                    // Both are variables
+                    cmd = make_shared<SubtractCommand>(shared_from_this(), destVar, srcVar1, srcVar2);
                 }
             }
-
-            // Try to parse srcVar2 as number, if fails, treat as variable
-            try {
-                val2 = static_cast<uint16_t>(stoi(srcVar2));
-            }
-            catch (const exception& e) {
-                // It's a variable, get its value from symbol table
-                if (symbolTable.find(srcVar2) != symbolTable.end()) {
-                    val2 = symbolTable[srcVar2];
-                }
-                else {
-                    // Auto-declare with value 0
-                    addSymbol(srcVar2, 0);
-                    val2 = 0;
-                }
-            }
-
-            cmd = make_shared<SubtractCommand>(shared_from_this(), destVar, val1, val2);
         }
         else if (cmdType == "SLEEP") {
             // Format: SLEEP duration
-            uint16_t duration;
+            uint8_t duration;
             iss >> duration;
             if (iss.fail()) {
                 cout << "Invalid SLEEP instruction: " << trimmedInstr << endl;
@@ -777,6 +753,8 @@ void Process::initializeCommands(const vector<string>& instructions) {
             continue;
         }
 
-        if (cmd) addCommand(cmd);
+        if (cmd) {
+            addCommand(cmd);
+        }
     }
 }
