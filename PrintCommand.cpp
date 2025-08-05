@@ -27,6 +27,18 @@ PrintCommand::PrintCommand(shared_ptr<Process> process, const string& message, c
     isVar = true;
 }
 
+void PrintCommand::pageIn(const string& varName) {
+    unordered_map<string, uint16_t> varAddressLocations = process->getMemoryNameTable();
+    uint16_t pageIndex = varAddressLocations[varName] / process->getMemFrame();
+    vector <size_t> pageIndices = process->getPageIndices(); // Get the page indices of the process
+    shared_ptr<PagingAllocator> pagingallocator = process->getPagingAllocator(); // Get the paging allocator instance
+    if (find(pageIndices.begin(), pageIndices.end(), pageIndex) == pageIndices.end()) {
+        pagingallocator->AllocatePage(process, pageIndex);// Add the page index to the allocator
+        //cout << allocatedFrames.size() << " frames allocated for process " << this->getName() << endl;
+        process->deletePageIndexFromFile("backingstore.txt", process->getName(), pageIndex); // Delete the page entry from the backing store file
+    }
+}
+
 void PrintCommand::execute() {
     string temp;
 	//lock_guard<mutex> lock(coutMutex);
@@ -60,6 +72,7 @@ void PrintCommand::execute() {
     else {
         // Fetch the value at execution time
         temp = message;
+		pageIn(varName);
     }
 
     cout << temp;

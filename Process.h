@@ -71,7 +71,7 @@ class Process : public enable_shared_from_this<Process>
 		// for sleep command
 		void setSleepTicks(int ticks) { sleepTicks = ticks; }
 		int getSleepTicks() const { return sleepTicks; }
-		void terminateProcess();
+		void terminateProcess(string destVar);
 
 		void decrementSleepTick() { if (sleepTicks > 0) --sleepTicks; }
 		bool isSleeping() const { return sleeping; }

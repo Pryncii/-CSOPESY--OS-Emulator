@@ -85,7 +85,23 @@ void Process::writeToMemory(uint16_t pageIndex, uint16_t address, uint16_t value
         }
     }
 
-    cout << "THIS IS WRITE" << endl;
+    // Update symbol table if address matches a variable
+    for (const auto& pair : memoryNameTable) {
+        if (pair.second == indexInPage) {
+            // Update the symbol table for this variable name
+            symbolTable[pair.first] = value;
+            //cout << "Updated symbolTable[" << pair.first << "] = " << value << endl;
+            break; // Assuming one variable per address
+        }
+    }
+
+    //cout << "THIS IS WRITE" << endl;
+    //cout << "address: " << address << endl;
+    //cout << "-------\n";
+    //for (const auto& pair : memoryNameTableFrame) {
+    //    cout << pair.first << endl;
+    //}
+    //cout << "-------\n";
 	visualizeProcessContents();
 }
 
@@ -110,14 +126,27 @@ void Process::readMemory(uint16_t pageIndex, uint16_t address, const string& var
 			//<< " from address " << address << " in frame " << frameIndex << "." << endl;
 	}
 
-    cout << "THIS IS READ" << endl;
+    //cout << "THIS IS READ" << endl;
+    //cout << "address: " << address << endl;
+    //cout << "-------\n";
+    //for (const auto& pair : memoryNameTableFrame) {
+    //    cout << pair.first << endl;
+    //}
+    //cout << "-------\n";
     visualizeProcessContents();
 }
 
-void Process::terminateProcess() {
+void Process::terminateProcess(string destVar) {
     this->isTerminated = true; // Set commandCounter to the total number of commands
     this->isProcessError = true;
-    cout << "process error, terminated.\n";
+
+    time_t now = time(nullptr);
+    string timeStr = ctime(&now);
+    timeStr.pop_back();
+
+    cout << "Process " << getName() << " shut down due to memory access violation error that occurred at " << timeStr << " <" << destVar <<"> invalid.\n";
+
+
 }
 
 bool Process::getIsProcessError() const {
@@ -159,6 +188,7 @@ void Process::allocateVariable(const string& varName, uint16_t value) {
 
                 // Save variable info in symbolTable only
                 symbolTable[varName] = value;
+                //cout << "\nALLOCATEVARIABLE varname: " << varName << " Varname value: " << symbolTable[varName] << endl;
                 memoryNameTableFrame[varName] = i;
 				memoryNameTable[varName] = j ; // Store the address in the frame
                 
@@ -185,6 +215,8 @@ void Process::allocateVariable(const string& varName, uint16_t value) {
         }
     }
 
+    
+
     /*
     cout << "Failed to allocate variable '" << varName << "' with value " << value 
 		<< ". Not enough memory available." << endl;
@@ -196,7 +228,7 @@ void Process::allocateVariable(const string& varName, uint16_t value) {
 // NOT SURE HOW ITS SUPPOSED TO BE DONE COS NO LOWBYTE HIGHBYTE
 void Process::editVariable(const string& varName, uint16_t newValue) {
     
-    cout << "IN EDIT VARIABLE" << endl;
+    //cout << "IN EDIT VARIABLE" << endl;
     // Check if the variable exists
 
 	//memoryNameTable[varName] this is the address of the variable in the memory
@@ -208,10 +240,20 @@ void Process::editVariable(const string& varName, uint16_t newValue) {
             //cout << allocatedFrames.size() << " frames allocated for process " << this->getName() << endl;
             deletePageIndexFromFile("backingstore.txt", this->getName(), pageIndex); // Delete the page entry from the backing store file
         }
-        cout << "SANITY CHECK" << endl;
+        //cout << "SANITY CHECK" << endl;
+
+        //cout << "varname: " << varName << endl;
+        //cout << "-------\n";
+        //for (const auto& pair : memoryNameTableFrame) {
+        //    cout << pair.first << endl;
+        //}
+        //cout << "-------\n";
+
+
+
         if (memoryNameTableFrame.find(varName) != memoryNameTableFrame.end() &&
             memoryNameTable.find(varName) != memoryNameTable.end()) {
-            cout << "in here" << endl;
+            //cout << "in here" << endl;
             //visualizeProcessContents();
             size_t frameIdx = memoryNameTableFrame[varName];
             size_t offset = memoryNameTable[varName];
@@ -228,7 +270,7 @@ void Process::editVariable(const string& varName, uint16_t newValue) {
                 if (frameIdx < frames.size()) {
                     size_t actualFrameIdx = frames[frameIdx];
 
-                    cout << "in here" << endl;
+                    //cout << "in here" << endl;
                     if (pagingallocator->frameMap.count(actualFrameIdx)) {
 
                         FrameEntry& frame = pagingallocator->frameMap[actualFrameIdx];
@@ -241,7 +283,7 @@ void Process::editVariable(const string& varName, uint16_t newValue) {
 
                 }
             }
-            cout << "YEAH" << endl;
+            //cout << "YEAH" << endl;
             // Update the symbol table too
             symbolTable[varName] = newValue;
 
@@ -256,7 +298,7 @@ void Process::editVariable(const string& varName, uint16_t newValue) {
 }
 
 void Process::savePageIndicesToFile(const std::string& filename) const {
-    pagingallocator->addPageIn(); // Increment page in count
+    pagingallocator->addPageOut(); // Increment page out count
     std::ofstream outFile(filename, ios::app);
     if (!outFile) {
         std::cerr << "Failed to open file: " << filename << std::endl;
@@ -271,7 +313,7 @@ void Process::savePageIndicesToFile(const std::string& filename) const {
 }
 
 void Process::deletePageIndexFromFile(const std::string& filename, const std::string& processName, uint16_t pageIndex) const {
-	pagingallocator->addPageOut(); // Increment page out count
+	pagingallocator->addPageIn(); // Increment page in count
     std::ifstream inFile(filename);
     if (!inFile) {
         std::cerr << "Failed to open file for reading: " << filename << std::endl;
@@ -968,22 +1010,16 @@ void Process::initializeCommands(const vector<string>& instructions) {
                 continue;
             }
 
-            // Parse srcVar1 and srcVar2 (could be variables or values)
             uint16_t val1;
+            bool isSrc1Const = false;
             try {
-                val1 = static_cast<uint16_t>(stoi(srcVar));
+                val1 = static_cast<uint16_t>(stoi(srcVar)); // number
+                isSrc1Const = true;
             }
             catch (const exception& e) {
-                // It's a variable, get its value from symbol table
-                if (symbolTable.find(srcVar) != symbolTable.end()) {
-                    val1 = symbolTable[srcVar];
-                }
-                else {
-                    // Auto-declare with value 0
-                    addSymbol(srcVar, 0);
-                    val1 = 0;
-                }
+                
             }
+
             vector<size_t> possibleAddresses;
             //cout << "memoryrequired: " << memoryRequired << endl;
             //cout << "memFrame: " << memFrame << endl;
@@ -1012,11 +1048,17 @@ void Process::initializeCommands(const vector<string>& instructions) {
 
             if (std::find(possibleAddresses.begin(), possibleAddresses.end(), destAddress) == possibleAddresses.end()) {
                 //cout << "Invalid WRITE address: " << destVar << " is not within allocated memory" << endl;
-                terminateProcess();
+                terminateProcess(destVar);
                 continue;
             }
 
-            cmd = make_shared<WriteCommand>(shared_from_this(), static_cast<uint16_t>(destAddress), memFrame, val1);
+            if (isSrc1Const)
+            {
+                cmd = make_shared<WriteCommand>(shared_from_this(), static_cast<uint16_t>(destAddress), memFrame, val1);
+            }
+            else {
+                cmd = make_shared<WriteCommand>(shared_from_this(), static_cast<uint16_t>(destAddress), memFrame, srcVar);
+            }
             cout << "Valid WRITE instruction" << endl;
         }
         else if (cmdType == "READ") {
@@ -1068,7 +1110,7 @@ void Process::initializeCommands(const vector<string>& instructions) {
             // check if address source is possible
             if (std::find(possibleAddresses.begin(), possibleAddresses.end(), srcAddress) == possibleAddresses.end()) {
                 //cout << "Invalid WRITE address: " << destVar << " is not within allocated memory" << endl;
-                terminateProcess();
+                terminateProcess(destVar);
                 continue;
             }
 
@@ -1083,5 +1125,9 @@ void Process::initializeCommands(const vector<string>& instructions) {
         if (cmd) {
             addCommand(cmd);
         }
+    }
+    cout << "Command List:" << endl;
+    for (const auto& cmd : commandList) {
+        cout << "- " << cmd->toString() << endl;
     }
 }
