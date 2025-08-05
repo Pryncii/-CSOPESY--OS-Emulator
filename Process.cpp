@@ -847,71 +847,114 @@ void Process::initializeCommands(const vector<string>& instructions) {
             // Extract content between parentheses
             size_t openParen = trimmedInstr.find('(');
             size_t closeParen = trimmedInstr.find_last_of(')');
-
             if (openParen != string::npos && closeParen != string::npos && closeParen > openParen) {
                 string content = trimmedInstr.substr(openParen + 1, closeParen - openParen - 1);
-
                 // Remove leading/trailing whitespace from content
                 content.erase(0, content.find_first_not_of(" \t"));
                 content.erase(content.find_last_not_of(" \t") + 1);
 
-                string finalOutput = "";
+                // Flags to determine which constructor to use
+                bool hasString = false;
+                bool hasVariable = false;
+                bool hasNumericLiteral = false;
+                bool hasConcatenation = false;
 
-                // Check if it contains string concatenation (+ operator)
+                string stringPart = "";
+                string variablePart = "";
+                uint16_t numericValue = 0;
+
+                // Check if it contains concatenation (+ operator)
                 if (content.find('+') != string::npos) {
-                    // Handle concatenation: "Hello World" + variable
+                    hasConcatenation = true;
+
+                    // Split by + and analyze each part
                     istringstream ss(content);
                     string token;
+                    vector<string> tokens;
 
+                    // Split by + operator
                     while (getline(ss, token, '+')) {
                         // Remove whitespace around token
                         token.erase(0, token.find_first_not_of(" \t"));
                         token.erase(token.find_last_not_of(" \t") + 1);
+                        if (!token.empty()) {
+                            tokens.push_back(token);
+                        }
+                    }
 
-                        if (token.empty()) continue;
+                    // Analyze tokens (expecting exactly 2 tokens for concatenation)
+                    if (tokens.size() == 2) {
+                        string firstToken = tokens[0];
+                        string secondToken = tokens[1];
 
-                        if (token.front() == '"' && token.back() == '"') {
-                            // It's a string literal - remove quotes and add to output
-                            finalOutput += token.substr(1, token.length() - 2);
+                        // Check first token
+                        if (firstToken.front() == '"' && firstToken.back() == '"') {
+                            hasString = true;
+                            stringPart = firstToken.substr(1, firstToken.length() - 2);
+                        }
+
+                        // Check second token
+                        if (secondToken.front() == '"' && secondToken.back() == '"') {
+                            // Second part is also a string (shouldn't happen in your examples, but handle it)
+                            stringPart += secondToken.substr(1, secondToken.length() - 2);
+                            hasString = true;
+                        }
+                        else if (isdigit(secondToken[0]) || (secondToken[0] == '-' && secondToken.length() > 1)) {
+                            // It's a numeric literal
+                            hasNumericLiteral = true;
+                            numericValue = static_cast<uint16_t>(stoi(secondToken));
                         }
                         else {
-                            // It's a variable - check if it exists in symbol table
-                            if (symbolTable.find(token) != symbolTable.end()) {
-                                // Variable exists, get its value
-                                finalOutput += to_string(symbolTable[token]);
-                            }
-                            else {
-                                // Variable doesn't exist, declare it with value 0
-                                auto declareCmd = make_shared<DeclareCommand>(shared_from_this(), token, 0);
-                                addCommand(declareCmd);
-                                finalOutput += "0";
-                            }
+                            // It's a variable
+                            hasVariable = true;
+                            variablePart = secondToken;
                         }
                     }
                 }
                 else {
                     // No concatenation - single item
                     if (content.front() == '"' && content.back() == '"') {
-                        // It's a string literal
-                        finalOutput = content.substr(1, content.length() - 2);
+                        // It's a string literal - PRINT("hello")
+                        hasString = true;
+                        stringPart = content.substr(1, content.length() - 2);
+                    }
+                    else if (isdigit(content[0]) || (content[0] == '-' && content.length() > 1)) {
+                        // It's a numeric literal - PRINT(123)
+                        hasNumericLiteral = true;
+                        numericValue = static_cast<uint16_t>(stoi(content));
                     }
                     else {
-                        // It's a variable
-                        if (symbolTable.find(content) != symbolTable.end()) {
-                            // Variable exists
-                            finalOutput = to_string(symbolTable[content]);
-                        }
-                        else {
-                            // Variable doesn't exist, declare it with value 0
-                            auto declareCmd = make_shared<DeclareCommand>(shared_from_this(), content, 0);
-                            addCommand(declareCmd);
-                            finalOutput = "0";
-                        }
+                        // It's a variable - PRINT(var)
+                        hasVariable = true;
+                        variablePart = content;
                     }
                 }
 
-                // Create the PrintCommand with the processed output
-                cmd = make_shared<PrintCommand>(shared_from_this(), finalOutput);
+                // Create appropriate PrintCommand based on flags
+                if (hasConcatenation) {
+                    if (hasString && hasVariable) {
+                        // PRINT("hello" + var) - Constructor: (process, message, varName)
+                        cmd = make_shared<PrintCommand>(shared_from_this(), stringPart, variablePart);
+                    }
+                    else if (hasString && hasNumericLiteral) {
+                        // PRINT("hello" + 8) - Constructor: (process, message, value)
+                        cmd = make_shared<PrintCommand>(shared_from_this(), stringPart, numericValue);
+                    }
+                }
+                else {
+                    if (hasString) {
+                        // PRINT("hello") - Constructor: (process, message)
+                        cmd = make_shared<PrintCommand>(shared_from_this(), stringPart);
+                    }
+                    else if (hasVariable) {
+                        // PRINT(var) - Constructor: (process, "", varName) - empty string + variable
+                        cmd = make_shared<PrintCommand>(shared_from_this(), "", variablePart);
+                    }
+                    else if (hasNumericLiteral) {
+                        // PRINT(123) - Constructor: (process, "", value) - empty string + numeric value
+                        cmd = make_shared<PrintCommand>(shared_from_this(), "", numericValue);
+                    }
+                }
             }
         }
         else if (cmdType == "FOR") {
