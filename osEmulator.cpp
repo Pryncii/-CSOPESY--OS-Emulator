@@ -203,7 +203,7 @@ void help() {
 }
 
 void report_util(Config config, Scheduler& scheduler){
-    cout << "\x1B[32m\x1B[1mreport-util\x1B[22m\x1B[0m command recognized. Generating logs.\n";
+    //cout << "\x1B[32m\x1B[1mreport-util\x1B[22m\x1B[0m command recognized. Generating logs.\n";
 
     ofstream outFile("csopesy-log.txt");
 
@@ -291,7 +291,7 @@ void screenInterface(string screenName){
     } while (screenInput != "exit");
 	system("cls"); // Clear the screen when exiting
     header();
-    cout << consoleStrings;
+    //cout << consoleStrings;
 }
 
 bool inScreenMap(string name)
@@ -402,11 +402,11 @@ void processSmi(Scheduler& scheduler, Config config, shared_ptr<PagingAllocator>
         size_t memoryAssigned = framesAssigned * config.memFrame;
         
 
-        cout << process->getName() << " (PID: " << process->getPID() << "):"
-            << " | Memory Used: " << memoryUsed << " bytes |" << " Memory in Frame: " << memoryAssigned << " bytes\n";
+        //cout << process->getName() << " (PID: " << process->getPID() << "):"
+            //<< " | Memory Used: " << memoryUsed << " bytes |" << " Memory in Frame: " << memoryAssigned << " bytes\n";
 
         //process->visualizeProcessMemory();
-        process->visualizeProcessContents();
+       // process->visualizeProcessContents();
     }
 
     cout << "\n=================================================\n";
@@ -430,8 +430,8 @@ void processSmi(Scheduler& scheduler, Config config, shared_ptr<PagingAllocator>
             }
         }
 
-        cout << process->getName() << " (PID: " << process->getPID() << ")"
-            << " | Memory Used: " << memoryUsed << " bytes\n";
+        //cout << process->getName() << " (PID: " << process->getPID() << ")"
+            //<< " | Memory Used: " << memoryUsed << " bytes\n";
 
         process->visualizeProcessMemory();
 
@@ -470,7 +470,7 @@ void saveLs(Scheduler& scheduler, Config config) {
     }
 
     output += "+============================================================+\n";
-    cout << output;
+   // cout << output;
     consoleStrings.append(output);
 }
 
@@ -481,20 +481,20 @@ uint16_t isValidMemory(const string& command, uint16_t maxMem) {
     iss >> screen >> flag >> screenName >> memStr;
 
     if (!isNonNegativeInteger(memStr)) {
-        cout << "Error: Memory value must be a non-negative integer.\n";
+        //cout << "Error: Memory value must be a non-negative integer.\n";
         return 0;
     }
 
     int memVal = stoi(memStr);
 
     if (memVal < 64 || memVal > maxMem) {
-        cout << "invalid memory allocation";
+        //cout << "invalid memory allocation";
         return 0;
     }
 
     // Check if memVal is a power of two
     if (!(memVal > 0 && (memVal & (memVal - 1)) == 0)) {
-        cout << "Error: Memory must be a power of two.\n";
+        //cout << "Error: Memory must be a power of two.\n";
         return 0;
     }
 
@@ -518,7 +518,7 @@ vector<string> parseInstructionsFromCommand(const string& command) {
     size_t endQuote = command.rfind('\"');
 
     if (startQuote == string::npos || endQuote == string::npos || endQuote <= startQuote + 1) {
-        cout << "invalid command\n";
+       // cout << "invalid command\n";
         return {};
     }
 
@@ -538,7 +538,7 @@ vector<string> parseInstructionsFromCommand(const string& command) {
     }
 
     if (instructions.empty() || instructions.size() > 50) {
-        cout << "invalid command\n"; // i think this should be throwed??? im not sure kindly double check tysm
+        //cout << "invalid command\n"; // i think this should be throwed??? im not sure kindly double check tysm
         return {};
     }
 
@@ -555,7 +555,7 @@ int main(){
     header();
     do {
         string screenName = "";
-        cout << "Enter command: ";
+       // cout << "Enter command: ";
         getline(cin, command);
         consoleStrings.append("Enter Command: " + command + "\n");
 
@@ -575,7 +575,7 @@ int main(){
                     mode = Scheduler::Mode::FCFS;
                 }
                 else {
-                    cout << "Invalid scheduler mode!\n";
+                   // cout << "Invalid scheduler mode!\n";
                     return 1;
                 }
 

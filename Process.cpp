@@ -85,8 +85,8 @@ void Process::writeToMemory(uint16_t pageIndex, uint16_t address, uint16_t value
         }
     }
 
-    cout << "THIS IS WRITE" << endl;
-	visualizeProcessContents();
+    //cout << "THIS IS WRITE" << endl;
+	//visualizeProcessContents();
 }
 
 void Process::readMemory(uint16_t pageIndex, uint16_t address, const string& varName) {
@@ -110,8 +110,8 @@ void Process::readMemory(uint16_t pageIndex, uint16_t address, const string& var
 			//<< " from address " << address << " in frame " << frameIndex << "." << endl;
 	}
 
-    cout << "THIS IS READ" << endl;
-    visualizeProcessContents();
+    //cout << "THIS IS READ" << endl;
+    //visualizeProcessContents();
 }
 
 void Process::terminateProcess() {
@@ -196,7 +196,7 @@ void Process::allocateVariable(const string& varName, uint16_t value) {
 // NOT SURE HOW ITS SUPPOSED TO BE DONE COS NO LOWBYTE HIGHBYTE
 void Process::editVariable(const string& varName, uint16_t newValue) {
     
-    cout << "IN EDIT VARIABLE" << endl;
+   // cout << "IN EDIT VARIABLE" << endl;
     // Check if the variable exists
 
 	//memoryNameTable[varName] this is the address of the variable in the memory
@@ -208,10 +208,10 @@ void Process::editVariable(const string& varName, uint16_t newValue) {
             //cout << allocatedFrames.size() << " frames allocated for process " << this->getName() << endl;
             deletePageIndexFromFile("backingstore.txt", this->getName(), pageIndex); // Delete the page entry from the backing store file
         }
-        cout << "SANITY CHECK" << endl;
+        //cout << "SANITY CHECK" << endl;
         if (memoryNameTableFrame.find(varName) != memoryNameTableFrame.end() &&
             memoryNameTable.find(varName) != memoryNameTable.end()) {
-            cout << "in here" << endl;
+           // cout << "in here" << endl;
             //visualizeProcessContents();
             size_t frameIdx = memoryNameTableFrame[varName];
             size_t offset = memoryNameTable[varName];
@@ -241,11 +241,11 @@ void Process::editVariable(const string& varName, uint16_t newValue) {
 
                 }
             }
-            cout << "YEAH" << endl;
+           // cout << "YEAH" << endl;
             // Update the symbol table too
             symbolTable[varName] = newValue;
 
-            visualizeProcessContents();
+           // visualizeProcessContents();
         }
     else {
         allocateVariable(varName, newValue);
