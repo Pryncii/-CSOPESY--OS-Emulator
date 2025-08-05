@@ -8,6 +8,7 @@ class WriteCommand : public Command
 public:
 	WriteCommand(shared_ptr<Process> process, uint16_t address, uint16_t memFrame, uint16_t value);
 	void execute() override;
+	void pageIn();
 
 	string toString() const override {
 		return "[WRITE]";

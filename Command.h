@@ -1,6 +1,7 @@
 #pragma once
 #include <memory>
 #include "Process.h"
+#include "PagingAllocator.h"
 
 using namespace std;
 

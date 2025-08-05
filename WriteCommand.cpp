@@ -11,42 +11,46 @@
 using namespace std;
 
 
+
 WriteCommand::WriteCommand(shared_ptr<Process> process, uint16_t address, uint16_t memFrame, uint16_t value) : Command(process, CommandType::WRITE) {
 	this->process = process;
 	this->address = address;
 	this->value = value;
 	this->memFrame = memFrame;
 }
-
+void WriteCommand::pageIn() {
+	//unordered_map<string, uint16_t> varAddressLocations = process->getMemoryNameTable();
+	uint16_t pageIndex = address / memFrame;
+	vector <size_t> pageIndices = process->getPageIndices(); // Get the page indices of the process
+	shared_ptr<PagingAllocator> pagingallocator = process->getPagingAllocator(); // Get the paging allocator instance
+	if (find(pageIndices.begin(), pageIndices.end(), pageIndex) == pageIndices.end()) {
+		pagingallocator->AllocatePage(process, pageIndex);// Add the page index to the allocator
+		//cout << allocatedFrames.size() << " frames allocated for process " << this->getName() << endl;
+		process->deletePageIndexFromFile("backingstore.txt", process->getName(), pageIndex); // Delete the page entry from the backing store file
+	}
+}
 void WriteCommand::execute() {
 	//receive the address
-	uint16_t frameOfAddress = address/memFrame;
-	vector<size_t> allocatedFrames = process->getAllocatedFrames();
-	bool isFrameAllocated = false;
+	uint16_t pageIndex = address/memFrame;
 
-	//check if the frame is allocated to the process
-	for(size_t i = 0; i < allocatedFrames.size(); i++) {
-		if (allocatedFrames[i] == frameOfAddress) {
-			isFrameAllocated = true;
-			break;
-		}
-	}
 
-	if(!isFrameAllocated) {
+	if (process->getMemReq() < address) {
 		cout << "Write Error" << endl;
+		//terminate the process if the frame is not allocated
 		process->terminateProcess();
 		return;
 	}
+	pageIn();
+
+	//cout << "Write Command: Writing value " << value << " to address " << address << " in process " << process->getName() << endl;
 
 	//write the value to the address
 
-	process->writeToMemory(frameOfAddress, address, value);
+	process->writeToMemory(pageIndex, address, value);
 	
-	/*
-	cout << "Memory Write [Frame: " << frameOfAddress
-		<< "] [Address: 0x" << hex << address
-		<< "] = " << dec << value << endl;
-		*/
+	
+	
+		
 
 
 

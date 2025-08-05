@@ -148,6 +148,7 @@
     <ClInclude Include="DeclareCommand.h" />
     <ClInclude Include="FlatMemoryAllocator.h" />
     <ClInclude Include="ForLoopCommand.h" />
+    <ClInclude Include="FrameEntry.h" />
     <ClInclude Include="IMemoryAllocator.h" />
     <ClInclude Include="MemoryAllocator.h" />
     <ClInclude Include="PagingAllocator.h" />

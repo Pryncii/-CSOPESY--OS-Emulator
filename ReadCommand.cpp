@@ -18,29 +18,33 @@ ReadCommand::ReadCommand(shared_ptr<Process> process, uint16_t address, const st
 	this->varName = varName;
 }
 
+void ReadCommand::pageIn() {
+	//unordered_map<string, uint16_t> varAddressLocations = process->getMemoryNameTable();
+	uint16_t pageIndex = address / memFrame;
+	vector <size_t> pageIndices = process->getPageIndices(); // Get the page indices of the process
+	shared_ptr<PagingAllocator> pagingallocator = process->getPagingAllocator(); // Get the paging allocator instance
+	if (find(pageIndices.begin(), pageIndices.end(), pageIndex) == pageIndices.end()) {
+		pagingallocator->AllocatePage(process, pageIndex);// Add the page index to the allocator
+		//cout << allocatedFrames.size() << " frames allocated for process " << this->getName() << endl;
+		process->deletePageIndexFromFile("backingstore.txt", process->getName(), pageIndex); // Delete the page entry from the backing store file
+	}
+}
+
 void ReadCommand::execute() {
 	//receive the address
-	uint16_t frameOfAddress = address / memFrame;
-	vector<size_t> allocatedFrames = process->getAllocatedFrames();
-	unordered_map<size_t, vector<int>> allocatedMemory = process->getProcessMemoryRead();
-	bool isThereValue = false;
-	bool isFrameAllocated = false;
+	uint16_t pageIndex = address / memFrame;
 
-	for (size_t i = 0; i < allocatedFrames.size(); i++) {
-		if (allocatedFrames[i] == frameOfAddress) {
-			isFrameAllocated = true;
-			break;
-		}
-	}
-
-	if (!isFrameAllocated) {
+	if (process->getMemReq() < address){
 		cout << "Read Error" << endl;
 		//terminate the process if the frame is not allocated
 		process->terminateProcess();
 		return;
 	}
 
-	process->readMemory(frameOfAddress, address, varName);
+	//cout << "Reading from address: " << address << endl;
+	
+	pageIn(); // Ensure the page is in memory before reading
+	process->readMemory(pageIndex, address, varName);
 
 }
 

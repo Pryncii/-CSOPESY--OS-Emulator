@@ -172,24 +172,29 @@ void Scheduler::coreWorker(int coreID) {
             queueCV.wait(lock, [this] { return !readyQueue.empty(); }); // Wait until queue is not empty
             current = readyQueue.front();
             //cout << "Process " << current->getName() << " now in running queue\n";
+            
+            
+            /*
             if (current->getAllocatedFrames().empty()) {
                 allocatedFrames = memoryAllocator->Allocate(current);
+                //immediately send to the backingStore
                 if (!allocatedFrames) {
                     //std::cout << "Insufficient memory for process " << current->getName() << " (ID: " << current->getPID() << ")\n";
-                    readyQueue.pop();
-                    readyQueue.push(current);
+                    //readyQueue.pop();
+                    //readyQueue.push(current);
                     continue; // Skip to next iteration, don't run this process
                 }
                 //cout << "Process " << current->getName() << " (ID: " << current->getPID() << ") allocated memory at address: " << allocatedMemory << "\n";
                 //std::cout << "Allocated memory for process " << current->getName() << " (ID: " << current->getPID() << ")\n";
                 //memoryAllocator->visualizeMemory();
             }
+            */
 
-            if(current->getHasCommands() == false) {
-                current->generateCommands(minins, maxins, 0);
-				current->setHasCommands(true);
-		    }
-
+            if (current->getHasCommands() == false) {
+                memoryAllocator->Allocate(current);
+                //current->generateCommands(minins, maxins, 0);
+                current->setHasCommands(true);
+            }
             // If already has memory, just proceed
             readyQueue.pop();
             runningQueue.push_back(current);
@@ -266,6 +271,7 @@ void Scheduler::coreWorker(int coreID) {
 
                
                 current->executeCommand();
+                
                 current->moveToNextLine();
 
                 if (current->isSleeping()) {
@@ -284,15 +290,11 @@ void Scheduler::coreWorker(int coreID) {
                     break;  // Stop executing this process
                 }
 
-                
 
                 //writeMemorySnapshot(timestep);
 
                 current->setTimestep(current->getTimestep() + 1);
                 //cout << current->getTimestep();
-                    // THIS WRITES THE MEMORY TEXT FILES, NOT SURE IF THIS IS THE BEST PLACE FOR THIS TBH
-
-
 
                 //cout << current->getCpuCoreID() << "'s Time step: " << timestep << "\n";
                 //if (timestep == timeQuantum) {
@@ -327,9 +329,6 @@ void Scheduler::coreWorker(int coreID) {
                 }
             }
 
-            // COMMENTED OUT BC IDK IF NEED
-            // THIS MAKES IT SO THAT THERE WILL ALWAYS BE A TEXT FILE AT THE END THAT HAS EMPTY MEMORY
-            
            
         }
 

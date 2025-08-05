@@ -8,6 +8,7 @@ class ReadCommand : public Command
 public:
 	ReadCommand(shared_ptr<Process> process, uint16_t address, const string& varName, uint16_t memFrame);
 	void execute() override;
+	void pageIn();
 
 	string toString() const override {
 		return "[READ]";

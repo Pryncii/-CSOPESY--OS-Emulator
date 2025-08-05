@@ -8,6 +8,7 @@
 using namespace std;
 
 class Command;
+class PagingAllocator;
 
 class Process : public enable_shared_from_this<Process>
 {
@@ -19,7 +20,7 @@ class Process : public enable_shared_from_this<Process>
 			FINISHED
 		};
 
-		Process(int pid, string name, uint32_t delay, uint16_t memoryRequired, uint16_t memFrame, uint16_t maxMem, uint32_t quantum);
+		Process(int pid, string name, uint32_t delay, uint16_t memoryRequired, uint16_t memFrame, uint16_t maxMem, uint32_t quantum, shared_ptr<PagingAllocator> allocator);
 		void addCommand(shared_ptr<Command> command);
 		void generateCommands(const uint32_t minIns, const uint32_t maxIns, int depth);
 		vector<shared_ptr<Command>> generateRandomCommandList(int depth, int repeats, int& instructionBudget);
@@ -27,6 +28,7 @@ class Process : public enable_shared_from_this<Process>
 		void moveToNextLine();
 		void setCpuCoreID(int coreID);
 		void writeLogsToFile(const string& filename) const;
+		void savePageIndicesToFile(const std::string& filename) const;
 
 		// In Process.h (add this member)
 		
@@ -49,19 +51,21 @@ class Process : public enable_shared_from_this<Process>
 		string saveLogs();
 		void setAllocatedMemory(void* memory);
 		void* getAllocatedMemory() { return allocatedMemory; }
+		void addToAllocatedFrames(size_t value);
 		void initializeCommands(const vector<string>& instructions);
-		void setAllocatedFrames(const vector<size_t>& frames);
+		void addToPageIndices(size_t value);
+		void setPages(bool deallocate);
 		void allocateVariable(const string& name, uint16_t value);
 		void editVariable(const string& name, uint16_t value);
 		void writeToMemory(uint16_t frameIndex, uint16_t address, uint16_t value);
 		void readMemory(uint16_t frameIndex, uint16_t address, const string& varName);
 		const vector<size_t>& getAllocatedFrames() const { return allocatedFrames; }
-		unordered_map<size_t, vector<bool>> getProcessMemory() const { return processMemory; }
-		unordered_map<size_t, vector<int>> getProcessMemoryRead() const { return processMemoryRead; }
+		vector<vector<bool>> getProcessMemory() const { return processMemory; }
+		vector<vector<int>> getProcessMemoryRead() const { return processMemoryRead; }
 		
 
 		vector<shared_ptr<Command>> Process::getCommandList() const;
-
+		int getCommandCounter() const { return commandCounter; }	
 		// for sleep command
 		void setSleepTicks(int ticks) { sleepTicks = ticks; }
 		int getSleepTicks() const { return sleepTicks; }
@@ -71,7 +75,7 @@ class Process : public enable_shared_from_this<Process>
 		bool isSleeping() const { return sleeping; }
 		void setSleeping(bool value) { sleeping = value; }
 		void visualizeProcessMemory() const;
-
+		void deletePageIndexFromFile(const std::string& filename, const std::string& processName, uint16_t pageToDelete) const;
 		int countNonForInstructions(const vector<shared_ptr<Command>>& cmds) const;
 		bool getIsTerminated() const { return isTerminated; }
 		void setHasCommands(bool value) { hasCommands = value; }
@@ -80,7 +84,10 @@ class Process : public enable_shared_from_this<Process>
 		int getTimestep() const { return timestep; }
 		void setTimestep(int step) { timestep = step; }
 		uint16_t getQuantum() { return quantum; }
-
+		unordered_map<string, uint16_t> getMemoryNameTable() const { return memoryNameTable; }
+		uint16_t getMemFrame() const { return memFrame; }
+		vector<size_t> getPageIndices() const { return pageIndices; }
+		shared_ptr<PagingAllocator> getPagingAllocator() const { return pagingallocator; }
 	
 	private:
 		void* allocatedMemory;
@@ -101,9 +108,26 @@ class Process : public enable_shared_from_this<Process>
 		unordered_map<string, uint16_t> memoryNameTableFrame; //name of the variable and its frame
 		unordered_map<string, uint16_t> memoryNameTable; //name of the variable and its address in the frame
 		//void* allocatedMemory;
+
+		/*
+		- When the process is loaded in, all our page indices will be
+		  in the backing store
+		- We will only page in and allocate to the main memory if an
+		  address is accessed that is not in the main memory
+		- So for the backing store, we will need the process ID, page number,
+		  and the contents of that page, probably the addresses of variable names(so if we add/subtract a variable,
+		  we'll first check if the page indices containing the symbol table is in the process, if not,
+		  call the backing store)
+		
+
+		*/
+		
+		vector<size_t> pageIndices; // this contains the address in the frame
+
+	
 		vector<size_t> allocatedFrames; // this contains the frame index
-		unordered_map<size_t, vector<bool>> processMemory; // for read and write; not yet used GO PRINCE WOO
-		unordered_map<size_t, vector<int>> processMemoryRead; // for read operations
+		vector<vector<bool>> processMemory; // for read and write; if true, memory spot is used
+		vector<vector<int>> processMemoryRead; // for read operations; contains the value
 		bool hasCommands = false;
 		int timestep = 0;
 
@@ -117,5 +141,25 @@ class Process : public enable_shared_from_this<Process>
 		int totalNumCommands = -1;
 		uint32_t delay;
 		
-
+		shared_ptr<PagingAllocator> pagingallocator;
 };
+
+/*
+IDEA:
+- when process gets inside CPU, throw everything to backing store first
+- then when process's command needs something from an address: EX: process1 says ADD varA varB varC
+- use ALLOCATEDFRAMES (contains phys mem frames); use that to search mem frames
+
+
+READ varA 0x99
+
+
+struct FrameEntry {
+	bool valid;                 // Valid bit
+	uint16_t processID;         // Owning process
+	uint16_t pageNumber;        // Which page of the process
+	vector<int> memoryContents; // Contents in this page (e.g. integers)
+};
+
+
+*/ 
