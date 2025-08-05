@@ -85,7 +85,23 @@ void Process::writeToMemory(uint16_t pageIndex, uint16_t address, uint16_t value
         }
     }
 
-    cout << "THIS IS WRITE" << endl;
+    // Update symbol table if address matches a variable
+    for (const auto& pair : memoryNameTable) {
+        if (pair.second == indexInPage) {
+            // Update the symbol table for this variable name
+            symbolTable[pair.first] = value;
+            //cout << "Updated symbolTable[" << pair.first << "] = " << value << endl;
+            break; // Assuming one variable per address
+        }
+    }
+
+    //cout << "THIS IS WRITE" << endl;
+    //cout << "address: " << address << endl;
+    //cout << "-------\n";
+    //for (const auto& pair : memoryNameTableFrame) {
+    //    cout << pair.first << endl;
+    //}
+    //cout << "-------\n";
 	visualizeProcessContents();
 }
 
@@ -110,14 +126,27 @@ void Process::readMemory(uint16_t pageIndex, uint16_t address, const string& var
 			//<< " from address " << address << " in frame " << frameIndex << "." << endl;
 	}
 
-    cout << "THIS IS READ" << endl;
+    //cout << "THIS IS READ" << endl;
+    //cout << "address: " << address << endl;
+    //cout << "-------\n";
+    //for (const auto& pair : memoryNameTableFrame) {
+    //    cout << pair.first << endl;
+    //}
+    //cout << "-------\n";
     visualizeProcessContents();
 }
 
-void Process::terminateProcess() {
+void Process::terminateProcess(string destVar) {
     this->isTerminated = true; // Set commandCounter to the total number of commands
     this->isProcessError = true;
-    cout << "process error, terminated.\n";
+
+    time_t now = time(nullptr);
+    string timeStr = ctime(&now);
+    timeStr.pop_back();
+
+    cout << "Process " << getName() << " shut down due to memory access violation error that occurred at " << timeStr << " <" << destVar <<"> invalid.\n";
+
+
 }
 
 bool Process::getIsProcessError() const {
@@ -159,6 +188,7 @@ void Process::allocateVariable(const string& varName, uint16_t value) {
 
                 // Save variable info in symbolTable only
                 symbolTable[varName] = value;
+                //cout << "\nALLOCATEVARIABLE varname: " << varName << " Varname value: " << symbolTable[varName] << endl;
                 memoryNameTableFrame[varName] = i;
 				memoryNameTable[varName] = j ; // Store the address in the frame
                 
@@ -185,6 +215,8 @@ void Process::allocateVariable(const string& varName, uint16_t value) {
         }
     }
 
+    
+
     /*
     cout << "Failed to allocate variable '" << varName << "' with value " << value 
 		<< ". Not enough memory available." << endl;
@@ -196,7 +228,7 @@ void Process::allocateVariable(const string& varName, uint16_t value) {
 // NOT SURE HOW ITS SUPPOSED TO BE DONE COS NO LOWBYTE HIGHBYTE
 void Process::editVariable(const string& varName, uint16_t newValue) {
     
-    cout << "IN EDIT VARIABLE" << endl;
+    //cout << "IN EDIT VARIABLE" << endl;
     // Check if the variable exists
 
 	//memoryNameTable[varName] this is the address of the variable in the memory
@@ -208,10 +240,20 @@ void Process::editVariable(const string& varName, uint16_t newValue) {
             //cout << allocatedFrames.size() << " frames allocated for process " << this->getName() << endl;
             deletePageIndexFromFile("backingstore.txt", this->getName(), pageIndex); // Delete the page entry from the backing store file
         }
-        cout << "SANITY CHECK" << endl;
+        //cout << "SANITY CHECK" << endl;
+
+        //cout << "varname: " << varName << endl;
+        //cout << "-------\n";
+        //for (const auto& pair : memoryNameTableFrame) {
+        //    cout << pair.first << endl;
+        //}
+        //cout << "-------\n";
+
+
+
         if (memoryNameTableFrame.find(varName) != memoryNameTableFrame.end() &&
             memoryNameTable.find(varName) != memoryNameTable.end()) {
-            cout << "in here" << endl;
+            //cout << "in here" << endl;
             //visualizeProcessContents();
             size_t frameIdx = memoryNameTableFrame[varName];
             size_t offset = memoryNameTable[varName];
@@ -228,7 +270,7 @@ void Process::editVariable(const string& varName, uint16_t newValue) {
                 if (frameIdx < frames.size()) {
                     size_t actualFrameIdx = frames[frameIdx];
 
-                    cout << "in here" << endl;
+                    //cout << "in here" << endl;
                     if (pagingallocator->frameMap.count(actualFrameIdx)) {
 
                         FrameEntry& frame = pagingallocator->frameMap[actualFrameIdx];
@@ -241,7 +283,7 @@ void Process::editVariable(const string& varName, uint16_t newValue) {
 
                 }
             }
-            cout << "YEAH" << endl;
+            //cout << "YEAH" << endl;
             // Update the symbol table too
             symbolTable[varName] = newValue;
 
@@ -256,7 +298,7 @@ void Process::editVariable(const string& varName, uint16_t newValue) {
 }
 
 void Process::savePageIndicesToFile(const std::string& filename) const {
-    pagingallocator->addPageIn(); // Increment page in count
+    pagingallocator->addPageOut(); // Increment page out count
     std::ofstream outFile(filename, ios::app);
     if (!outFile) {
         std::cerr << "Failed to open file: " << filename << std::endl;
@@ -271,7 +313,7 @@ void Process::savePageIndicesToFile(const std::string& filename) const {
 }
 
 void Process::deletePageIndexFromFile(const std::string& filename, const std::string& processName, uint16_t pageIndex) const {
-	pagingallocator->addPageOut(); // Increment page out count
+	pagingallocator->addPageIn(); // Increment page in count
     std::ifstream inFile(filename);
     if (!inFile) {
         std::cerr << "Failed to open file for reading: " << filename << std::endl;
@@ -847,71 +889,114 @@ void Process::initializeCommands(const vector<string>& instructions) {
             // Extract content between parentheses
             size_t openParen = trimmedInstr.find('(');
             size_t closeParen = trimmedInstr.find_last_of(')');
-
             if (openParen != string::npos && closeParen != string::npos && closeParen > openParen) {
                 string content = trimmedInstr.substr(openParen + 1, closeParen - openParen - 1);
-
                 // Remove leading/trailing whitespace from content
                 content.erase(0, content.find_first_not_of(" \t"));
                 content.erase(content.find_last_not_of(" \t") + 1);
 
-                string finalOutput = "";
+                // Flags to determine which constructor to use
+                bool hasString = false;
+                bool hasVariable = false;
+                bool hasNumericLiteral = false;
+                bool hasConcatenation = false;
 
-                // Check if it contains string concatenation (+ operator)
+                string stringPart = "";
+                string variablePart = "";
+                uint16_t numericValue = 0;
+
+                // Check if it contains concatenation (+ operator)
                 if (content.find('+') != string::npos) {
-                    // Handle concatenation: "Hello World" + variable
+                    hasConcatenation = true;
+
+                    // Split by + and analyze each part
                     istringstream ss(content);
                     string token;
+                    vector<string> tokens;
 
+                    // Split by + operator
                     while (getline(ss, token, '+')) {
                         // Remove whitespace around token
                         token.erase(0, token.find_first_not_of(" \t"));
                         token.erase(token.find_last_not_of(" \t") + 1);
+                        if (!token.empty()) {
+                            tokens.push_back(token);
+                        }
+                    }
 
-                        if (token.empty()) continue;
+                    // Analyze tokens (expecting exactly 2 tokens for concatenation)
+                    if (tokens.size() == 2) {
+                        string firstToken = tokens[0];
+                        string secondToken = tokens[1];
 
-                        if (token.front() == '"' && token.back() == '"') {
-                            // It's a string literal - remove quotes and add to output
-                            finalOutput += token.substr(1, token.length() - 2);
+                        // Check first token
+                        if (firstToken.front() == '"' && firstToken.back() == '"') {
+                            hasString = true;
+                            stringPart = firstToken.substr(1, firstToken.length() - 2);
+                        }
+
+                        // Check second token
+                        if (secondToken.front() == '"' && secondToken.back() == '"') {
+                            // Second part is also a string (shouldn't happen in your examples, but handle it)
+                            stringPart += secondToken.substr(1, secondToken.length() - 2);
+                            hasString = true;
+                        }
+                        else if (isdigit(secondToken[0]) || (secondToken[0] == '-' && secondToken.length() > 1)) {
+                            // It's a numeric literal
+                            hasNumericLiteral = true;
+                            numericValue = static_cast<uint16_t>(stoi(secondToken));
                         }
                         else {
-                            // It's a variable - check if it exists in symbol table
-                            if (symbolTable.find(token) != symbolTable.end()) {
-                                // Variable exists, get its value
-                                finalOutput += to_string(symbolTable[token]);
-                            }
-                            else {
-                                // Variable doesn't exist, declare it with value 0
-                                auto declareCmd = make_shared<DeclareCommand>(shared_from_this(), token, 0);
-                                addCommand(declareCmd);
-                                finalOutput += "0";
-                            }
+                            // It's a variable
+                            hasVariable = true;
+                            variablePart = secondToken;
                         }
                     }
                 }
                 else {
                     // No concatenation - single item
                     if (content.front() == '"' && content.back() == '"') {
-                        // It's a string literal
-                        finalOutput = content.substr(1, content.length() - 2);
+                        // It's a string literal - PRINT("hello")
+                        hasString = true;
+                        stringPart = content.substr(1, content.length() - 2);
+                    }
+                    else if (isdigit(content[0]) || (content[0] == '-' && content.length() > 1)) {
+                        // It's a numeric literal - PRINT(123)
+                        hasNumericLiteral = true;
+                        numericValue = static_cast<uint16_t>(stoi(content));
                     }
                     else {
-                        // It's a variable
-                        if (symbolTable.find(content) != symbolTable.end()) {
-                            // Variable exists
-                            finalOutput = to_string(symbolTable[content]);
-                        }
-                        else {
-                            // Variable doesn't exist, declare it with value 0
-                            auto declareCmd = make_shared<DeclareCommand>(shared_from_this(), content, 0);
-                            addCommand(declareCmd);
-                            finalOutput = "0";
-                        }
+                        // It's a variable - PRINT(var)
+                        hasVariable = true;
+                        variablePart = content;
                     }
                 }
 
-                // Create the PrintCommand with the processed output
-                cmd = make_shared<PrintCommand>(shared_from_this(), finalOutput);
+                // Create appropriate PrintCommand based on flags
+                if (hasConcatenation) {
+                    if (hasString && hasVariable) {
+                        // PRINT("hello" + var) - Constructor: (process, message, varName)
+                        cmd = make_shared<PrintCommand>(shared_from_this(), stringPart, variablePart);
+                    }
+                    else if (hasString && hasNumericLiteral) {
+                        // PRINT("hello" + 8) - Constructor: (process, message, value)
+                        cmd = make_shared<PrintCommand>(shared_from_this(), stringPart, numericValue);
+                    }
+                }
+                else {
+                    if (hasString) {
+                        // PRINT("hello") - Constructor: (process, message)
+                        cmd = make_shared<PrintCommand>(shared_from_this(), stringPart);
+                    }
+                    else if (hasVariable) {
+                        // PRINT(var) - Constructor: (process, "", varName) - empty string + variable
+                        cmd = make_shared<PrintCommand>(shared_from_this(), "", variablePart);
+                    }
+                    else if (hasNumericLiteral) {
+                        // PRINT(123) - Constructor: (process, "", value) - empty string + numeric value
+                        cmd = make_shared<PrintCommand>(shared_from_this(), "", numericValue);
+                    }
+                }
             }
         }
         else if (cmdType == "FOR") {
@@ -925,22 +1010,16 @@ void Process::initializeCommands(const vector<string>& instructions) {
                 continue;
             }
 
-            // Parse srcVar1 and srcVar2 (could be variables or values)
             uint16_t val1;
+            bool isSrc1Const = false;
             try {
-                val1 = static_cast<uint16_t>(stoi(srcVar));
+                val1 = static_cast<uint16_t>(stoi(srcVar)); // number
+                isSrc1Const = true;
             }
             catch (const exception& e) {
-                // It's a variable, get its value from symbol table
-                if (symbolTable.find(srcVar) != symbolTable.end()) {
-                    val1 = symbolTable[srcVar];
-                }
-                else {
-                    // Auto-declare with value 0
-                    addSymbol(srcVar, 0);
-                    val1 = 0;
-                }
+                
             }
+
             vector<size_t> possibleAddresses;
             //cout << "memoryrequired: " << memoryRequired << endl;
             //cout << "memFrame: " << memFrame << endl;
@@ -969,11 +1048,17 @@ void Process::initializeCommands(const vector<string>& instructions) {
 
             if (std::find(possibleAddresses.begin(), possibleAddresses.end(), destAddress) == possibleAddresses.end()) {
                 //cout << "Invalid WRITE address: " << destVar << " is not within allocated memory" << endl;
-                terminateProcess();
+                terminateProcess(destVar);
                 continue;
             }
 
-            cmd = make_shared<WriteCommand>(shared_from_this(), static_cast<uint16_t>(destAddress), memFrame, val1);
+            if (isSrc1Const)
+            {
+                cmd = make_shared<WriteCommand>(shared_from_this(), static_cast<uint16_t>(destAddress), memFrame, val1);
+            }
+            else {
+                cmd = make_shared<WriteCommand>(shared_from_this(), static_cast<uint16_t>(destAddress), memFrame, srcVar);
+            }
             cout << "Valid WRITE instruction" << endl;
         }
         else if (cmdType == "READ") {
@@ -1025,7 +1110,7 @@ void Process::initializeCommands(const vector<string>& instructions) {
             // check if address source is possible
             if (std::find(possibleAddresses.begin(), possibleAddresses.end(), srcAddress) == possibleAddresses.end()) {
                 //cout << "Invalid WRITE address: " << destVar << " is not within allocated memory" << endl;
-                terminateProcess();
+                terminateProcess(destVar);
                 continue;
             }
 
@@ -1040,5 +1125,9 @@ void Process::initializeCommands(const vector<string>& instructions) {
         if (cmd) {
             addCommand(cmd);
         }
+    }
+    cout << "Command List:" << endl;
+    for (const auto& cmd : commandList) {
+        cout << "- " << cmd->toString() << endl;
     }
 }

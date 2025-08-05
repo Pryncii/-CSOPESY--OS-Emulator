@@ -39,7 +39,7 @@ void ReadCommand::execute() {
 	if (process->getMemReq() < address){
 		cout << "Read Error" << endl;
 		//terminate the process if the frame is not allocated
-		process->terminateProcess();
+		process->terminateProcess(to_string(address));
 		return;
 	}
 

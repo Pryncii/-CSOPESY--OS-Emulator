@@ -7,7 +7,9 @@ using namespace std;
 class PrintCommand : public Command {
 public:
 	PrintCommand(shared_ptr<Process> process, const string& message);
-	PrintCommand(shared_ptr<Process> process, const string& value, const int i);
+	PrintCommand(shared_ptr<Process> process, const string& message, uint16_t value);
+	PrintCommand(shared_ptr<Process> process, const string& message, const string& varName);
+	void pageIn(const string& varName);
 	void execute() override;
 	string getMessage() const;
 
@@ -17,9 +19,8 @@ public:
 
 private:
 	string message;
-	bool isValue;
+	bool isVar;
 	uint16_t value;
-	string symbolName;
-
+	string varName;
 };
 
