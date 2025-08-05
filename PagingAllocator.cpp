@@ -1,5 +1,6 @@
 #include "PagingAllocator.h"
 #include <iostream>
+#include <random>
 using namespace std;
 
 PagingAllocator::PagingAllocator(uint16_t maxMem, uint16_t memFrame)
@@ -22,10 +23,7 @@ bool PagingAllocator::Allocate(shared_ptr<Process> process) {
 
     size_t numFramesNeeded = process->getMemReq() / frameSize;
 
-    if (freeFrameList.empty()) {
-        return false; // not enough memory
-		//page replacement algorithm would be needed here
-    }
+    
 
     //vector<size_t> allocated = allocateFrames(numFramesNeeded, processID);
     process->setPages(false);
@@ -36,8 +34,28 @@ bool PagingAllocator::AllocatePage(shared_ptr<Process> process, uint16_t pageInd
     size_t processID = process->getPID();
     size_t numFramesNeeded = 1; // Allocating one frame for the page
     if (freeFrameList.empty()) {
-        return false; // not enough memory
-        //page replacement algorithm would be needed here
+        if (!frameMap.empty()) {
+            
+            // Randomly select a frame to evict
+            std::vector<size_t> frameIndices;
+            for (const auto& pair : frameMap) {
+                frameIndices.push_back(pair.first);
+            }
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::uniform_int_distribution<> dis(0, static_cast<int>(frameIndices.size() - 1));
+            size_t victimFrame = frameIndices[dis(gen)];
+
+            // Remove the victim frame from frameMap and add to freeFrameList
+            frameMap.erase(victimFrame);
+            freeFrameList.push_back(victimFrame);
+            std::cout << "Page Swapping: Evicted frame " << victimFrame << " from memory.\n";
+            
+        }
+        else {
+            // No frames to evict, allocation fails
+            return false;
+        }
     }
 	// add the frame to the process's allocated frames
     size_t allocated = allocateSingleFrameForPage(process, pageIndex);

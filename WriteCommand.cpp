@@ -42,7 +42,7 @@ void WriteCommand::execute() {
 	}
 	pageIn();
 
-	cout << "Write Command: Writing value " << value << " to address " << address << " in process " << process->getName() << endl;
+	//cout << "Write Command: Writing value " << value << " to address " << address << " in process " << process->getName() << endl;
 
 	//write the value to the address
 

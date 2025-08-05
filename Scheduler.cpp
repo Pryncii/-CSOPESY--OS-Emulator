@@ -192,7 +192,7 @@ void Scheduler::coreWorker(int coreID) {
 
             if (current->getHasCommands() == false) {
                 memoryAllocator->Allocate(current);
-                current->generateCommands(minins, maxins, 0);
+                //current->generateCommands(minins, maxins, 0);
                 current->setHasCommands(true);
             }
             // If already has memory, just proceed

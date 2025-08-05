@@ -41,7 +41,7 @@ void ReadCommand::execute() {
 		return;
 	}
 
-	cout << "Reading from address: " << address << endl;
+	//cout << "Reading from address: " << address << endl;
 	
 	pageIn(); // Ensure the page is in memory before reading
 	process->readMemory(pageIndex, address, varName);

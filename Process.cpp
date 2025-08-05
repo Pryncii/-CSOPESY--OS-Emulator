@@ -193,7 +193,7 @@ void Process::editVariable(const string& varName, uint16_t newValue) {
         uint16_t pageIndex = memoryNameTable[varName] / memFrame;
         if (find(pageIndices.begin(), pageIndices.end(), pageIndex) == pageIndices.end()) {
             pagingallocator->AllocatePage(shared_from_this(), pageIndex);// Add the page index to the allocator
-            cout << allocatedFrames.size() << " frames allocated for process " << this->getName() << endl;
+            //cout << allocatedFrames.size() << " frames allocated for process " << this->getName() << endl;
             deletePageIndexFromFile("backingstore.txt", this->getName(), pageIndex); // Delete the page entry from the backing store file
         }
 
@@ -203,7 +203,7 @@ void Process::editVariable(const string& varName, uint16_t newValue) {
             size_t frameIdx = memoryNameTableFrame[varName];
             size_t offset = memoryNameTable[varName];
 
-            cout << "Edit existing variable from " << processMemoryRead[frameIdx][offset] << " to " << newValue << endl;
+            //cout << "Edit existing variable from " << processMemoryRead[frameIdx][offset] << " to " << newValue << endl;
             // Update value in memory
             processMemoryRead[frameIdx][offset] = static_cast<uint8_t>(newValue & 0x00FF);        // Low byte
 
@@ -408,7 +408,7 @@ string Process::getTime() const {
 }
 
 int Process::getTotalLines() const {
-	return countNonForInstructions(getCommandList());
+	return commandList.size();
 }
 
 string Process::getName() const {
@@ -511,6 +511,7 @@ string Process::saveLogs() {
 	
 vector<shared_ptr<Command>> Process::generateRandomCommandList(int depth, int repeats, int& instructionBudget) {
     vector<shared_ptr<Command>> commands;
+    int targetCommands = instructionBudget; // Default to 10 if not set
 
     if (depth >= 3) {
         return commands;
@@ -522,7 +523,7 @@ vector<shared_ptr<Command>> Process::generateRandomCommandList(int depth, int re
         seeded = true;
     }
 
-    while (instructionBudget >= repeats) {
+    while (commands.size() < targetCommands) {
         Command::CommandType type = static_cast<Command::CommandType>(rand() % 8); // 0 to 7
         shared_ptr<Command> cmd;
        
@@ -595,7 +596,6 @@ vector<shared_ptr<Command>> Process::generateRandomCommandList(int depth, int re
                 }
                 break;
                 */
-
            
                 int looprepeats = 1 + rand() % 4;
 
@@ -605,7 +605,14 @@ vector<shared_ptr<Command>> Process::generateRandomCommandList(int depth, int re
                 // Append the repeated commands directly to the parent list
                 for (int i = 0; i < looprepeats; ++i) {
                     for (auto& subCmd : nestedCommands) {
-                        commandList.push_back(subCmd);  // ← this is your idea
+                        if (commands.size() < targetCommands) {
+                            commands.push_back(subCmd);  // ← this is your idea
+                            instructionBudget -= repeats;
+                        }
+                        else {
+
+                            break;
+                        }
                     }
                 }
                 break;
@@ -614,7 +621,7 @@ vector<shared_ptr<Command>> Process::generateRandomCommandList(int depth, int re
             }
             
             case Command::WRITE: {
-				cout << "Generating WRITE command for process " << name << endl;
+				//cout << "Generating WRITE command for process " << name << endl;
                 // only addresses it can access are the addresses that has the allocated frames
                 vector<size_t> possibleAddresses;
                 uint16_t address;
@@ -659,7 +666,12 @@ vector<shared_ptr<Command>> Process::generateRandomCommandList(int depth, int re
         }
        
         if (cmd) {
-            commands.push_back(cmd);
+            if (commands.size() < targetCommands) {
+                commands.push_back(cmd);
+            }
+            else {
+                break;
+            }
         }
 	}
 
@@ -671,21 +683,18 @@ vector<shared_ptr<Command>> Process::generateRandomCommandList(int depth, int re
 void Process::generateCommands(uint32_t minIns, uint32_t maxIns, int depth) {
 
     if (this->totalNumCommands == -1) {
-        int range = static_cast<int>(maxIns - minIns + 1); // number of values for the range
-        this->totalNumCommands = static_cast<int>(minIns) + (rand() % range); // inclusive range [minIns, maxIns]
-        // 0 to range-1
+        int range = static_cast<int>(maxIns - minIns + 1);
+        this->totalNumCommands = static_cast<int>(minIns) + (rand() % range);
     }
-    
-    //cout << "\nPID: " << this->getPID() << "\n";
-    //cout << "numcommands: " << this->totalNumCommands << "\n";
 
     int instructionBudget = this->totalNumCommands;
     auto cmds = generateRandomCommandList(depth, 1, instructionBudget);
-    
-    int instructionCount = countNonForInstructions(cmds);
-    //cout << "# of generated commands: " << instructionCount << "\n";
 
+    // Instead of using countNonForInstructions, just use the actual size
     for (auto& c : cmds) addCommand(c);
+
+    // Set totalNumCommands to the actual number of commands generated
+    this->totalNumCommands = static_cast<int>(commandList.size());
 }
 
 int Process::countNonForInstructions(const vector<shared_ptr<Command>>& cmds) const {

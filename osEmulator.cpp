@@ -159,7 +159,7 @@ void scheduler_start(Config config, Scheduler& scheduler){
 
             shared_ptr<Process> process = make_shared<Process>(globalPID, "Process_" + to_string(globalPID), config.delay, memoryRequired, config.memFrame, config.maxMem, config.quantum, pagingallocator);
             //cout << config.quantum << endl;
-            //process->generateCommands(config.minIns, config.maxIns, 0);
+            process->generateCommands(config.minIns, config.maxIns, 0);
             scheduler.addProcess(process); // add the process to the scheduler
 
             Console temp(process);
@@ -305,16 +305,18 @@ void cpuCycleThread(uint32_t delayMs) {
     }
 }
 
-void processSmi(Scheduler& scheduler, Config config) {
+void processSmi(Scheduler& scheduler, Config config, shared_ptr<PagingAllocator> pagingAllocator) {
 
     auto cpuUtilization = (scheduler.getRunningCores() * 100) / config.numCPU;
     uint16_t totalMemory = config.maxMem;
-	size_t totalMemoryUsed = 0;
 	
+	
+    size_t totalMemoryUsed = pagingAllocator->getFrameMap().size() * config.memFrame;
 
     vector<shared_ptr<Process>> runningProcesses = scheduler.getRunningQueue();
 	queue<shared_ptr<Process>> readyProcesses = scheduler.getReadyQueue();
-
+    queue<shared_ptr<Process>> tempReadyQueue = readyProcesses; // copy
+    /*
     for (const shared_ptr<Process>& process : runningProcesses) {
         vector<vector<bool>> curProcMem = process->getProcessMemory();
 
@@ -346,6 +348,7 @@ void processSmi(Scheduler& scheduler, Config config) {
             }
         }
     }
+    */
 
 
 	auto memoryUtilization = (totalMemoryUsed * 100) / totalMemory;
@@ -630,7 +633,7 @@ int main(){
                     uint16_t processMemory = isValidMemory(command, config.maxMem); // check if the memory size for the process is valid
                     if (processMemory == 0) continue;
                     shared_ptr<Process> process = make_shared<Process>(globalPID, screenName, config.delay, processMemory, config.memFrame, config.maxMem, config.quantum, pagingallocator);
-					//process->generateCommands(config.minIns, config.maxIns, 0);
+					process->generateCommands(config.minIns, config.maxIns, 0);
 					scheduler->addProcess(process); // add the process to the scheduler
                     
                     Console temp(process);
@@ -713,7 +716,7 @@ int main(){
             }
         }
         else if (command == "process-smi") {
-			processSmi(ref(*scheduler), config); // call process smi
+			processSmi(ref(*scheduler), config, pagingallocator); // call process smi
             pagingallocator->visualizeMemory();
         }
         else {
