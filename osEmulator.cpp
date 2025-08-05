@@ -369,6 +369,7 @@ void processSmi(Scheduler& scheduler, Config config, shared_ptr<PagingAllocator>
 
         size_t memoryUsed = 0;
 
+        
         for (int i = 0; i < curProcMem.size(); i++) {
             //size_t frameIndex = pair.first;
             //const vector<bool>& frameData = pair.second;
@@ -380,8 +381,19 @@ void processSmi(Scheduler& scheduler, Config config, shared_ptr<PagingAllocator>
             }
         }
 
+        size_t framesAssigned = 0;
+        auto frameMap = pagingAllocator->getFrameMap();
+        for (const auto& pair : frameMap) {
+            const FrameEntry& entry = pair.second;
+            if (entry.valid && entry.processID == process->getPID()) {
+                ++framesAssigned;
+            }
+        }
+        size_t memoryAssigned = framesAssigned * config.memFrame;
+        
+
         cout << process->getName() << " (PID: " << process->getPID() << "):"
-            << " | Memory Used: " << memoryUsed << " bytes\n";
+            << " | Memory Used: " << memoryUsed << " bytes |" << " Memory in Frame: " << memoryAssigned << " bytes\n";
 
         //process->visualizeProcessMemory();
         process->visualizeProcessContents();

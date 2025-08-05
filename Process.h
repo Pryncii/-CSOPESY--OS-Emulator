@@ -62,6 +62,7 @@ class Process : public enable_shared_from_this<Process>
 		const vector<size_t>& getAllocatedFrames() const { return allocatedFrames; }
 		vector<vector<bool>> getProcessMemory() const { return processMemory; }
 		vector<vector<int>> getProcessMemoryRead() const { return processMemoryRead; }
+		void removeFromAllocatedFrames(size_t frame);
 		
 
 		vector<shared_ptr<Command>> Process::getCommandList() const;

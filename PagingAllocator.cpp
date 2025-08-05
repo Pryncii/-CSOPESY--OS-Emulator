@@ -49,6 +49,9 @@ bool PagingAllocator::AllocatePage(shared_ptr<Process> process, uint16_t pageInd
             // Remove the victim frame from frameMap and add to freeFrameList
             frameMap.erase(victimFrame);
             freeFrameList.push_back(victimFrame);
+			// also remove the allocated frame from the process
+			process->removeFromAllocatedFrames(victimFrame);
+            
             std::cout << "Page Swapping: Evicted frame " << victimFrame << " from memory.\n";
             
         }

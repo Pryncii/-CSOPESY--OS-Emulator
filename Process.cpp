@@ -697,6 +697,18 @@ void Process::generateCommands(uint32_t minIns, uint32_t maxIns, int depth) {
     this->totalNumCommands = static_cast<int>(commandList.size());
 }
 
+void Process::removeFromAllocatedFrames(size_t frameIndex) {
+    auto it = find(allocatedFrames.begin(), allocatedFrames.end(), frameIndex);
+    if (it != allocatedFrames.end()) {
+        allocatedFrames.erase(it);
+        //reduce the size of the allocated frames
+        
+		cout << "Removed frame index " << frameIndex << " from allocated frames." << endl;
+		//print out remaining allocated frames for the process
+		cout << "Remaining allocated frames for process " << name << ": " << allocatedFrames.size() << endl;
+    }
+}
+
 int Process::countNonForInstructions(const vector<shared_ptr<Command>>& cmds) const {
     int count = 0;
     for (const auto& cmd : cmds) {
