@@ -210,7 +210,7 @@ void Scheduler::coreWorker(int coreID) {
         if (schedulingMode == Mode::FCFS) {
             // run until finished
             bool didSleep = false;
-            while (!current->isFinished() && !current->getIsTerminated()) {
+            while (!current->isFinished() && !current->getIsTerminated() && !current->getIsProcessError()) {
 
                 // add to running queue
                 activeTicks++;
@@ -263,7 +263,7 @@ void Scheduler::coreWorker(int coreID) {
             bool justFinished = false;
 
             // until finished or timeQuantum is reached
-            while (!current->isFinished() && current -> getTimestep() < timeQuantum) {
+            while (!current->isFinished() && current -> getTimestep() < timeQuantum && !current->getIsProcessError()) {
 
                 activeTicks++;
                 current->executeCommand();

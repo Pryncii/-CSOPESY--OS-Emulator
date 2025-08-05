@@ -33,6 +33,9 @@ class Process : public enable_shared_from_this<Process>
 		
 
 		bool isFinished() const;
+
+		bool getIsProcessError() const;
+
 		int getPID() const;
 		int getCpuCoreID() const;
 		void printLogs() const;
@@ -82,6 +85,8 @@ class Process : public enable_shared_from_this<Process>
 		void setTimestep(int step) { timestep = step; }
 		uint16_t getQuantum() { return quantum; }
 
+		
+
 	
 	private:
 		void* allocatedMemory;
@@ -107,6 +112,7 @@ class Process : public enable_shared_from_this<Process>
 		vector<vector<int>> processMemoryRead; // for read operations
 		bool hasCommands = false;
 		int timestep = 0;
+		bool isProcessError = false;
 
 		uint16_t memoryRequired;
 		int commandCounter = 0;

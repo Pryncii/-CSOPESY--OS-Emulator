@@ -43,16 +43,32 @@ void AddCommand::execute() {
 	uint16_t result = 0;
 	if (var2IsNumber && var3IsNumber) {
 		result = var2Num + var3Num;
+
+		cout << process->getCpuCoreID() << "ADD NN: " << var2Num << " + " << var3Num << " = " << result << endl;
+
+
 		process->editVariable(var1, result);
 	} else if(var2IsNumber && !var3IsNumber) { // if var 2 is number and var 3 is string
 		result = var2Num + process->getSymbolValue(var3Str);
+
+		cout << process->getCpuCoreID() << "ADD NV: " << var2Num << " + " << process->getSymbolValue(var3Str) << " = " << result << endl;
+
+
 		process->editVariable(var1, result);
 	} else if (!var2IsNumber && var3IsNumber) { // if var 2 is string and var 3 is number
 		result = process->getSymbolValue(var2Str) + var3Num;
+
+		cout << process->getCpuCoreID() << "ADD VN: " << process->getSymbolValue(var2Str) << " + " << var3Num << " = " << result << endl;
+
+
 		process->editVariable(var1, result);
 	}
 	else { // if both are strings
 		result = process->getSymbolValue(var2Str) + process->getSymbolValue(var3Str);
+
+		cout << process->getCpuCoreID() << "ADD VV: " << process->getSymbolValue(var2Str) << " + " << process->getSymbolValue(var3Str) << " = " << result << endl;
+
+
 		process->editVariable(var1, result);
 	}
 

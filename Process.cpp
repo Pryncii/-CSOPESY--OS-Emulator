@@ -109,7 +109,13 @@ void Process::readMemory(uint16_t pageIndex, uint16_t address, const string& var
 }
 
 void Process::terminateProcess() {
-	this->isTerminated = true; // Set commandCounter to the total number of commands
+    this->isTerminated = true; // Set commandCounter to the total number of commands
+    this->isProcessError = true;
+    cout << "process error, terminated.\n";
+}
+
+bool Process::getIsProcessError() const {
+    return isProcessError;
 }
 
 // Searches for two free bytes in the memory to store a variable, marks memory, and updates symbol tables.
@@ -669,10 +675,125 @@ void Process::initializeCommands(const vector<string>& instructions) {
             cmd = make_shared<SleepCommand>(shared_from_this(), duration);
         }
         else if (cmdType == "WRITE") {
-            
+            // WRITE address_dest source
+            // WRITE 0x500 varA
+
+            string destVar, srcVar;
+            iss >> destVar >> srcVar;
+            if (destVar.empty() || srcVar.empty()) {
+                cout << "Invalid WRITE instruction: " << trimmedInstr << endl;
+                continue;
+            }
+
+            // Parse srcVar1 and srcVar2 (could be variables or values)
+            uint16_t val1;
+            try {
+                val1 = static_cast<uint16_t>(stoi(srcVar));
+            }
+            catch (const exception& e) {
+                // It's a variable, get its value from symbol table
+                if (symbolTable.find(srcVar) != symbolTable.end()) {
+                    val1 = symbolTable[srcVar];
+                }
+                else {
+                    // Auto-declare with value 0
+                    addSymbol(srcVar, 0);
+                    val1 = 0;
+                }
+            }
+            vector<size_t> possibleAddresses;
+            //cout << "memoryrequired: " << memoryRequired << endl;
+            //cout << "memFrame: " << memFrame << endl;
+            for (int i = 0; i < memoryRequired / memFrame; ++i) {
+                //for each page index, add all addresses in that frame to the possible addresses
+
+                for (size_t j = 0; j < memFrame - 1; ++j) {
+                    possibleAddresses.push_back(i * memFrame + j);
+                }
+            }
+            //cout << "Possible addresses for WRITE: ";
+            //for (size_t addr : possibleAddresses) {
+            //    cout << addr << " ";
+            //}
+            //cout << endl;
+
+            size_t destAddress;
+            try {
+                destAddress = std::stoul(destVar, nullptr, 0); // auto-detects base (hex, dec)
+                //cout << "DEST ADDRESS: " << destAddress << endl;
+            }
+            catch (const std::exception& e) {
+                cout << "Invalid WRITE destination address format: " << destVar << endl;
+                continue;
+            }
+
+            if (std::find(possibleAddresses.begin(), possibleAddresses.end(), destAddress) == possibleAddresses.end()) {
+                //cout << "Invalid WRITE address: " << destVar << " is not within allocated memory" << endl;
+                terminateProcess();
+                continue;
+            }
+
+            cmd = make_shared<WriteCommand>(shared_from_this(), static_cast<uint16_t>(destAddress), memFrame, val1);
+            cout << "Valid WRITE instruction" << endl;
         }
         else if (cmdType == "READ") {
-            
+            // READ dest address_source
+            // READ varC 0x500
+
+            string destVar, srcVar;
+            iss >> destVar >> srcVar;
+            if (destVar.empty() || srcVar.empty()) {
+                cout << "Invalid READ instruction: " << trimmedInstr << endl;
+                continue;
+            }
+
+            // check if destination is in symbol table, if not, declare with 0
+            uint16_t val1;
+            try {
+                val1 = static_cast<uint16_t>(stoi(destVar));
+            }
+            catch (const exception& e) {
+                // It's a variable, get its value from symbol table
+                if (symbolTable.find(destVar) != symbolTable.end()) {
+                    val1 = symbolTable[destVar];
+                }
+                else {
+                    // Auto-declare with value 0
+                    addSymbol(destVar, 0);
+                    val1 = 0;
+                }
+            }
+            vector<size_t> possibleAddresses;
+            for (int i = 0; i < memoryRequired / memFrame; ++i) {
+                for (size_t j = 0; j < memFrame - 1; ++j) {
+                    possibleAddresses.push_back(i * memFrame + j);
+                }
+            }
+            //cout << "Possible addresses for READ: ";
+            //for (size_t addr : possibleAddresses) {
+            //    cout << addr << " ";
+            //}
+            //cout << endl;
+
+            size_t srcAddress;
+            try {
+                srcAddress = std::stoul(srcVar, nullptr, 0); // auto-detects base (hex, dec)
+                //cout << "DEST ADDRESS: " << srcAddress << endl;
+            }
+            catch (const std::exception& e) {
+                cout << "Invalid WRITE destination address format: " << destVar << endl;
+                continue;
+            }
+
+            // check if address source is possible
+            if (std::find(possibleAddresses.begin(), possibleAddresses.end(), srcAddress) == possibleAddresses.end()) {
+                //cout << "Invalid WRITE address: " << destVar << " is not within allocated memory" << endl;
+                terminateProcess();
+                continue;
+            }
+
+            cmd = make_shared<ReadCommand>(shared_from_this(), static_cast<uint16_t>(srcAddress), destVar, memFrame);
+            cout << "Valid READ instruction" << endl;
         }
         else if (trimmedInstr.substr(0, 5) == "PRINT") {
             // Extract content between parentheses
