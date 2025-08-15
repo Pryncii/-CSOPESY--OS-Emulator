@@ -228,7 +228,7 @@ void Process::editVariable(const string& varName, uint16_t newValue) {
                 if (frameIdx < frames.size()) {
                     size_t actualFrameIdx = frames[frameIdx];
 
-                    cout << "in here" << endl;
+                    //cout << "in here" << endl;
                     if (pagingallocator->frameMap.count(actualFrameIdx)) {
 
                         FrameEntry& frame = pagingallocator->frameMap[actualFrameIdx];
@@ -539,7 +539,7 @@ vector<shared_ptr<Command>> Process::generateRandomCommandList(int depth, int re
     }
 
     while (commands.size() < targetCommands) {
-        Command::CommandType type = static_cast<Command::CommandType>(rand() % 8); // 0 to 7
+        Command::CommandType type = static_cast<Command::CommandType>(rand() % 6); // 0 to 7
         shared_ptr<Command> cmd;
        
         switch (type) {

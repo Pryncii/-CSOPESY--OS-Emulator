@@ -129,10 +129,10 @@ Config loadConfig() {
     config.minIns = parsecheckWithinRange(textconfig["min-ins"], "min-ins", 1, UINT32_MAX);
     config.maxIns = parsecheckWithinRange(textconfig["max-ins"], "max-ins", 1, UINT32_MAX);
     config.delay = parsecheckWithinRange(textconfig["delay-per-exec"], "delay-per-exec", 0, UINT32_MAX);
-	config.maxMem = parsecheckWithinRange(textconfig["max-overall-mem"], "max-overall-meme", 64, UINT16_MAX);
+	config.maxMem = parsecheckWithinRange(textconfig["max-overall-mem"], "max-overall-meme", 0, UINT16_MAX);
 	config.memFrame = parsecheckWithinRange(textconfig["mem-per-frame"], "mem-per-frame", 0, UINT16_MAX);
-	config.minMemProc = parsecheckWithinRange(textconfig["min-mem-per-proc"], "min-mem-per-proc", 64, UINT16_MAX);
-	config.maxMemProc = parsecheckWithinRange(textconfig["max-mem-per-proc"], "max-mem-per-proc", 64, UINT16_MAX);
+	config.minMemProc = parsecheckWithinRange(textconfig["min-mem-per-proc"], "min-mem-per-proc", 0, UINT16_MAX);
+	config.maxMemProc = parsecheckWithinRange(textconfig["max-mem-per-proc"], "max-mem-per-proc", 0, UINT16_MAX);
 
     return config;
 }
@@ -367,19 +367,21 @@ void processSmi(Scheduler& scheduler, Config config, shared_ptr<PagingAllocator>
     cout << "=================================================\n";
     cout << "|   PROCESS-SMI V01.00  Driver Version: 01.00   |\n";
     cout << "-------------------------------------------------\n";
-    cout << "CPU Utilization: " << cpuUtilization << "%" << endl;
+    cout << "CPU Utilization: " << 0 << "%" << endl;
 	cout << "Memory Usage: " << totalMemoryUsed << " bytes" << "/" << totalMemory << " bytes\n";
 	cout << "Memory Utilization: " << memoryUtilization << "%\n" << endl;
     cout << "=================================================\n";
     cout << "Running processes and memory usage:\n";
     cout << "-------------------------------------------------\n";
    
+    /*
     for (const shared_ptr<Process>& process : runningProcesses) {
         vector<vector<bool>> curProcMem = process->getProcessMemory();
 
         size_t memoryUsed = 0;
 
         
+
         for (int i = 0; i < curProcMem.size(); i++) {
             //size_t frameIndex = pair.first;
             //const vector<bool>& frameData = pair.second;
@@ -405,7 +407,7 @@ void processSmi(Scheduler& scheduler, Config config, shared_ptr<PagingAllocator>
         //cout << process->getName() << " (PID: " << process->getPID() << "):"
             //<< " | Memory Used: " << memoryUsed << " bytes |" << " Memory in Frame: " << memoryAssigned << " bytes\n";
 
-        //process->visualizeProcessMemory();
+        process->visualizeProcessMemory();
        // process->visualizeProcessContents();
     }
 
@@ -437,6 +439,7 @@ void processSmi(Scheduler& scheduler, Config config, shared_ptr<PagingAllocator>
 
         // Visualize the process memory allocation
     }
+    */
 }
 
 void saveLs(Scheduler& scheduler, Config config) {
@@ -470,7 +473,7 @@ void saveLs(Scheduler& scheduler, Config config) {
     }
 
     output += "+============================================================+\n";
-   // cout << output;
+   cout << output;
     consoleStrings.append(output);
 }
 
@@ -739,7 +742,7 @@ int main(){
         }
         else if (command == "process-smi") {
 			processSmi(ref(*scheduler), config, pagingallocator); // call process smi
-            pagingallocator->visualizeMemory();
+            //pagingallocator->visualizeMemory();
         }
         else if (command == "vmstat") {
             size_t totalMemory = config.maxMem;
